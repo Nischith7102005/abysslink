@@ -14,8 +14,9 @@
     <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
         * { 
@@ -25,33 +26,28 @@
         }
         
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --accent-cyan: #00d4ff;
-            --accent-purple: #8b5cf6;
-            --text-primary: #e5e5e7;
-            --text-secondary: #a1a1aa;
-            --border-subtle: rgba(255, 255, 255, 0.08);
+            --black: #000000;
+            --dark-gray: #0a0a0a;
+            --gray: #1a1a1a;
+            --white: #ffffff;
+            --off-white: #e0e0e0;
+            --subtle-white: rgba(255, 255, 255, 0.1);
         }
         
         body { 
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--black);
+            color: var(--white);
+            font-family: 'Rajdhani', sans-serif;
             overflow-x: hidden;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
-            line-height: 1.6;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
 
-        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar { width: 4px; }
         body::-webkit-scrollbar-track { background: transparent; }
         body::-webkit-scrollbar-thumb { 
-            background: rgba(255,255,255,0.1); 
-            border-radius: 4px; 
-        }
-        body::-webkit-scrollbar-thumb:hover { 
             background: rgba(255,255,255,0.2); 
+            border-radius: 2px; 
         }
 
         #canvas-container {
@@ -61,7 +57,21 @@
             width: 100%;
             height: 100vh;
             z-index: 0;
-            opacity: 0.6;
+            opacity: 0.4;
+        }
+
+        /* Grain texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
         }
 
         /* Navigation */
@@ -71,39 +81,40 @@
             left: 0;
             right: 0;
             z-index: 100;
-            padding: 1.5rem 3rem;
+            padding: 2rem 3rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(10, 10, 15, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-subtle);
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
         .logo {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 700;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: -0.02em;
+            color: var(--white);
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 0.1em;
         }
 
         .nav-links {
             display: flex;
-            gap: 2rem;
+            gap: 3rem;
             align-items: center;
         }
 
         .nav-link {
-            color: var(--text-secondary);
+            color: var(--off-white);
             text-decoration: none;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             transition: color 0.3s ease;
             font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .nav-link:hover {
-            color: var(--text-primary);
+            color: var(--white);
         }
 
         /* Content Sections */
@@ -113,14 +124,81 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 8rem 2rem 4rem;
+            padding: 0 2rem;
             z-index: 10;
         }
 
         .section-container {
-            max-width: 1200px;
+            max-width: 1400px;
             width: 100%;
             margin: 0 auto;
+        }
+
+        /* GLITCH EFFECT */
+        .glitch {
+            position: relative;
+            font-size: clamp(4rem, 12vw, 10rem);
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 0.05em;
+            color: var(--white);
+            text-transform: uppercase;
+            animation: glitch-skew 1s infinite;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 #fff;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 #fff, 2px 2px #000;
+            animation: glitch-anim2 1s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(31px, 9999px, 94px, 0); }
+            20% { clip: rect(60px, 9999px, 5px, 0); }
+            40% { clip: rect(69px, 9999px, 40px, 0); }
+            60% { clip: rect(95px, 9999px, 68px, 0); }
+            80% { clip: rect(12px, 9999px, 99px, 0); }
+            100% { clip: rect(83px, 9999px, 61px, 0); }
+        }
+
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 119px, 0); }
+            20% { clip: rect(52px, 9999px, 74px, 0); }
+            40% { clip: rect(79px, 9999px, 85px, 0); }
+            60% { clip: rect(58px, 9999px, 124px, 0); }
+            80% { clip: rect(35px, 9999px, 93px, 0); }
+            100% { clip: rect(88px, 9999px, 45px, 0); }
+        }
+
+        @keyframes glitch-skew {
+            0% { transform: skew(0deg); }
+            10% { transform: skew(-2deg); }
+            20% { transform: skew(2deg); }
+            30% { transform: skew(-1deg); }
+            40% { transform: skew(1deg); }
+            50% { transform: skew(0deg); }
+            60% { transform: skew(0deg); }
+            70% { transform: skew(0deg); }
+            80% { transform: skew(0deg); }
+            90% { transform: skew(0deg); }
+            100% { transform: skew(0deg); }
         }
 
         /* Hero Section */
@@ -129,106 +207,127 @@
             padding: 0 2rem;
         }
 
-        .hero-title {
-            font-size: clamp(3.5rem, 8vw, 7rem);
-            font-weight: 700;
-            line-height: 1;
-            letter-spacing: -0.04em;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            color: var(--off-white);
+            margin: 2rem 0 3rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeIn 1s ease 0.5s forwards;
         }
 
-        .hero-subtitle {
-            font-size: clamp(1.1rem, 2vw, 1.4rem);
-            color: var(--text-secondary);
-            margin-bottom: 3rem;
-            font-weight: 400;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+        @keyframes fadeIn {
+            to { opacity: 1; }
         }
 
         /* Buttons */
         .btn-group {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
             justify-content: center;
             flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeIn 1s ease 1s forwards;
         }
 
         .btn {
-            padding: 1rem 2.5rem;
-            font-size: 1rem;
+            padding: 1.2rem 3rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 0;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
-            font-family: inherit;
+            font-family: 'Rajdhani', sans-serif;
             border: none;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: left 0.3s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
-            background: var(--accent-cyan);
-            color: #000;
+            background: var(--white);
+            color: var(--black);
+            border: 2px solid var(--white);
         }
 
         .btn-primary:hover {
-            background: #00b8e6;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.25);
+            background: transparent;
+            color: var(--white);
         }
 
         .btn-secondary {
             background: transparent;
-            border: 1px solid var(--border-subtle);
-            color: var(--text-primary);
+            border: 2px solid var(--white);
+            color: var(--white);
         }
 
         .btn-secondary:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--white);
+            color: var(--black);
         }
 
-        /* Feature Grid */
+        /* Section Headers */
         .section-header {
             text-align: center;
-            margin-bottom: 4rem;
+            margin-bottom: 5rem;
+            opacity: 0;
+            transform: translateY(30px);
         }
 
         .section-title {
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-size: clamp(2.5rem, 5vw, 4rem);
             font-weight: 700;
             margin-bottom: 1rem;
-            letter-spacing: -0.02em;
+            letter-spacing: 0.05em;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
         }
 
         .section-description {
             font-size: 1.1rem;
-            color: var(--text-secondary);
+            color: var(--off-white);
             max-width: 600px;
             margin: 0 auto;
+            font-weight: 300;
+            letter-spacing: 0.05em;
         }
 
+        /* Feature Grid */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.5rem;
+            gap: 2rem;
             margin-top: 3rem;
         }
 
         .feature-card {
             background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            padding: 2.5rem 2rem;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 2rem;
+            transition: all 0.4s ease;
             position: relative;
-            overflow: hidden;
+            opacity: 0;
+            transform: translateY(30px);
         }
 
         .feature-card::before {
@@ -236,21 +335,20 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
-            opacity: 0;
-            transition: opacity 0.4s ease;
+            width: 0;
+            height: 2px;
+            background: var(--white);
+            transition: width 0.4s ease;
         }
 
         .feature-card:hover::before {
-            opacity: 1;
+            width: 100%;
         }
 
         .feature-card:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
         }
 
         .feature-icon {
@@ -261,70 +359,78 @@
         }
 
         .feature-title {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 600;
             margin-bottom: 0.75rem;
-            color: var(--text-primary);
+            color: var(--white);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .feature-description {
             font-size: 0.95rem;
-            color: var(--text-secondary);
+            color: var(--off-white);
             line-height: 1.6;
+            font-weight: 300;
         }
 
         /* Process Steps */
         .process-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
+            gap: 3rem;
             margin-top: 3rem;
         }
 
         .process-step {
             position: relative;
-            padding: 2rem;
+            padding: 2.5rem;
             background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
         }
 
         .process-step:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .step-number {
-            font-size: 3rem;
-            font-weight: 700;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--accent-cyan);
-            opacity: 0.2;
+            font-size: 5rem;
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            color: var(--white);
+            opacity: 0.1;
             margin-bottom: 1rem;
             line-height: 1;
         }
 
         .step-title {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: var(--text-primary);
+            color: var(--white);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .step-description {
             font-size: 0.95rem;
-            color: var(--text-secondary);
+            color: var(--off-white);
             line-height: 1.6;
+            font-weight: 300;
         }
 
         /* Privacy List */
         .privacy-box {
-            background: rgba(139, 92, 246, 0.05);
-            border: 1px solid rgba(139, 92, 246, 0.15);
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 3rem 2.5rem;
             margin-top: 3rem;
+            opacity: 0;
+            transform: translateY(30px);
         }
 
         .privacy-list {
@@ -336,34 +442,40 @@
         .privacy-list li {
             position: relative;
             padding-left: 2rem;
-            color: var(--text-secondary);
+            color: var(--off-white);
+            font-weight: 300;
+            letter-spacing: 0.03em;
         }
 
         .privacy-list li::before {
-            content: "✓";
+            content: "—";
             position: absolute;
             left: 0;
-            color: var(--accent-cyan);
+            color: var(--white);
             font-weight: 600;
         }
 
         /* Final CTA */
         .cta-section {
             text-align: center;
-            padding: 6rem 2rem;
+            padding: 8rem 2rem;
         }
 
         .cta-title {
-            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
             font-weight: 700;
             margin-bottom: 1.5rem;
-            letter-spacing: -0.02em;
+            letter-spacing: 0.05em;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
         }
 
         .cta-description {
             font-size: 1.2rem;
-            color: var(--text-secondary);
+            color: var(--off-white);
             margin-bottom: 3rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
         }
 
         /* Modals */
@@ -374,28 +486,20 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 1000;
             justify-content: center;
             align-items: center;
             animation: fadeIn 0.2s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
         .modal-content {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-subtle);
+            background: var(--dark-gray);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             padding: 3rem;
-            border-radius: 16px;
             max-width: 500px;
             width: 90%;
-            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
         }
 
         @keyframes slideUp {
@@ -412,8 +516,11 @@
         .modal-content h2 {
             font-size: 1.8rem;
             margin-bottom: 2rem;
-            color: var(--text-primary);
+            color: var(--white);
             font-weight: 600;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .form-group {
@@ -423,18 +530,19 @@
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            color: var(--text-secondary);
+            color: var(--off-white);
             font-size: 0.9rem;
             font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .form-group input {
             width: 100%;
-            padding: 0.9rem 1.2rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-subtle);
-            background: rgba(0, 0, 0, 0.3);
-            color: var(--text-primary);
+            padding: 1rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--white);
             font-size: 1rem;
             font-family: inherit;
             transition: all 0.3s ease;
@@ -442,8 +550,8 @@
 
         .form-group input:focus {
             outline: none;
-            border-color: var(--accent-cyan);
-            background: rgba(0, 0, 0, 0.4);
+            border-color: var(--white);
+            background: rgba(0, 0, 0, 0.7);
         }
 
         .modal-actions {
@@ -453,92 +561,91 @@
         }
 
         .info-box {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.5);
             padding: 1.5rem;
-            border-radius: 8px;
             margin-bottom: 1.5rem;
-            border: 1px solid var(--border-subtle);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .info-box p {
-            color: var(--text-secondary);
+            color: var(--off-white);
             margin-bottom: 0.5rem;
             font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
             font-weight: 600;
         }
 
         .info-box .value {
-            color: var(--accent-cyan);
+            color: var(--white);
             word-break: break-all;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 0.85rem;
             cursor: pointer;
             padding: 0.75rem;
-            background: rgba(0, 212, 255, 0.05);
-            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
             display: block;
             margin-top: 0.5rem;
             transition: all 0.2s ease;
         }
 
         .info-box .value:hover {
-            background: rgba(0, 212, 255, 0.1);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .warning {
-            color: var(--text-secondary);
+            color: var(--off-white);
             margin-bottom: 2rem;
             font-size: 0.9rem;
             padding: 1rem;
-            background: rgba(255, 107, 107, 0.05);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 107, 107, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Status Badge */
-        .status-badge {
+        /* Corner Brackets */
+        .corner-bracket {
             position: fixed;
-            bottom: 2rem;
-            left: 2rem;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-            z-index: 100;
-            background: rgba(10, 10, 15, 0.8);
-            backdrop-filter: blur(20px);
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-subtle);
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            z-index: 101;
         }
 
-        .status-badge span {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: var(--accent-cyan);
-            border-radius: 50%;
-            margin-right: 0.5rem;
-            animation: pulse 2s infinite;
+        .corner-bracket.top-left {
+            top: 20px;
+            left: 20px;
+            border-right: none;
+            border-bottom: none;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+        .corner-bracket.top-right {
+            top: 20px;
+            right: 20px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .corner-bracket.bottom-left {
+            bottom: 20px;
+            left: 20px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .corner-bracket.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            border-left: none;
+            border-top: none;
         }
 
         @media (max-width: 768px) {
             nav {
-                padding: 1rem 1.5rem;
+                padding: 1.5rem;
             }
 
             .nav-links {
-                gap: 1rem;
-            }
-
-            .content-section {
-                padding: 6rem 1.5rem 3rem;
+                gap: 1.5rem;
             }
 
             .features-grid,
@@ -550,8 +657,9 @@
                 flex-direction: column;
             }
 
-            .status-badge {
-                display: none;
+            .corner-bracket {
+                width: 30px;
+                height: 30px;
             }
         }
     </style>
@@ -560,30 +668,31 @@
 
     <div id="canvas-container"></div>
 
+    <!-- Corner Brackets -->
+    <div class="corner-bracket top-left"></div>
+    <div class="corner-bracket top-right"></div>
+    <div class="corner-bracket bottom-left"></div>
+    <div class="corner-bracket bottom-right"></div>
+
     <!-- Navigation -->
     <nav>
-        <div class="logo">AbyssLink</div>
+        <div class="logo">ABYSSLINK</div>
         <div class="nav-links">
             <a href="#features" class="nav-link">Features</a>
-            <a href="#how" class="nav-link">How it Works</a>
-            <a href="rooms.html" class="nav-link">Active Rooms</a>
+            <a href="#protocol" class="nav-link">Protocol</a>
+            <a href="rooms.html" class="nav-link">Rooms</a>
         </div>
     </nav>
-
-    <!-- Status Badge -->
-    <div class="status-badge">
-        <span></span>ENCRYPTED
-    </div>
 
     <!-- HERO SECTION -->
     <section class="content-section">
         <div class="section-container">
             <div class="hero-content">
-                <h1 class="hero-title">AbyssLink</h1>
-                <p class="hero-subtitle">Anonymous. Ephemeral. Untraceable. Create secure chat rooms that vanish without a trace.</p>
+                <h1 class="glitch" data-text="ABYSSLINK">ABYSSLINK</h1>
+                <p class="hero-subtitle">Anonymous • Ephemeral • Untraceable</p>
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
-                    <a href="rooms.html" class="btn btn-secondary">View Active Rooms</a>
+                    <a href="rooms.html" class="btn btn-secondary">Active Rooms</a>
                 </div>
             </div>
         </div>
@@ -593,73 +702,73 @@
     <section class="content-section" id="features">
         <div class="section-container">
             <div class="section-header">
-                <h2 class="section-title">Built for Privacy</h2>
-                <p class="section-description">Every feature designed with anonymity and ephemerality at its core.</p>
+                <h2 class="section-title">Core Protocol</h2>
+                <p class="section-description">Built for absolute privacy and ephemeral communication</p>
             </div>
             
             <div class="features-grid">
                 <div class="feature-card">
-                    <span class="feature-icon">🎭</span>
-                    <h3 class="feature-title">Completely Anonymous</h3>
-                    <p class="feature-description">No accounts, no usernames, no email. Enter any room as a ghost.</p>
+                    <span class="feature-icon">◼</span>
+                    <h3 class="feature-title">Anonymous</h3>
+                    <p class="feature-description">No accounts. No usernames. No identity. Pure anonymity.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">⏱️</span>
-                    <h3 class="feature-title">24-Hour Auto-Destruct</h3>
-                    <p class="feature-description">Every room self-destructs after 24 hours. Or vanish it instantly.</p>
+                    <span class="feature-icon">◻</span>
+                    <h3 class="feature-title">24h Decay</h3>
+                    <p class="feature-description">Auto-destruct after 24 hours. Or vanish instantly.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">🔐</span>
-                    <h3 class="feature-title">Invite-Only Rooms</h3>
-                    <p class="feature-description">Password-protected. Share links privately. Full control over access.</p>
+                    <span class="feature-icon">◼</span>
+                    <h3 class="feature-title">Encrypted</h3>
+                    <p class="feature-description">Password-protected. Invite-only access control.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">💬</span>
-                    <h3 class="feature-title">Real-Time Messaging</h3>
-                    <p class="feature-description">Instant chat with file sharing. WebSocket-powered communication.</p>
+                    <span class="feature-icon">◻</span>
+                    <h3 class="feature-title">Real-Time</h3>
+                    <p class="feature-description">Instant messaging with file sharing capabilities.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">🔥</span>
+                    <span class="feature-icon">◼</span>
                     <h3 class="feature-title">Zero Trace</h3>
-                    <p class="feature-description">No logs. No backups. No recovery. When it's gone, it's gone.</p>
+                    <p class="feature-description">No logs. No backups. No recovery systems.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">🌐</span>
+                    <span class="feature-icon">◻</span>
                     <h3 class="feature-title">No Tracking</h3>
-                    <p class="feature-description">No analytics. No cookies. We don't know who you are.</p>
+                    <p class="feature-description">No analytics. No cookies. Complete privacy.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- HOW IT WORKS -->
-    <section class="content-section" id="how">
+    <!-- PROTOCOL SECTION -->
+    <section class="content-section" id="protocol">
         <div class="section-container">
             <div class="section-header">
-                <h2 class="section-title">How It Works</h2>
-                <p class="section-description">Four simple steps to secure, anonymous communication.</p>
+                <h2 class="section-title">Protocol</h2>
+                <p class="section-description">Four-step secure communication process</p>
             </div>
             
             <div class="process-grid">
                 <div class="process-step">
                     <div class="step-number">01</div>
-                    <h3 class="step-title">Create</h3>
-                    <p class="step-description">Set a topic and password. Get your unique invite link and creator key.</p>
+                    <h3 class="step-title">Initialize</h3>
+                    <p class="step-description">Set topic and password. Receive invite link and creator key.</p>
                 </div>
                 <div class="process-step">
                     <div class="step-number">02</div>
-                    <h3 class="step-title">Invite</h3>
-                    <p class="step-description">Share the link privately. Send the password separately. Both required to join.</p>
+                    <h3 class="step-title">Distribute</h3>
+                    <p class="step-description">Share link privately. Transmit password separately.</p>
                 </div>
                 <div class="process-step">
                     <div class="step-number">03</div>
-                    <h3 class="step-title">Chat</h3>
-                    <p class="step-description">Anonymous real-time messaging. Share files. No identity required.</p>
+                    <h3 class="step-title">Communicate</h3>
+                    <p class="step-description">Anonymous real-time messaging. File transfer enabled.</p>
                 </div>
                 <div class="process-step">
                     <div class="step-number">04</div>
-                    <h3 class="step-title">Vanish</h3>
-                    <p class="step-description">24-hour auto-destruct or instant manual deletion. Everything disappears.</p>
+                    <h3 class="step-title">Terminate</h3>
+                    <p class="step-description">24h auto-destruct or manual instant deletion.</p>
                 </div>
             </div>
         </div>
@@ -669,18 +778,18 @@
     <section class="content-section">
         <div class="section-container">
             <div class="section-header">
-                <h2 class="section-title">Privacy by Design</h2>
-                <p class="section-description">True privacy means we can't access your data—because it doesn't exist.</p>
+                <h2 class="section-title">Privacy Architecture</h2>
+                <p class="section-description">True privacy through data non-existence</p>
             </div>
             
             <div class="privacy-box">
                 <ul class="privacy-list">
-                    <li>No user accounts or registration required</li>
-                    <li>No permanent storage of messages</li>
-                    <li>No tracking, analytics, or cookies</li>
-                    <li>No way to identify participants</li>
-                    <li>No chat history retention</li>
-                    <li>No backups or recovery systems</li>
+                    <li>No user accounts or registration systems</li>
+                    <li>No permanent message storage infrastructure</li>
+                    <li>No tracking, analytics, or monitoring</li>
+                    <li>No participant identification mechanisms</li>
+                    <li>No chat history retention protocols</li>
+                    <li>No backup or recovery systems</li>
                 </ul>
             </div>
         </div>
@@ -690,10 +799,10 @@
     <section class="content-section">
         <div class="section-container">
             <div class="cta-section">
-                <h2 class="cta-title">Ready to Disappear?</h2>
-                <p class="cta-description">Create a room. Have your conversation. Let it vanish.</p>
-                <button class="btn btn-primary" onclick="openCreateModal()" style="font-size: 1.1rem; padding: 1.2rem 3rem;">
-                    Start Now →
+                <h2 class="cta-title">Initialize Session</h2>
+                <p class="cta-description">Create room. Communicate. Vanish.</p>
+                <button class="btn btn-primary" onclick="openCreateModal()" style="font-size: 1.1rem; padding: 1.3rem 3.5rem;">
+                    Begin →
                 </button>
             </div>
         </div>
@@ -702,15 +811,15 @@
     <!-- CREATE ROOM MODAL -->
     <div id="createModal" class="modal">
         <div class="modal-content">
-            <h2>Create New Room</h2>
+            <h2>Create Room</h2>
             <form id="createForm" onsubmit="handleCreateRoom(event)">
                 <div class="form-group">
-                    <label>Room Topic</label>
-                    <input type="text" id="topicInput" required placeholder="What's this room about?" autocomplete="off">
+                    <label>Topic</label>
+                    <input type="text" id="topicInput" required placeholder="Room topic" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="passwordInput" required placeholder="Set a strong password" autocomplete="off">
+                    <input type="password" id="passwordInput" required placeholder="Set password" autocomplete="off">
                 </div>
                 <div class="modal-actions">
                     <button type="submit" class="btn btn-primary" style="flex: 1;">Create</button>
@@ -723,7 +832,7 @@
     <!-- SUCCESS MODAL -->
     <div id="successModal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
-            <h2>Room Created</h2>
+            <h2>Room Initialized</h2>
             
             <div class="info-box">
                 <p>Room ID</p>
@@ -736,7 +845,7 @@
             </div>
 
             <div class="warning">
-                ⚠️ Share Room ID and password separately. Save your creator key to destroy the room later.
+                ⚠ Distribute Room ID and password separately. Save creator key for termination.
             </div>
 
             <button class="btn btn-primary" onclick="enterCreatedRoom()" style="width: 100%;">
@@ -751,9 +860,9 @@
 
         // === THREE.JS SETUP ===
         const scene = new THREE.Scene();
-        scene.fog = new THREE.Fog(0x0a0a0f, 5, 20);
+        scene.fog = new THREE.Fog(0x000000, 8, 25);
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
         const renderer = new THREE.WebGLRenderer({ 
             antialias: true,
             alpha: true
@@ -761,76 +870,94 @@
         
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x0a0a0f, 0);
+        renderer.setClearColor(0x000000, 0);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // SUBTLE POST PROCESSING
+        // MINIMAL BLOOM FOR SUBTLE GLOW
         const composer = new THREE.EffectComposer(renderer);
         const renderPass = new THREE.RenderPass(scene, camera);
         composer.addPass(renderPass);
 
         const bloomPass = new THREE.UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.4,  // Reduced strength for subtlety
-            0.3,
-            0.9
+            0.3,  // Very subtle
+            0.4,
+            0.95
         );
         composer.addPass(bloomPass);
 
-        // TORUS KNOT (More interesting than sphere)
-        const geometry = new THREE.TorusKnotGeometry(1.2, 0.4, 150, 30);
-        const material = new THREE.MeshPhysicalMaterial({
-            color: 0x00d4ff,
-            roughness: 0.2,
-            metalness: 0.8,
+        // SAMURAI-INSPIRED GEOMETRY: Dodecahedron with modifiers
+        const geometry = new THREE.DodecahedronGeometry(2, 1);
+        
+        // Edges geometry for wireframe look
+        const edges = new THREE.EdgesGeometry(geometry);
+        const lineMaterial = new THREE.LineBasicMaterial({ 
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.7,
-            wireframe: true,
-            wireframeLinewidth: 1
+            opacity: 0.6
         });
+        const wireframe = new THREE.LineSegments(edges, lineMaterial);
+        scene.add(wireframe);
 
-        const mainObject = new THREE.Mesh(geometry, material);
-        scene.add(mainObject);
-
-        // RING SYSTEM
-        const ringGeometry = new THREE.TorusGeometry(3, 0.02, 16, 100);
-        const ringMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x8b5cf6,
+        // INNER CORE
+        const coreMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.3
+            opacity: 0.05,
+            wireframe: false
         });
+        const core = new THREE.Mesh(geometry, coreMaterial);
+        scene.add(core);
 
-        const ring1 = new THREE.Mesh(ringGeometry, ringMaterial);
+        // ROTATING RINGS (Samurai aesthetic)
+        function createRing(radius, thickness, opacity) {
+            const ringGeo = new THREE.TorusGeometry(radius, thickness, 8, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff,
+                transparent: true,
+                opacity: opacity,
+                wireframe: true
+            });
+            return new THREE.Mesh(ringGeo, ringMat);
+        }
+
+        const ring1 = createRing(3.5, 0.03, 0.4);
         ring1.rotation.x = Math.PI / 2;
         scene.add(ring1);
 
-        const ring2 = new THREE.Mesh(ringGeometry, ringMaterial.clone());
+        const ring2 = createRing(4, 0.02, 0.3);
         ring2.rotation.y = Math.PI / 3;
         scene.add(ring2);
 
-        // PARTICLE FIELD (Cubes instead of tetrahedrons)
-        const particlesCount = 800;
-        const particlesGeometry = new THREE.BoxGeometry(0.04, 0.04, 0.04);
+        const ring3 = createRing(4.5, 0.02, 0.2);
+        ring3.rotation.z = Math.PI / 4;
+        scene.add(ring3);
+
+        // PARTICLE FIELD (Cubes)
+        const particlesCount = 500;
+        const particlesGeometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
         const particlesMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x00d4ff,
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.4
+            opacity: 0.3
         });
         
         const particles = new THREE.InstancedMesh(particlesGeometry, particlesMaterial, particlesCount);
         const dummy = new THREE.Object3D();
         
+        const positions = [];
         for(let i = 0; i < particlesCount; i++) {
-            const r = (Math.random() * 8) + 4;
+            const r = (Math.random() * 10) + 5;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             
-            dummy.position.set(
-                r * Math.sin(phi) * Math.cos(theta),
-                r * Math.sin(phi) * Math.sin(theta),
-                r * Math.cos(phi)
-            );
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.sin(phi) * Math.sin(theta);
+            const z = r * Math.cos(phi);
             
+            positions.push({ x, y, z });
+            
+            dummy.position.set(x, y, z);
             dummy.rotation.set(
                 Math.random() * Math.PI,
                 Math.random() * Math.PI,
@@ -842,21 +969,17 @@
         }
         scene.add(particles);
 
-        // LIGHTING (Subtle)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+        // SUBTLE LIGHTING
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
         scene.add(ambientLight);
 
-        const pointLight1 = new THREE.PointLight(0x00d4ff, 0.8, 25);
-        pointLight1.position.set(5, 5, 5);
-        scene.add(pointLight1);
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 30);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
 
-        const pointLight2 = new THREE.PointLight(0x8b5cf6, 0.8, 25);
-        pointLight2.position.set(-5, -5, 5);
-        scene.add(pointLight2);
+        camera.position.z = 10;
 
-        camera.position.z = 8;
-
-        // MOUSE INTERACTION (Primary)
+        // MOUSE PARALLAX
         let mouseX = 0;
         let mouseY = 0;
         let targetX = 0;
@@ -867,32 +990,114 @@
             mouseY = (e.clientY / window.innerHeight) - 0.5;
         });
 
+        // SCROLL ANIMATIONS WITH GSAP
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Animate section headers
+        gsap.utils.toArray('.section-header').forEach((header) => {
+            gsap.to(header, {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                scrollTrigger: {
+                    trigger: header,
+                    start: "top 80%",
+                    end: "top 50%",
+                    scrub: 1
+                }
+            });
+        });
+
+        // Animate feature cards
+        gsap.utils.toArray('.feature-card').forEach((card, index) => {
+            gsap.to(card, {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                delay: index * 0.1,
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 85%",
+                    end: "top 60%",
+                    scrub: 1
+                }
+            });
+        });
+
+        // Animate process steps
+        gsap.utils.toArray('.process-step').forEach((step, index) => {
+            gsap.to(step, {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                delay: index * 0.1,
+                scrollTrigger: {
+                    trigger: step,
+                    start: "top 85%",
+                    end: "top 60%",
+                    scrub: 1
+                }
+            });
+        });
+
+        // Animate privacy box
+        gsap.to('.privacy-box', {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            scrollTrigger: {
+                trigger: '.privacy-box',
+                start: "top 80%",
+                end: "top 50%",
+                scrub: 1
+            }
+        });
+
+        // 3D SCENE SCROLL ANIMATION
+        const scrollTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1
+            }
+        });
+
+        scrollTimeline
+            .to(wireframe.rotation, { x: Math.PI * 2, y: Math.PI * 2, duration: 5 })
+            .to(core.rotation, { x: -Math.PI * 2, y: -Math.PI * 2, duration: 5 }, "<")
+            .to(camera.position, { z: 15, duration: 5 }, "<");
+
         // ANIMATION LOOP
         const clock = new THREE.Clock();
 
         function animate() {
             const time = clock.getElapsedTime();
 
-            // Smooth follow mouse
+            // Smooth mouse follow
             targetX += (mouseX - targetX) * 0.05;
             targetY += (mouseY - targetY) * 0.05;
 
-            // Main object follows mouse
-            mainObject.rotation.y = targetX * 0.5;
-            mainObject.rotation.x = targetY * 0.5;
-            mainObject.rotation.z += 0.001;
+            // Core rotation based on mouse
+            wireframe.rotation.x += 0.001;
+            wireframe.rotation.y += 0.002;
+            wireframe.rotation.x += targetY * 0.1;
+            wireframe.rotation.y += targetX * 0.1;
 
-            // Rings rotate independently
+            core.rotation.x = wireframe.rotation.x;
+            core.rotation.y = wireframe.rotation.y;
+
+            // Rings independent rotation
             ring1.rotation.z = time * 0.1;
-            ring2.rotation.x = time * 0.15;
+            ring2.rotation.x = time * 0.12;
+            ring3.rotation.y = time * 0.08;
 
-            // Particles gentle rotation
+            // Particles gentle movement
             particles.rotation.y = time * 0.02;
-            particles.rotation.x = targetY * 0.1;
 
-            // Camera subtle parallax
-            camera.position.x = targetX * 0.5;
-            camera.position.y = -targetY * 0.5;
+            // Camera parallax
+            camera.position.x = targetX * 1;
+            camera.position.y = -targetY * 1;
 
             composer.render();
             requestAnimationFrame(animate);
@@ -961,17 +1166,19 @@
                 document.getElementById('successModal').style.display = 'flex';
 
             } catch (error) {
-                alert('Error creating room. Backend might be waking up (30s). Try again.');
+                alert('Error creating room. Backend waking up (30s). Retry.');
                 console.error(error);
             }
         }
 
         function copyToClipboard(elementId) {
             const text = document.getElementById(elementId).textContent;
+            if (text === 'Click to copy') return;
+            
             navigator.clipboard.writeText(text).then(() => {
                 const el = document.getElementById(elementId);
                 const original = el.textContent;
-                el.textContent = '✓ Copied!';
+                el.textContent = '✓ Copied';
                 setTimeout(() => {
                     el.textContent = original;
                 }, 1500);
@@ -991,7 +1198,7 @@
             }
         });
 
-        // Smooth scroll for nav links
+        // Smooth scroll
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
