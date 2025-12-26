@@ -3,8 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Room — AbyssLink</title>
+    <title>Session Active — AbyssLink</title>
+    
+    <!-- FONTS: Manrope (Clean/Modern) & Space Mono (Technical) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --bg: #050505;
+            --surface: #0a0a0a;
+            --text-main: #ffffff;
+            --text-dim: #888888;
+            --border: #222222;
+            --accent: #ffffff;
+            --danger: #ff4444;
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,79 +29,128 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #fff;
-            height: 100vh;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Manrope', sans-serif;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
+        /* Loading Screen */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border);
+            border-top-color: var(--text-main);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+        }
+
         /* Header */
         .chat-header {
-            background: linear-gradient(135deg, #1a0a2e, #0a0a0a);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
             padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
+            position: relative;
+            z-index: 100;
         }
 
         .room-info h2 {
-            font-size: clamp(1.2rem, 3vw, 1.5rem);
-            color: #00d4ff;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
             margin-bottom: 0.3rem;
         }
 
         .room-meta {
-            font-size: 0.9rem;
-            color: #888;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
-        .timer-display {
-            background: rgba(255, 107, 107, 0.1);
-            padding: 0.5rem 1.5rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 107, 107, 0.3);
-            font-weight: 600;
-            color: #ff6b6b;
-            font-size: 0.9rem;
+        .status-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s var(--ease-out);
         }
 
-        .participants-display {
-            background: rgba(0, 212, 255, 0.1);
-            padding: 0.5rem 1.5rem;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            font-weight: 600;
-            color: #00d4ff;
-            font-size: 0.9rem;
+        .status-badge.timer {
+            color: var(--danger);
+            border-color: rgba(255, 68, 68, 0.3);
         }
 
-        /* Main Chat Container */
+        .status-badge.participants {
+            color: var(--text-main);
+        }
+
+        /* Main Container */
         .chat-container {
             flex: 1;
             display: flex;
             overflow: hidden;
+            position: relative;
         }
 
         .messages-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: #000;
+            position: relative;
         }
 
-        /* Messages */
+        /* Messages Area */
         .messages {
             flex: 1;
             overflow-y: auto;
@@ -95,10 +161,9 @@
         }
 
         .message {
-            max-width: 70%;
+            max-width: 65%;
             padding: 1rem 1.5rem;
-            border-radius: 20px;
-            animation: slideIn 0.3s ease;
+            animation: slideIn 0.4s var(--ease-out);
             word-wrap: break-word;
             position: relative;
         }
@@ -106,7 +171,7 @@
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -116,114 +181,119 @@
 
         .message.own {
             align-self: flex-end;
-            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-            color: #fff;
-            border-bottom-right-radius: 5px;
+            background: var(--text-main);
+            color: var(--bg);
         }
 
         .message.other {
             align-self: flex-start;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom-left-radius: 5px;
+            background: var(--surface);
+            border: 1px solid var(--border);
         }
 
         .message-text {
             margin-bottom: 0.5rem;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-size: 0.95rem;
         }
 
         .message-time {
-            font-size: 0.7rem;
-            opacity: 0.6;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            opacity: 0.5;
+            text-transform: uppercase;
         }
 
         .system-message {
             align-self: center;
-            background: rgba(255, 0, 255, 0.1);
-            border: 1px solid rgba(255, 0, 255, 0.3);
-            padding: 0.5rem 1rem;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            color: #ff00ff;
+            background: transparent;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
             max-width: 100%;
         }
 
         /* Input Area */
         .input-area {
             padding: 1.5rem 2rem;
-            background: #0a0a0a;
-            border-top: 1px solid rgba(0, 212, 255, 0.2);
+            background: var(--surface);
+            border-top: 1px solid var(--border);
             display: flex;
             gap: 1rem;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .input-area input[type="text"] {
             flex: 1;
-            min-width: 200px;
             padding: 1rem 1.5rem;
-            border-radius: 25px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            font-size: 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Manrope', sans-serif;
+            font-size: 0.95rem;
             outline: none;
-            transition: all 0.3s ease;
+            transition: all 0.3s var(--ease-out);
         }
 
         .input-area input[type="text"]:focus {
-            border-color: #00d4ff;
-            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--text-main);
+            background: var(--surface);
         }
 
-        .send-btn, .file-btn, .leave-btn {
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 25px;
+        .input-area input[type="text"]::placeholder {
+            color: var(--text-dim);
+        }
+
+        /* Buttons */
+        .btn {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 1rem 1.5rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-main);
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            font-size: 1rem;
+            transition: all 0.3s var(--ease-out);
             white-space: nowrap;
         }
 
-        .send-btn {
-            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-            color: #fff;
-        }
-
-        .send-btn:hover {
+        .btn:hover {
+            background: var(--text-main);
+            color: var(--bg);
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
         }
 
-        .file-btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: #00d4ff;
-            border: 1px solid rgba(0, 212, 255, 0.3);
+        .btn-primary {
+            background: var(--text-main);
+            color: var(--bg);
         }
 
-        .file-btn:hover {
-            background: rgba(0, 212, 255, 0.1);
+        .btn-primary:hover {
+            background: var(--text-dim);
         }
 
-        .leave-btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: #888;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .btn-danger {
+            border-color: var(--danger);
+            color: var(--danger);
         }
 
-        .leave-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
+        .btn-danger:hover {
+            background: var(--danger);
+            color: var(--text-main);
         }
 
         /* Sidebar */
         .sidebar {
             width: 320px;
-            background: #0a0a0a;
-            border-left: 1px solid rgba(0, 212, 255, 0.2);
+            background: var(--surface);
+            border-left: 1px solid var(--border);
             padding: 2rem;
             overflow-y: auto;
             display: flex;
@@ -232,43 +302,50 @@
         }
 
         .sidebar h3 {
-            color: #00d4ff;
-            font-size: 1.2rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
             margin-bottom: 1rem;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
         }
 
         .info-box {
-            background: rgba(0, 212, 255, 0.1);
-            padding: 1rem;
-            border-radius: 10px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
+            background: var(--bg);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
         }
 
         .info-box p {
-            color: #aaa;
-            font-size: 0.9rem;
+            font-family: 'Space Mono', monospace;
+            color: var(--text-dim);
+            font-size: 0.75rem;
             margin-bottom: 0.5rem;
+            text-transform: uppercase;
         }
 
         .info-box strong {
-            color: #00d4ff;
-            font-size: 1.2rem;
+            font-family: 'Space Mono', monospace;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            font-weight: 700;
         }
 
         .files-list {
             display: flex;
             flex-direction: column;
-            gap: 0.8rem;
+            gap: 0.5rem;
             max-height: 300px;
             overflow-y: auto;
         }
 
         .file-item {
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--bg);
             padding: 1rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            transition: all 0.3s var(--ease-out);
             cursor: pointer;
             text-decoration: none;
             color: inherit;
@@ -276,103 +353,79 @@
         }
 
         .file-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(0, 212, 255, 0.3);
+            background: var(--surface);
+            border-color: var(--text-main);
             transform: translateX(5px);
         }
 
         .file-name {
-            color: #00d4ff;
+            font-family: 'Space Mono', monospace;
+            color: var(--text-main);
             font-weight: 600;
             margin-bottom: 0.3rem;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .file-meta {
-            font-size: 0.75rem;
-            color: #666;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
         }
 
         .empty-files {
-            color: #555;
-            font-style: italic;
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
             text-align: center;
             padding: 2rem 0;
+            text-transform: uppercase;
         }
 
         .action-buttons {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.75rem;
             margin-top: auto;
-        }
-
-        .btn {
-            padding: 0.8rem 1.5rem;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .btn-vanish {
-            background: linear-gradient(135deg, #ff0055, #cc0044);
-            color: #fff;
-        }
-
-        .btn-vanish:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(255, 0, 85, 0.4);
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
         }
 
         /* Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: #0a0a0a;
+            background: var(--bg);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(0, 212, 255, 0.3);
-            border-radius: 4px;
+            background: var(--border);
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 212, 255, 0.5);
-        }
-
-        /* Loading */
-        .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            font-size: 1.5rem;
-            color: #00d4ff;
+            background: var(--text-dim);
         }
 
         /* Responsive */
         @media (max-width: 968px) {
             .sidebar {
-                display: none;
+                position: fixed;
+                right: -320px;
+                top: 0;
+                height: 100vh;
+                z-index: 200;
+                transition: right 0.3s var(--ease-out);
+            }
+
+            .sidebar.open {
+                right: 0;
             }
 
             .message {
-                max-width: 85%;
-            }
-
-            .input-area {
-                padding: 1rem;
-            }
-
-            .send-btn, .file-btn, .leave-btn {
-                padding: 0.8rem 1.5rem;
-                font-size: 0.9rem;
+                max-width: 80%;
             }
         }
 
@@ -387,22 +440,36 @@
             }
 
             .input-area {
-                flex-direction: column;
-                align-items: stretch;
+                padding: 1rem;
+                flex-wrap: wrap;
             }
 
             .input-area input[type="text"] {
-                min-width: 100%;
+                width: 100%;
+            }
+
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.75rem;
+            }
+
+            .message {
+                max-width: 90%;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Loading Screen -->
     <div id="loadingScreen" class="loading">
-        <div>Connecting to room...</div>
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Establishing Secure Connection</div>
+        </div>
     </div>
 
-    <div id="chatApp" style="display: none; height: 100%; display: flex; flex-direction: column;">
+    <!-- Chat Application -->
+    <div id="chatApp" style="display: none; height: 100%; flex-direction: column;">
         <!-- Header -->
         <div class="chat-header">
             <div class="room-info">
@@ -412,11 +479,11 @@
                 </div>
             </div>
             <div class="header-right">
-                <div class="participants-display">
-                    👥 <span id="participantCount">0</span>
+                <div class="status-badge participants">
+                    <span id="participantCount">0</span> Active
                 </div>
-                <div class="timer-display">
-                    ⏱️ <span id="timeRemaining">24:00:00</span>
+                <div class="status-badge timer">
+                    <span id="timeRemaining">24:00:00</span>
                 </div>
             </div>
         </div>
@@ -428,36 +495,38 @@
                 
                 <div class="input-area">
                     <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect()">
-                    <button class="file-btn" onclick="document.getElementById('fileInput').click()">
-                        📎 File
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">
+                        Attach
                     </button>
-                    <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
-                    <button class="send-btn" onclick="sendMessage()">Send →</button>
-                    <button class="leave-btn" onclick="leaveRoom()">Leave</button>
+                    <input type="text" id="messageInput" placeholder="Compose message..." onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()">Send</button>
                 </div>
             </div>
 
             <!-- Sidebar -->
-            <div class="sidebar">
+            <div class="sidebar" id="sidebar">
                 <div>
-                    <h3>Room Info</h3>
+                    <h3>Session Status</h3>
                     <div class="info-box">
-                        <p>Participants</p>
-                        <strong><span id="sidebarParticipants">0</span> online</strong>
+                        <p>Active Participants</p>
+                        <strong><span id="sidebarParticipants">0</span></strong>
                     </div>
                 </div>
 
                 <div>
                     <h3>Shared Files</h3>
                     <div class="files-list" id="filesList">
-                        <div class="empty-files">No files shared yet</div>
+                        <div class="empty-files">No Files Shared</div>
                     </div>
                 </div>
 
-                <div class="action-buttons" id="creatorActions" style="display: none;">
-                    <button class="btn btn-vanish" onclick="confirmVanish()">
-                        🔥 Vanish Room Now
-                    </button>
+                <div class="action-buttons">
+                    <button class="btn" onclick="leaveRoom()">Exit Session</button>
+                    <div id="creatorActions" style="display: none;">
+                        <button class="btn btn-danger" onclick="confirmVanish()">
+                            Destroy Room
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -490,7 +559,7 @@
 
             if (!roomData) {
                 // Room not in localStorage, need to join
-                const password = prompt('This room requires a password:');
+                const password = prompt('Access Key Required:');
                 if (!password) {
                     window.location.href = 'rooms.html';
                     return;
@@ -512,7 +581,7 @@
 
                 if (!response.ok) {
                     const error = await response.json();
-                    alert(error.error || 'Invalid password');
+                    alert(error.error || 'Invalid access key');
                     window.location.href = 'rooms.html';
                     return;
                 }
@@ -534,7 +603,7 @@
                 initializeRoom();
 
             } catch (error) {
-                alert('Error joining room');
+                alert('Connection failed');
                 console.error(error);
                 window.location.href = 'rooms.html';
             }
@@ -545,11 +614,11 @@
             document.getElementById('loadingScreen').style.display = 'none';
             document.getElementById('chatApp').style.display = 'flex';
 
-            document.getElementById('roomTopic').textContent = roomData.topic || 'Untitled Room';
-            document.getElementById('roomId').textContent = `Room: ${roomData.roomId.substring(0, 8)}...`;
+            document.getElementById('roomTopic').textContent = roomData.topic || 'Untitled Session';
+            document.getElementById('roomId').textContent = `ID: ${roomData.roomId.substring(0, 8).toUpperCase()}`;
 
             if (roomData.isCreator && roomData.creatorKey) {
-                document.getElementById('creatorActions').style.display = 'flex';
+                document.getElementById('creatorActions').style.display = 'block';
             }
 
             startTimer();
@@ -576,21 +645,21 @@
 
             socket.on('participant_joined', (data) => {
                 updateParticipantCount(data.count);
-                addSystemMessage('Someone joined the room');
+                addSystemMessage('Participant Joined');
             });
 
             socket.on('participant_left', (data) => {
                 updateParticipantCount(data.count);
-                addSystemMessage('Someone left the room');
+                addSystemMessage('Participant Disconnected');
             });
 
             socket.on('file_uploaded', (file) => {
                 addFileToList(file);
-                addSystemMessage('A file was shared');
+                addSystemMessage('File Shared');
             });
 
             socket.on('room_vanished', () => {
-                alert('This room has been destroyed by the creator');
+                alert('This session has been terminated by the creator');
                 removeRoomFromStorage();
                 window.location.href = 'rooms.html';
             });
@@ -627,7 +696,7 @@
             const messagesDiv = document.getElementById('messages');
             const messageEl = document.createElement('div');
             messageEl.className = 'system-message';
-            messageEl.textContent = text;
+            messageEl.textContent = `— ${text} —`;
             messagesDiv.appendChild(messageEl);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
@@ -681,6 +750,7 @@
 
                 if (response.ok) {
                     fileInput.value = '';
+                    addSystemMessage('File Upload Complete');
                 } else {
                     alert('File upload failed');
                 }
@@ -734,7 +804,7 @@
 
             if (remaining <= 0) {
                 clearInterval(timerInterval);
-                alert('Room has expired');
+                alert('Session expired');
                 removeRoomFromStorage();
                 window.location.href = 'rooms.html';
                 return;
@@ -747,16 +817,17 @@
             document.getElementById('timeRemaining').textContent =
                 `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-            // Warning color when less than 5 minutes
+            // Warning when less than 5 minutes
             if (remaining < 5 * 60 * 1000) {
-                document.querySelector('.timer-display').style.background = 'rgba(255, 0, 0, 0.2)';
-                document.querySelector('.timer-display').style.borderColor = 'rgba(255, 0, 0, 0.5)';
+                const timerBadge = document.querySelector('.status-badge.timer');
+                timerBadge.style.borderColor = 'var(--danger)';
+                timerBadge.style.color = 'var(--danger)';
             }
         }
 
         // Leave room
         function leaveRoom() {
-            if (confirm('Leave this room?')) {
+            if (confirm('Exit this session?')) {
                 clearInterval(timerInterval);
                 socket.disconnect();
                 window.location.href = 'rooms.html';
@@ -765,7 +836,7 @@
 
         // Confirm vanish
         function confirmVanish() {
-            if (!confirm('⚠️ This will permanently destroy this room and all its contents for everyone.\n\nAre you absolutely sure?')) {
+            if (!confirm('⚠️ PROTOCOL WARNING\n\nThis will permanently destroy this session and all contents for all participants.\n\nThis action cannot be undone.\n\nProceed with termination?')) {
                 return;
             }
 
@@ -775,7 +846,7 @@
         // Vanish room
         async function vanishRoom() {
             if (!roomData || !roomData.creatorKey) {
-                alert('Only the creator can vanish this room');
+                alert('Insufficient permissions');
                 return;
             }
 
@@ -793,10 +864,10 @@
                     removeRoomFromStorage();
                     window.location.href = 'rooms.html';
                 } else {
-                    alert('Failed to vanish room');
+                    alert('Termination failed');
                 }
             } catch (error) {
-                alert('Error vanishing room');
+                alert('System error');
                 console.error(error);
             }
         }
