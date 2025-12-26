@@ -114,6 +114,13 @@
             gap: 1rem;
             margin-bottom: 3rem;
             flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .action-left {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -147,6 +154,18 @@
 
         .btn-secondary:hover {
             background: var(--text-main);
+            color: var(--bg);
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+        }
+
+        .btn-danger:hover {
+            background: #ff6b6b;
             color: var(--bg);
             transform: scale(1.05);
         }
@@ -386,6 +405,16 @@
             margin-top: 2rem;
         }
 
+        .warning {
+            color: #ff6b6b;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            padding: 1rem;
+            background: rgba(255, 0, 0, 0.05);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            font-family: 'Space Mono', monospace;
+        }
+
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .rooms-grid {
@@ -394,6 +423,10 @@
 
             .action-bar {
                 flex-direction: column;
+            }
+
+            .action-left {
+                width: 100%;
             }
 
             .room-actions {
@@ -439,8 +472,13 @@
         </header>
 
         <div class="action-bar">
-            <a href="landing.html" class="btn btn-secondary">← Back to Home</a>
-            <button class="btn btn-primary" onclick="openJoinModal()">+ Join Room</button>
+            <div class="action-left">
+                <a href="landing.html" class="btn btn-secondary">← Back to Home</a>
+                <button class="btn btn-primary" onclick="openJoinModal()">+ Join Room</button>
+            </div>
+            <button class="btn btn-danger" onclick="confirmVanishAll()" id="vanishAllBtn" style="display: none;">
+                🔥 Vanish All
+            </button>
         </div>
 
         <div id="roomsContainer"></div>
@@ -467,31 +505,59 @@
         </div>
     </div>
 
+    <!-- Vanish All Confirmation Modal -->
+    <div id="vanishAllModal" class="modal">
+        <div class="modal-content">
+            <h2>Vanish All Rooms</h2>
+            <div class="warning">
+                ⚠️ CRITICAL ACTION: This will permanently destroy ALL rooms you have creator access to and remove all room records from your device.<br><br>
+                This action cannot be undone.
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="vanishAllRooms()" style="flex: 1;">
+                    Confirm Vanish All
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeVanishAllModal()" style="flex: 1;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Configuration - Backend URL
         const API_URL = 'https://abysslink.onrender.com';
 
-        // Load and display rooms
+        // Load and display rooms from localStorage only
         function loadRooms() {
             const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
             const container = document.getElementById('roomsContainer');
+            const vanishAllBtn = document.getElementById('vanishAllBtn');
             const now = Date.now();
 
             // Filter expired rooms
             const activeRooms = rooms.filter(room => room.expiresAt > now);
             
-            // Update localStorage
+            // Update localStorage if any rooms expired
             if (activeRooms.length !== rooms.length) {
                 localStorage.setItem('abysslink_rooms', JSON.stringify(activeRooms));
             }
 
-            // Show empty state if no rooms
+            // Show/hide Vanish All button based on creator rooms
+            const creatorRooms = activeRooms.filter(room => room.isCreator && room.creatorKey);
+            if (creatorRooms.length > 0) {
+                vanishAllBtn.style.display = 'inline-flex';
+            } else {
+                vanishAllBtn.style.display = 'none';
+            }
+
+            // Show empty state if no rooms in localStorage
             if (activeRooms.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">👻</div>
                         <h2>No Active Rooms</h2>
-                        <p>Create a new room or join one with an invite link</p>
+                        <p>You haven't created or joined any rooms yet</p>
                         <a href="landing.html" class="btn btn-primary">Create Your First Room</a>
                     </div>
                 `;
@@ -628,6 +694,67 @@
             }
         }
 
+        // Confirm vanish all
+        function confirmVanishAll() {
+            document.getElementById('vanishAllModal').style.display = 'flex';
+        }
+
+        // Close vanish all modal
+        function closeVanishAllModal() {
+            document.getElementById('vanishAllModal').style.display = 'none';
+        }
+
+        // Vanish all rooms
+        async function vanishAllRooms() {
+            const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
+            const creatorRooms = rooms.filter(room => room.isCreator && room.creatorKey);
+
+            if (creatorRooms.length === 0) {
+                alert('No rooms to vanish');
+                closeVanishAllModal();
+                return;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+
+            // Vanish all creator rooms
+            for (const room of creatorRooms) {
+                try {
+                    const response = await fetch(`${API_URL}/api/rooms/vanish`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            roomId: room.roomId, 
+                            creatorKey: room.creatorKey 
+                        })
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    console.error(`Failed to vanish room ${room.roomId}:`, error);
+                    failCount++;
+                }
+            }
+
+            // Clear all rooms from localStorage
+            localStorage.setItem('abysslink_rooms', JSON.stringify([]));
+
+            closeVanishAllModal();
+            
+            if (failCount > 0) {
+                alert(`Vanished ${successCount} room(s). ${failCount} failed to vanish from server but were removed locally.`);
+            } else {
+                alert(`Successfully vanished all ${successCount} room(s)`);
+            }
+
+            loadRooms();
+        }
+
         // Open join modal
         function openJoinModal() {
             document.getElementById('joinModal').style.display = 'flex';
@@ -694,10 +821,11 @@
             return div.innerHTML;
         }
 
-        // Close modal on Escape
+        // Close modals on Escape
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeJoinModal();
+                closeVanishAllModal();
             }
         });
 
