@@ -3,299 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink — Anonymous Ephemeral Chat</title>
+    <title>AbyssLink | Anonymous Ephemeral Chat</title>
+    
+    <!-- IMPORTS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #000;
-            color: #fff;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: 'Space Grotesk', sans-serif; 
             overflow-x: hidden;
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+        body::-webkit-scrollbar { display: none; }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+            will-change: transform; 
         }
 
-        /* Hero Section */
-        #hero {
-            position: relative;
-            height: 100vh;
+        .content-section {
+            min-height: 100vh;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
-            overflow: hidden;
+            position: relative;
+            padding: 2rem;
         }
 
-        .hero-content {
+        .text-wrap {
             text-align: center;
             z-index: 10;
-            position: relative;
-            animation: fadeInUp 1s ease;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            padding: 2rem;
+            opacity: 0;
+            transform: translateY(50px);
+            max-width: 900px;
         }
 
         h1 {
-            font-size: clamp(4rem, 10vw, 8rem);
-            font-weight: 900;
-            background: linear-gradient(45deg, #00d4ff, #ff00ff, #00d4ff);
-            background-size: 200% 200%;
+            font-size: clamp(3rem, 8vw, 8rem);
+            font-weight: 700;
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #00d4ff, #ff00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 3s ease infinite;
+            text-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+        }
+
+        h2 {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 700;
+            line-height: 1.1;
             letter-spacing: -0.03em;
             margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        .tagline {
-            font-size: clamp(1rem, 3vw, 1.5rem);
-            color: #888;
-            margin-bottom: 3rem;
-            animation: fadeInUp 1s ease 0.3s backwards;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            animation: fadeInUp 1s ease 0.6s backwards;
+        p {
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            color: #a0a0a0;
+            line-height: 1.6;
+            margin-bottom: 2rem;
         }
 
         .btn {
+            display: inline-block;
             padding: 1.2rem 3rem;
             font-size: 1.1rem;
-            border: none;
+            font-weight: 600;
+            border: 2px solid #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-weight: 600;
+            margin: 0.5rem;
             text-decoration: none;
-            display: inline-block;
+            pointer-events: all;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: #00d4ff;
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+            transform: translateY(-3px);
         }
 
         .btn-primary {
             background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            border: none;
             color: #fff;
-            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
         }
 
         .btn-primary:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0, 212, 255, 0.5);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: #00d4ff;
-            border: 2px solid #00d4ff;
-        }
-
-        .btn-secondary:hover {
-            background: #00d4ff;
-            color: #000;
-        }
-
-        /* Animated particles */
-        .particle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: #00d4ff;
-            border-radius: 50%;
-            opacity: 0.6;
-            animation: float linear infinite;
-        }
-
-        @keyframes float {
-            0% {
-                transform: translate(0, 0) scale(1);
-                opacity: 0.6;
-            }
-            50% {
-                opacity: 0.3;
-            }
-            100% {
-                transform: translate(var(--tx), var(--ty)) scale(1.5);
-                opacity: 0;
-            }
-        }
-
-        /* Features Section */
-        #features {
-            background: #0a0a0a;
-            padding: 5rem 2rem;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
-            margin-bottom: 4rem;
-            background: linear-gradient(135deg, #00d4ff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.4);
         }
 
         .features-grid {
-            max-width: 1200px;
-            margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 2rem;
+            margin-top: 3rem;
         }
 
         .feature-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(0, 212, 255, 0.2);
             border-radius: 20px;
-            padding: 2.5rem;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
+            padding: 2rem;
+            transition: all 0.5s ease;
+            backdrop-filter: blur(10px);
         }
 
         .feature-card:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
             transform: translateY(-10px);
-            border-color: rgba(0, 212, 255, 0.6);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.2);
         }
 
         .feature-icon {
             font-size: 3rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             display: block;
         }
 
         .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
             color: #00d4ff;
         }
 
         .feature-card p {
-            color: #aaa;
-            line-height: 1.6;
+            font-size: 0.95rem;
+            color: #888;
+            line-height: 1.5;
         }
 
-        /* How it works */
-        #how-it-works {
-            background: linear-gradient(180deg, #0a0a0a 0%, #1a0a2e 100%);
-            padding: 8rem 2rem;
+        .hud-overlay {
+            position: fixed;
+            bottom: 40px;
+            left: 40px;
+            font-family: 'Space Grotesk', monospace;
+            color: rgba(255,255,255,0.3);
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 100;
         }
 
-        .steps {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .step {
+        .scroll-indicator {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 50px;
+            height: 50px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 3rem;
-            margin-bottom: 4rem;
-            opacity: 0;
-            transform: translateX(-50px);
-            transition: all 0.6s ease;
-        }
-
-        .step.visible {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .step:nth-child(even) {
-            flex-direction: row-reverse;
-            transform: translateX(50px);
-        }
-
-        .step:nth-child(even).visible {
-            transform: translateX(0);
-        }
-
-        .step-number {
-            font-size: 4rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, #00d4ff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            min-width: 100px;
-            text-align: center;
-        }
-
-        .step-content h3 {
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
+            justify-content: center;
+            animation: pulse 2s infinite;
+            z-index: 100;
             color: #00d4ff;
         }
 
-        .step-content p {
-            color: #aaa;
-            font-size: 1.1rem;
-            line-height: 1.8;
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 212, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
         }
 
-        /* Privacy section */
-        #privacy {
-            background: #000;
-            padding: 8rem 2rem;
-            text-align: center;
-        }
-
-        .privacy-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .privacy-promise {
-            background: rgba(255, 0, 255, 0.1);
-            border: 2px solid rgba(255, 0, 255, 0.3);
-            border-radius: 20px;
-            padding: 3rem;
-            margin-top: 3rem;
-        }
-
-        .privacy-promise ul {
-            list-style: none;
-            font-size: 1.2rem;
-            line-height: 2.5;
-            text-align: left;
-        }
-
-        .privacy-promise li:before {
-            content: "✓ ";
-            color: #00d4ff;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        /* Final CTA */
-        #final-cta {
-            background: linear-gradient(135deg, #1a0a2e 0%, #0a0a0a 100%);
-            padding: 8rem 2rem;
-            text-align: center;
-        }
-
-        /* Modals */
+        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -304,6 +208,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -316,13 +221,15 @@
         }
 
         .modal-content {
-            background: linear-gradient(135deg, #1a0a2e, #0a0a0a);
+            background: linear-gradient(135deg, rgba(26, 10, 46, 0.9), rgba(10, 10, 10, 0.9));
             padding: 3rem;
             border-radius: 20px;
             max-width: 500px;
             width: 90%;
             border: 2px solid #00d4ff;
+            box-shadow: 0 0 60px rgba(0, 212, 255, 0.3);
             animation: slideUp 0.4s ease;
+            backdrop-filter: blur(20px);
         }
 
         @keyframes slideUp {
@@ -340,6 +247,8 @@
             margin-bottom: 2rem;
             color: #00d4ff;
             font-size: 2rem;
+            background: none;
+            -webkit-text-fill-color: #00d4ff;
         }
 
         .form-group {
@@ -357,17 +266,19 @@
             width: 100%;
             padding: 1rem;
             border-radius: 10px;
-            border: 1px solid #333;
-            background: #111;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            background: rgba(0, 0, 0, 0.5);
             color: #fff;
             font-size: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
             transition: all 0.3s ease;
         }
 
         .form-group input:focus {
             outline: none;
             border-color: #00d4ff;
-            background: #1a1a1a;
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
         }
 
         .modal-actions {
@@ -393,9 +304,18 @@
         .info-box .value {
             color: #00d4ff;
             word-break: break-all;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.9rem;
             cursor: pointer;
+            padding: 0.5rem;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 5px;
+            display: block;
+            margin-top: 0.5rem;
+        }
+
+        .info-box .value:hover {
+            background: rgba(0, 212, 255, 0.2);
         }
 
         .warning {
@@ -408,190 +328,165 @@
             border: 1px solid rgba(255, 0, 0, 0.3);
         }
 
-        .scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: bounce 2s infinite;
-            font-size: 2rem;
-            color: #00d4ff;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translate(-50%, 0); }
-            50% { transform: translate(-50%, 20px); }
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .cta-buttons {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .step {
-                flex-direction: column !important;
-                text-align: center;
-            }
-
-            .step-number {
-                margin: 0 auto;
-            }
-
             .features-grid {
                 grid-template-columns: 1fr;
             }
-
+            
             .modal-actions {
                 flex-direction: column;
+            }
+            
+            .hud-overlay {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Hero Section -->
-    <section id="hero">
-        <div class="hero-content">
+
+    <div id="canvas-container"></div>
+
+    <div class="hud-overlay">
+        STATUS: ENCRYPTED<br>
+        ROOMS: EPHEMERAL<br>
+        PROTOCOL: ANONYMOUS
+    </div>
+    
+    <div class="scroll-indicator">↓</div>
+
+    <!-- SECTION 1: HERO -->
+    <section class="content-section" id="section-1">
+        <div class="text-wrap">
             <h1>AbyssLink</h1>
-            <p class="tagline">Anonymous. Ephemeral. Untraceable.</p>
-            <div class="cta-buttons">
+            <p>Anonymous. Ephemeral. Untraceable.</p>
+            <div style="margin-top: 2rem;">
                 <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
-                <a href="rooms.html" class="btn btn-secondary">Active Rooms</a>
-            </div>
-        </div>
-        <div class="scroll-indicator">↓</div>
-    </section>
-
-    <!-- Features Section -->
-    <section id="features">
-        <h2 class="section-title">Why AbyssLink?</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <span class="feature-icon">🎭</span>
-                <h3>Completely Anonymous</h3>
-                <p>No accounts, no usernames, no identity. Everyone is a ghost in the machine.</p>
-            </div>
-            <div class="feature-card">
-                <span class="feature-icon">⏱️</span>
-                <h3>24-Hour Lifespan</h3>
-                <p>Every room self-destructs after 24 hours. Or vanish instantly with one click.</p>
-            </div>
-            <div class="feature-card">
-                <span class="feature-icon">🔐</span>
-                <h3>Invite-Only Access</h3>
-                <p>Password-protected rooms. Share the link privately. Control who enters.</p>
-            </div>
-            <div class="feature-card">
-                <span class="feature-icon">💬</span>
-                <h3>Real-Time Chat</h3>
-                <p>Instant messaging with file sharing. Everything disappears when the room does.</p>
-            </div>
-            <div class="feature-card">
-                <span class="feature-icon">🔥</span>
-                <h3>Zero Trace</h3>
-                <p>No chat logs. No backups. No recovery. Once it's gone, it's gone forever.</p>
-            </div>
-            <div class="feature-card">
-                <span class="feature-icon">🌐</span>
-                <h3>No Tracking</h3>
-                <p>We don't know who you are, and we don't want to. Total privacy by design.</p>
+                <a href="rooms.html" class="btn">Active Rooms</a>
             </div>
         </div>
     </section>
 
-    <!-- How It Works -->
-    <section id="how-it-works">
-        <div class="steps">
-            <h2 class="section-title">How It Works</h2>
-            
-            <div class="step">
-                <div class="step-number">01</div>
-                <div class="step-content">
-                    <h3>Create a Room</h3>
-                    <p>Set a topic and password. Get an invite link and creator key. Share them separately for maximum security.</p>
+    <!-- SECTION 2: FEATURES -->
+    <section class="content-section" id="section-2">
+        <div class="text-wrap">
+            <h2>Why AbyssLink?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎭</span>
+                    <h3>Anonymous</h3>
+                    <p>No accounts. No identity. Pure ghost mode.</p>
                 </div>
-            </div>
-
-            <div class="step">
-                <div class="step-number">02</div>
-                <div class="step-content">
-                    <h3>Invite Participants</h3>
-                    <p>Send the link privately. Share the password through a different channel. Both are required to enter.</p>
+                <div class="feature-card">
+                    <span class="feature-icon">⏱️</span>
+                    <h3>24h Lifespan</h3>
+                    <p>Auto-destruct or vanish instantly.</p>
                 </div>
-            </div>
-
-            <div class="step">
-                <div class="step-number">03</div>
-                <div class="step-content">
-                    <h3>Chat Anonymously</h3>
-                    <p>Everyone appears as an anonymous participant. Chat, share files, and communicate freely.</p>
+                <div class="feature-card">
+                    <span class="feature-icon">🔐</span>
+                    <h3>Encrypted</h3>
+                    <p>Password-protected. Invite-only.</p>
                 </div>
-            </div>
-
-            <div class="step">
-                <div class="step-number">04</div>
-                <div class="step-content">
-                    <h3>Watch It Disappear</h3>
-                    <p>After 24 hours, everything vanishes automatically. Or trigger "Vanish Now" to destroy it instantly.</p>
+                <div class="feature-card">
+                    <span class="feature-icon">💬</span>
+                    <h3>Real-Time</h3>
+                    <p>Instant chat with file sharing.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔥</span>
+                    <h3>Zero Trace</h3>
+                    <p>No logs. No backups. No recovery.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🌐</span>
+                    <h3>No Tracking</h3>
+                    <p>We don't know who you are.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Privacy -->
-    <section id="privacy">
-        <div class="privacy-content">
-            <h2 class="section-title">Privacy by Design</h2>
-            <p style="font-size: 1.2rem; color: #aaa; line-height: 1.8; margin-bottom: 2rem;">
-                AbyssLink is built on the principle that true privacy means we can't access your data—because it doesn't exist.
-            </p>
-            <div class="privacy-promise">
-                <ul>
-                    <li>No user accounts or registration</li>
-                    <li>No permanent storage of messages</li>
-                    <li>No tracking or analytics</li>
-                    <li>No way to identify participants</li>
-                    <li>No chat history retention</li>
-                    <li>No backups or recovery systems</li>
+    <!-- SECTION 3: HOW IT WORKS -->
+    <section class="content-section" id="section-3">
+        <div class="text-wrap">
+            <h2>How It Works</h2>
+            <div class="features-grid" style="grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem;">
+                <div style="text-align: left;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #00d4ff; margin-bottom: 1rem;">01</div>
+                    <h3 style="color: #fff; margin-bottom: 0.5rem;">Create</h3>
+                    <p>Set topic and password. Get invite link.</p>
+                </div>
+                <div style="text-align: left;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #ff00ff; margin-bottom: 1rem;">02</div>
+                    <h3 style="color: #fff; margin-bottom: 0.5rem;">Invite</h3>
+                    <p>Share link privately. Password required.</p>
+                </div>
+                <div style="text-align: left;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #00d4ff; margin-bottom: 1rem;">03</div>
+                    <h3 style="color: #fff; margin-bottom: 0.5rem;">Chat</h3>
+                    <p>Anonymous real-time communication.</p>
+                </div>
+                <div style="text-align: left;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #ff00ff; margin-bottom: 1rem;">04</div>
+                    <h3 style="color: #fff; margin-bottom: 0.5rem;">Vanish</h3>
+                    <p>24h auto-destruct or instant delete.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: PRIVACY -->
+    <section class="content-section" id="section-4">
+        <div class="text-wrap">
+            <h2>Privacy by Design</h2>
+            <p>True privacy means we can't access your data—because it doesn't exist.</p>
+            <div style="background: rgba(255, 0, 255, 0.1); border: 1px solid rgba(255, 0, 255, 0.3); border-radius: 20px; padding: 2rem; margin-top: 2rem;">
+                <ul style="list-style: none; text-align: left; font-size: 1.1rem; line-height: 2.5;">
+                    <li>✓ No user accounts</li>
+                    <li>✓ No message storage</li>
+                    <li>✓ No tracking</li>
+                    <li>✓ No backups</li>
+                    <li>✓ No recovery</li>
                 </ul>
             </div>
         </div>
     </section>
 
-    <!-- Final CTA -->
-    <section id="final-cta">
-        <h2 class="section-title">Ready to Disappear?</h2>
-        <p style="font-size: 1.3rem; color: #888; margin-bottom: 3rem;">
-            Create a room. Have your conversation. Let it vanish.
-        </p>
-        <button class="btn btn-primary" onclick="openCreateModal()" style="font-size: 1.3rem; padding: 1.5rem 4rem;">
-            Start Your First Room
-        </button>
+    <!-- SECTION 5: CTA -->
+    <section class="content-section" id="section-5">
+        <div class="text-wrap">
+            <h2>Ready to Disappear?</h2>
+            <p>Create a room. Have your conversation. Let it vanish.</p>
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-primary" onclick="openCreateModal()" style="font-size: 1.3rem; padding: 1.5rem 4rem;">
+                    Start Now
+                </button>
+            </div>
+        </div>
     </section>
 
-    <!-- Create Room Modal -->
+    <!-- CREATE ROOM MODAL -->
     <div id="createModal" class="modal">
         <div class="modal-content">
             <h2>Create New Room</h2>
             <form id="createForm" onsubmit="handleCreateRoom(event)">
                 <div class="form-group">
                     <label>Room Topic</label>
-                    <input type="text" id="topicInput" required placeholder="What's this room about?">
+                    <input type="text" id="topicInput" required placeholder="What's this room about?" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="passwordInput" required placeholder="Set a strong password">
+                    <input type="password" id="passwordInput" required placeholder="Set a strong password" autocomplete="off">
                 </div>
                 <div class="modal-actions">
                     <button type="submit" class="btn btn-primary" style="flex: 1;">Create</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
+                    <button type="button" class="btn" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Room Created Success Modal -->
+    <!-- SUCCESS MODAL -->
     <div id="successModal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <h2>✓ Room Created!</h2>
@@ -602,12 +497,12 @@
             </div>
 
             <div class="info-box">
-                <p>Creator Key (save this - only you have it!):</p>
+                <p>Creator Key (save this!):</p>
                 <div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')" style="color: #ff00ff;"></div>
             </div>
 
             <div class="warning">
-                ⚠️ <strong>Important:</strong> Share the Room ID and password separately. Both are required to join. Save your creator key to destroy the room later.
+                ⚠️ Share Room ID and password separately. Both required to join.
             </div>
 
             <button class="btn btn-primary" onclick="enterCreatedRoom()" style="width: 100%;">
@@ -617,47 +512,233 @@
     </div>
 
     <script>
-        // Configuration - Backend URL
+        // Configuration
         const API_URL = 'https://abysslink.onrender.com';
 
-        // Generate particles
-        function createParticles() {
-            const hero = document.getElementById('hero');
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.top = Math.random() * 100 + '%';
-                particle.style.setProperty('--tx', (Math.random() - 0.5) * 200 + 'px');
-                particle.style.setProperty('--ty', (Math.random() - 0.5) * 200 + 'px');
-                particle.style.animationDuration = (10 + Math.random() * 20) + 's';
-                particle.style.animationDelay = Math.random() * 5 + 's';
-                hero.appendChild(particle);
-            }
-        }
-        createParticles();
+        // === THREE.JS SETUP ===
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.015);
 
-        // Intersection Observer for scroll animations
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: false,
+            powerPreference: "high-performance",
+            alpha: true
+        });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // POST PROCESSING
+        const composer = new THREE.EffectComposer(renderer);
+        const renderPass = new THREE.RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        const bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            1.8,
+            0.5,
+            0.85
+        );
+        composer.addPass(bloomPass);
+
+        // CORE OBJECT
+        const geometry = new THREE.IcosahedronGeometry(1, 80);
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x00D9FF,
+            roughness: 0.1,
+            metalness: 0.9,
+            wireframe: false
+        });
+
+        material.onBeforeCompile = (shader) => {
+            shader.uniforms.uTime = { value: 0 };
+            material.userData.shader = shader;
+
+            shader.vertexShader = `
+                uniform float uTime;
+                vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+                vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+                float snoise(vec3 v) {
+                    const vec2  C = vec2(1.0/6.0, 1.0/3.0);
+                    const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+                    vec3 i  = floor(v + dot(v, C.yyy));
+                    vec3 x0 = v - i + dot(i, C.xxx);
+                    vec3 g = step(x0.yzx, x0.xyz);
+                    vec3 l = 1.0 - g;
+                    vec3 i1 = min(g.xyz, l.zxy);
+                    vec3 i2 = max(g.xyz, l.zxy);
+                    vec3 x1 = x0 - i1 + C.xxx;
+                    vec3 x2 = x0 - i2 + C.yyy;
+                    vec3 x3 = x0 - D.yyy;
+                    i = mod289(i);
+                    vec4 p = permute(permute(permute(
+                                i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                    float n_ = 0.142857142857;
+                    vec3  ns = n_ * D.wyz - D.xzx;
+                    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                    vec4 x_ = floor(j * ns.z);
+                    vec4 y_ = floor(j - 7.0 * x_);
+                    vec4 x = x_ * ns.x + ns.yyyy;
+                    vec4 y = y_ * ns.x + ns.yyyy;
+                    vec4 h = 1.0 - abs(x) - abs(y);
+                    vec4 b0 = vec4(x.xy, y.xy);
+                    vec4 b1 = vec4(x.zw, y.zw);
+                    vec4 s0 = floor(b0)*2.0 + 1.0;
+                    vec4 s1 = floor(b1)*2.0 + 1.0;
+                    vec4 sh = -step(h, vec4(0.0));
+                    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+                    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                    vec3 p0 = vec3(a0.xy,h.x);
+                    vec3 p1 = vec3(a0.zw,h.y);
+                    vec3 p2 = vec3(a1.xy,h.z);
+                    vec3 p3 = vec3(a1.zw,h.w);
+                    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                    p0 *= norm.x;
+                    p1 *= norm.y;
+                    p2 *= norm.z;
+                    p3 *= norm.w;
+                    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                    m = m * m;
+                    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+                }
+            ` + shader.vertexShader;
+
+            shader.vertexShader = shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                `
+                #include <begin_vertex>
+                float noise = snoise(position * 1.5 + uTime * 0.3);
+                float displacement = noise * 0.3;
+                transformed += normal * displacement;
+                `
+            );
+        };
+
+        const core = new THREE.Mesh(geometry, material);
+        scene.add(core);
+
+        // PARTICLES
+        const particlesCount = 1500;
+        const particlesGeometry = new THREE.TetrahedronGeometry(0.03, 0);
+        const particlesMaterial = new THREE.MeshBasicMaterial({ color: 0xFF00FF });
+        
+        const particles = new THREE.InstancedMesh(particlesGeometry, particlesMaterial, particlesCount);
+        const dummy = new THREE.Object3D();
+        
+        for(let i = 0; i < particlesCount; i++) {
+            const r = (Math.random() * 8) + 3;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            
+            dummy.position.set(
+                r * Math.sin(phi) * Math.cos(theta),
+                r * Math.sin(phi) * Math.sin(theta),
+                r * Math.cos(phi)
+            );
+            
+            dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+            dummy.scale.setScalar(Math.random());
+            dummy.updateMatrix();
+            particles.setMatrixAt(i, dummy.matrix);
+        }
+        scene.add(particles);
+
+        // LIGHTING
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00D9FF, 2, 25);
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xFF006E, 2, 25);
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        camera.position.z = 5;
+
+        // GSAP SCROLL ANIMATIONS
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.utils.toArray('.text-wrap').forEach((text) => {
+            gsap.to(text, {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                scrollTrigger: {
+                    trigger: text.parentElement,
+                    start: "top 70%",
+                    end: "top 30%",
+                    scrub: 1
                 }
             });
-        }, { threshold: 0.3 });
+        });
 
-        document.querySelectorAll('.step').forEach(step => observer.observe(step));
-
-        // Parallax scroll effect
-        window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const hero = document.getElementById('hero');
-            if (hero) {
-                hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 0.5
             }
         });
 
-        // Modal functions
+        tl.to(core.rotation, { x: 2, y: 2, duration: 3 })
+          .to(core.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 2 }, "<")
+          .to(particles.rotation, { y: Math.PI * 3, duration: 5 }, "<")
+          .to(material.color, { r: 1, g: 0, b: 0.4, duration: 2 })
+          .to(bloomPass, { strength: 2.5, duration: 2 }, "<")
+          .to(camera.position, { z: 8, duration: 4 }, "<");
+
+        // ANIMATION LOOP
+        const clock = new THREE.Clock();
+
+        function animate() {
+            const time = clock.getElapsedTime();
+
+            if (material.userData.shader) {
+                material.userData.shader.uniforms.uTime.value = time;
+            }
+
+            core.rotation.z = time * 0.05;
+            particles.rotation.z = time * 0.03;
+
+            composer.render();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // RESIZE
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // MOUSE PARALLAX
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) - 0.5;
+            mouseY = (e.clientY / window.innerHeight) - 0.5;
+            
+            gsap.to(camera.rotation, {
+                x: -mouseY * 0.1,
+                y: mouseX * 0.1,
+                duration: 1
+            });
+        });
+
+        // MODAL FUNCTIONS
         function openCreateModal() {
             document.getElementById('createModal').style.display = 'flex';
             document.getElementById('topicInput').focus();
@@ -672,10 +753,8 @@
             document.getElementById('successModal').style.display = 'none';
         }
 
-        // Store current room data
         let currentRoom = null;
 
-        // Handle room creation
         async function handleCreateRoom(event) {
             event.preventDefault();
 
@@ -689,13 +768,10 @@
                     body: JSON.stringify({ topic, password })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to create room');
-                }
+                if (!response.ok) throw new Error('Failed to create room');
 
                 const data = await response.json();
 
-                // Store in localStorage
                 const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
                 currentRoom = {
                     roomId: data.roomId,
@@ -708,7 +784,6 @@
                 rooms.push(currentRoom);
                 localStorage.setItem('abysslink_rooms', JSON.stringify(rooms));
 
-                // Show success modal
                 document.getElementById('roomIdDisplay').textContent = data.roomId;
                 document.getElementById('creatorKeyDisplay').textContent = data.creatorKey;
                 
@@ -716,32 +791,29 @@
                 document.getElementById('successModal').style.display = 'flex';
 
             } catch (error) {
-                alert('Error creating room. Make sure the backend is running.');
+                alert('Error creating room. Backend might be waking up (Render free tier). Try again in 30 seconds.');
                 console.error(error);
             }
         }
 
-        // Copy to clipboard
         function copyToClipboard(elementId) {
             const text = document.getElementById(elementId).textContent;
             navigator.clipboard.writeText(text).then(() => {
                 const el = document.getElementById(elementId);
                 const original = el.textContent;
-                el.textContent = 'Copied!';
+                el.textContent = '✓ Copied!';
                 setTimeout(() => {
                     el.textContent = original;
-                }, 1000);
+                }, 1500);
             });
         }
 
-        // Enter created room
         function enterCreatedRoom() {
             if (currentRoom) {
                 window.location.href = `chat.html?room=${currentRoom.roomId}`;
             }
         }
 
-        // Close modals on escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeCreateModal();
