@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink — Anonymous Ephemeral Chat</title>
+    <title>AbyssLink | Secure Transmission Layer</title>
     
     <!-- IMPORTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -86,14 +86,14 @@
 
         .nav-items a {
             font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--text-main);
             text-decoration: none;
             margin-left: 2rem;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
             opacity: 0.6;
             transition: opacity 0.3s;
+            cursor: pointer;
         }
 
         .nav-items a:hover { opacity: 1; }
@@ -122,7 +122,6 @@
             line-height: 0.9;
             letter-spacing: -0.04em;
             margin-bottom: 2rem;
-            text-transform: uppercase;
         }
 
         h2 {
@@ -130,49 +129,71 @@
             font-weight: 200;
             margin-bottom: 1.5rem;
             letter-spacing: -0.03em;
-            color: var(--text-main);
         }
 
         p.lead {
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             color: var(--text-dim);
             line-height: 1.6;
             margin-bottom: 3rem;
             font-weight: 300;
         }
 
-        /* DECIPHER GLITCH TEXT */
-        .decipher-text {
+        /* PROFESSIONAL GLITCH (DECIPHER EFFECT) */
+        .decipher-text span {
             display: inline-block;
+            transition: color 0.1s;
         }
 
-        /* BUTTONS - ADAPTED FROM SOURCE 1 TO MATCH SOURCE 2 STYLE */
-        .btn-group {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
+        /* GRID LAYOUTS */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
         }
 
+        .card {
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--text-main);
+        }
+
+        .card h3 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        .card p {
+            font-size: 1rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        /* BUTTONS */
         .btn {
-            padding: 1.2rem 2.5rem;
+            display: inline-flex;
+            align-items: center;
+            background: var(--text-main);
+            color: var(--bg);
+            padding: 1rem 2.5rem;
             font-family: 'Space Mono', monospace;
             font-size: 0.8rem;
             text-transform: uppercase;
             font-weight: 700;
+            border: none;
             cursor: pointer;
-            transition: all 0.3s var(--ease-out);
-            text-decoration: none;
-            display: inline-block;
-            border-radius: 0;
+            transition: transform 0.3s var(--ease-out);
         }
 
-        .btn-primary {
-            background: var(--text-main);
-            color: var(--bg);
-            border: 1px solid var(--text-main);
-        }
-
-        .btn-primary:hover {
+        .btn:hover {
             transform: translateX(10px);
         }
 
@@ -183,181 +204,51 @@
         }
 
         .btn-secondary:hover {
-            border-color: var(--text-main);
+            background: var(--text-main);
+            color: var(--bg);
+            transform: translateX(0) scale(1.05);
         }
 
-        /* FEATURES GRID - ADAPTED CONTENT */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 4rem;
-            width: 100%;
-        }
-
-        .feature-card {
-            border-top: 1px solid var(--border);
-            padding-top: 1.5rem;
-            transition: border-color 0.3s ease;
-            background: transparent;
-        }
-
-        .feature-card:hover {
-            border-color: var(--text-main);
-        }
-
-        .feature-icon {
-            font-size: 1.5rem; /* Smaller to fit theme */
-            margin-bottom: 1rem;
-            display: block;
-            filter: grayscale(100%);
-            opacity: 0.7;
-        }
-
-        .feature-card h3 {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-            color: var(--text-main);
-            letter-spacing: 0.1em;
-        }
-
-        .feature-card p {
-            font-size: 0.95rem;
-            color: var(--text-dim);
-            line-height: 1.5;
-        }
-
-        /* HOW IT WORKS - STEPS */
-        .steps-container {
-            width: 100%;
-            max-width: 1000px;
-        }
-
-        .step {
-            display: flex;
-            align-items: flex-start;
-            gap: 3rem;
-            margin-bottom: 4rem;
-            opacity: 0;
-            transform: translateX(-20px);
-            transition: all 0.6s ease;
-        }
-
-        .step.visible {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .step:nth-child(even) {
-            transform: translateX(20px);
-        }
-
-        .step-number {
-            font-family: 'Space Mono', monospace;
-            font-size: 3rem;
-            font-weight: 700;
-            color: var(--text-main);
-            min-width: 100px;
-            opacity: 0.3;
-            line-height: 1;
-        }
-
-        .step-content h3 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-main);
-            font-weight: 400;
-        }
-
-        .step-content p {
-            color: var(--text-dim);
-            font-size: 1rem;
-            line-height: 1.6;
-        }
-
-        /* PRIVACY SECTION */
-        .privacy-promise {
-            border: 1px solid var(--border);
-            padding: 3rem;
-            margin-top: 3rem;
-        }
-
-        .privacy-promise ul {
-            list-style: none;
-            font-size: 1.1rem;
-            line-height: 2;
-            text-align: left;
-            font-family: 'Space Mono', monospace;
-        }
-
-        .privacy-promise li {
-            color: var(--text-dim);
-        }
-
-        .privacy-promise li::before {
-            content: "// ";
-            color: var(--text-main);
-            opacity: 0.5;
-        }
-
-        /* ABOUT SECTION (SMALL, LAST) */
+        /* ABOUT SECTION */
         .about-section {
             min-height: 60vh;
             background: var(--bg);
             border-top: 1px solid var(--border);
             padding: 4rem 8rem;
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
             z-index: 20;
-            position: relative;
-            text-align: left;
         }
 
-        .footer-brand h3 {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.9rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
+        .footer-brand {
+            width: 100%;
+            margin-bottom: 3rem;
         }
 
-        .footer-brand p {
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            max-width: 300px;
-            line-height: 1.5;
-        }
-
-        .footer-links {
+        .footer-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 2rem;
+            width: 100%;
         }
 
-        .link-col h4 {
+        .footer-col h4 {
             font-family: 'Space Mono', monospace;
-            font-size: 0.7rem;
-            color: #333;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
+            color: var(--text-dim);
             margin-bottom: 1rem;
         }
 
-        .link-col a {
-            display: block;
-            color: var(--text-dim);
-            text-decoration: none;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            transition: color 0.3s;
+        .footer-col p {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            line-height: 1.4;
         }
 
-        .link-col a:hover { color: var(--text-main); }
-
-        /* MODALS - STEALTH STYLE */
+        /* MODAL STYLES */
         .modal {
             display: none;
             position: fixed;
@@ -365,12 +256,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 5, 5, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.2s ease;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(10px);
         }
 
         @keyframes fadeIn {
@@ -381,15 +272,16 @@
         .modal-content {
             background: var(--surface);
             padding: 3rem;
-            border: 1px solid var(--border);
+            border-radius: 0;
             max-width: 500px;
             width: 90%;
+            border: 1px solid var(--border);
             animation: slideUp 0.4s ease;
         }
 
         @keyframes slideUp {
             from {
-                transform: translateY(30px);
+                transform: translateY(50px);
                 opacity: 0;
             }
             to {
@@ -399,12 +291,13 @@
         }
 
         .modal-content h2 {
-            font-family: 'Space Mono', monospace;
-            font-size: 1.5rem;
             margin-bottom: 2rem;
             color: var(--text-main);
-            letter-spacing: 0.1em;
+            font-size: 2rem;
+            font-weight: 200;
+            font-family: 'Space Mono', monospace;
             text-transform: uppercase;
+            letter-spacing: -0.02em;
         }
 
         .form-group {
@@ -414,28 +307,28 @@
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.7rem;
             color: var(--text-dim);
+            font-size: 0.8rem;
+            font-family: 'Space Mono', monospace;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
         }
 
         .form-group input {
             width: 100%;
             padding: 1rem;
+            border-radius: 0;
             border: 1px solid var(--border);
             background: var(--bg);
             color: var(--text-main);
-            font-family: 'Manrope', sans-serif;
             font-size: 1rem;
-            transition: border-color 0.3s;
-            border-radius: 0;
+            font-family: 'Manrope', sans-serif;
+            transition: all 0.3s ease;
         }
 
         .form-group input:focus {
             outline: none;
             border-color: var(--text-main);
+            background: var(--surface);
         }
 
         .modal-actions {
@@ -445,56 +338,61 @@
         }
 
         .info-box {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg);
             padding: 1.5rem;
-            border: 1px solid var(--border);
+            border-radius: 0;
             margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
         }
 
         .info-box p {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.7rem;
             color: var(--text-dim);
             margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+            font-family: 'Space Mono', monospace;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
         }
 
         .info-box .value {
             color: var(--text-main);
             word-break: break-all;
             font-family: 'Space Mono', monospace;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             cursor: pointer;
-            padding: 0.75rem 0;
-            display: block;
+            transition: color 0.2s;
         }
 
         .info-box .value:hover {
-            color: #fff;
+            color: var(--text-dim);
         }
 
         .warning {
-            color: #666;
+            color: #ff6b6b;
             margin-bottom: 2rem;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             padding: 1rem;
-            border: 1px solid #333;
+            background: rgba(255, 0, 0, 0.05);
+            border-radius: 0;
+            border: 1px solid rgba(255, 0, 0, 0.2);
             font-family: 'Space Mono', monospace;
         }
 
         /* RESPONSIVE */
         @media (max-width: 1024px) {
             section { padding: 0 4rem; }
-            .about-section { padding: 4rem; grid-template-columns: 1fr; }
+            nav { padding: 1.5rem 2rem; }
+            .about-section { padding: 3rem 2rem; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
         }
 
-        @media (max-width: 768px) {
-            .features-grid { grid-template-columns: 1fr; }
-            .btn-group { flex-direction: column; }
-            .step { flex-direction: column !important; gap: 1rem; text-align: left; }
+        @media (max-width: 600px) {
+            h1 { font-size: 3rem; }
+            section { padding: 0 2rem; }
+            nav { padding: 1rem; }
+            .nav-items a { margin-left: 1rem; font-size: 0.7rem; }
             .about-section { padding: 2rem 1.5rem; }
-            .footer-links { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+            .modal-actions { flex-direction: column; }
         }
     </style>
 </head>
@@ -507,168 +405,131 @@
     <nav>
         <div class="brand">AbyssLink</div>
         <div class="nav-items">
-            <a href="#features">System</a>
-            <a href="#how-it-works">Protocol</a>
-            <a href="#privacy">Privacy</a>
+            <a href="#infrastructure">Infrastructure</a>
+            <a href="#security">Security</a>
+            <a href="rooms.html">Active Rooms</a>
         </div>
     </nav>
 
-    <!-- HERO SECTION: STEALTH STYLE WITH SOURCE 1 FUNCTIONALITY -->
+    <!-- HERO SECTION -->
     <section id="hero">
         <div class="content-wrapper">
             <h1 class="decipher-text" data-value="INVISIBLE_BY_DEFAULT">Invisible by Default.</h1>
             <p class="lead">
-                Anonymous. Ephemeral. Untraceable.
+                An ephemeral communication layer designed for professionals who require absolute stealth. 
+                No persistent storage. No logs. Just silence.
             </p>
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
-                <a href="rooms.html" class="btn btn-secondary">Active Rooms</a>
-            </div>
+            <button class="btn" onclick="openCreateModal()">Initiate Session</button>
         </div>
     </section>
 
-    <!-- FEATURES SECTION: SOURCE 1 CONTENT, STEALTH STYLE -->
-    <section id="features">
-        <div class="content-wrapper" style="max-width: 1000px;">
-            <h2 class="decipher-text" data-value="WHY_ABYSSLINK">Why AbyssLink?</h2>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <span class="feature-icon">🎭</span>
-                    <h3>Completely Anonymous</h3>
-                    <p>No accounts, no usernames, no identity. Everyone is a ghost in the machine.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">⏱️</span>
-                    <h3>24-Hour Lifespan</h3>
-                    <p>Every room self-destructs after 24 hours. Or vanish instantly with one click.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🔐</span>
-                    <h3>Invite-Only Access</h3>
-                    <p>Password-protected rooms. Share link privately. Control who enters.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">💬</span>
-                    <h3>Real-Time Chat</h3>
-                    <p>Instant messaging with file sharing. Everything disappears when room does.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🔥</span>
-                    <h3>Zero Trace</h3>
-                    <p>No chat logs. No backups. No recovery. Once it's gone, it's gone forever.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🌐</span>
-                    <h3>No Tracking</h3>
-                    <p>We don't know who you are, and we don't want to. Total privacy by design.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- HOW IT WORKS: SOURCE 1 CONTENT, STEALTH STYLE -->
-    <section id="how-it-works">
-        <div class="content-wrapper steps-container">
-            <h2 class="decipher-text" data-value="HOW_IT_WORKS">How It Works</h2>
-            
-            <div class="step">
-                <div class="step-number">01</div>
-                <div class="step-content">
-                    <h3>Create a Room</h3>
-                    <p>Set a topic and password. Get an invite link and creator key. Share them separately for maximum security.</p>
-                </div>
-            </div>
-
-            <div class="step">
-                <div class="step-number">02</div>
-                <div class="step-content">
-                    <h3>Invite Participants</h3>
-                    <p>Send link privately. Share password through a different channel. Both are required to enter.</p>
-                </div>
-            </div>
-
-            <div class="step">
-                <div class="step-number">03</div>
-                <div class="step-content">
-                    <h3>Chat Anonymously</h3>
-                    <p>Everyone appears as an anonymous participant. Chat, share files, and communicate freely.</p>
-                </div>
-            </div>
-
-            <div class="step">
-                <div class="step-number">04</div>
-                <div class="step-content">
-                    <h3>Watch It Disappear</h3>
-                    <p>After 24 hours, everything vanishes automatically. Or trigger "Vanish Now" to destroy it instantly.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- PRIVACY SECTION -->
-    <section id="privacy" style="text-align: center; align-items: center;">
-        <div class="content-wrapper" style="max-width: 900px;">
-            <h2 class="decipher-text" data-value="PRIVACY_BY_DESIGN">Privacy by Design</h2>
-            <p class="lead">
-                AbyssLink is built on principle that true privacy means we can't access your data—because it doesn't exist.
-            </p>
-            <div class="privacy-promise">
-                <ul>
-                    <li>No user accounts or registration</li>
-                    <li>No permanent storage of messages</li>
-                    <li>No tracking or analytics</li>
-                    <li>No way to identify participants</li>
-                    <li>No chat history retention</li>
-                    <li>No backups or recovery systems</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- FINAL CTA -->
-    <section id="final-cta" style="text-align: center; align-items: center;">
+    <!-- INFRASTRUCTURE SECTION -->
+    <section id="infrastructure">
         <div class="content-wrapper">
-            <h2 class="decipher-text" data-value="READY_TO_DISAPPEAR">Ready to Disappear?</h2>
-            <p class="lead">Create a room. Have your conversation. Let it vanish.</p>
-            <button class="btn btn-primary" style="font-size: 1.1rem; padding: 1.5rem 3.5rem;" onclick="openCreateModal()">
-                Start Your First Room
-            </button>
+            <h2 class="decipher-text" data-value="STRUCTURED_ANONYMITY">Structured Anonymity.</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>01 // Zero-Persistence</h3>
+                    <p>Volatile memory stacks ensure messages cease to exist once delivered. 24-hour automatic expiration with instant destruction capability.</p>
+                </div>
+                <div class="card">
+                    <h3>02 // Complete Anonymity</h3>
+                    <p>No accounts, no usernames, no identity tracking. All participants appear as encrypted nodes in the network.</p>
+                </div>
+                <div class="card">
+                    <h3>03 // Invite-Only Architecture</h3>
+                    <p>Password-protected rooms with isolated access. Share credentials through separate channels for maximum security.</p>
+                </div>
+                <div class="card">
+                    <h3>04 // Real-Time Encryption</h3>
+                    <p>End-to-end encrypted messaging with file sharing. All data is encrypted in transit and at rest.</p>
+                </div>
+                <div class="card">
+                    <h3>05 // Zero Trace Protocol</h3>
+                    <p>No chat logs, no backups, no recovery systems. Data is purged permanently upon room destruction.</p>
+                </div>
+                <div class="card">
+                    <h3>06 // Anonymous Routing</h3>
+                    <p>No IP logging, no session tracking, no behavioral analysis. We can't identify you because we don't try.</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- ABOUT SECTION (PROFESSIONAL, SMALL, LAST) -->
+    <!-- SECURITY SECTION -->
+    <section id="security">
+        <div class="content-wrapper">
+            <h2 class="decipher-text" data-value="ABSOLUTE_PRIVACY">Absolute Privacy.</h2>
+            <p class="lead">
+                In the modern digital landscape, surveillance is the default. 
+                We have built a system where privacy is the baseline. 
+                Your communication is isolated, encrypted, and ephemeral.
+            </p>
+            <div class="grid-3" style="margin-top: 3rem;">
+                <div class="card">
+                    <h3>No User Accounts</h3>
+                    <p>Registration is surveillance. We operate on a zero-knowledge principle.</p>
+                </div>
+                <div class="card">
+                    <h3>No Message Storage</h3>
+                    <p>Messages exist only in volatile memory during active sessions.</p>
+                </div>
+                <div class="card">
+                    <h3>No Analytics</h3>
+                    <p>We don't track usage patterns, behaviors, or metadata.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ACCESS CTA -->
+    <section id="access" style="text-align: center; align-items: center;">
+        <div class="content-wrapper" style="max-width: 100%; text-align: center;">
+            <h2 class="decipher-text" data-value="READY_TO_VANISH">Ready to Vanish?</h2>
+            <p class="lead">Join the network that forgets.</p>
+            <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+                <button class="btn" onclick="openCreateModal()">Create Room</button>
+                <a href="rooms.html" class="btn btn-secondary" style="text-decoration: none;">View Active Rooms</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
     <footer class="about-section">
         <div class="footer-brand">
             <h3 class="decipher-text" data-value="ABYSSLINK_CORP" style="font-size: 1.5rem; letter-spacing: -0.02em;">AbyssLink</h3>
-            <p>
-                Founded on principle that digital communication should mirror transience of physical conversation. We build for the shadows.
+            <p style="margin-top: 1rem; color: var(--text-dim); max-width: 400px; font-size: 0.9rem;">
+                Founded on the principle that digital communication should mirror the transience of physical conversation. We build for the shadows.
             </p>
         </div>
-        <div class="footer-links">
-            <div class="link-col">
+        <div class="footer-grid">
+            <div class="footer-col">
                 <h4>Protocol</h4>
-                <a href="#">E2E Encryption</a>
-                <a href="#">Volatile Nodes</a>
-                <a href="#">Entropy Injection</a>
+                <p>E2E Encryption</p>
+                <p>Volatile Nodes</p>
+                <p>Entropy Injection</p>
+                <p>24hr Auto-Destruct</p>
             </div>
-            <div class="link-col">
-                <h4>Company</h4>
-                <a href="#">Manifesto</a>
-                <a href="#">Careers</a>
-                <a href="#">Press Kit</a>
+            <div class="footer-col">
+                <h4>Features</h4>
+                <p>Anonymous Chat</p>
+                <p>File Sharing</p>
+                <p>Instant Vanish</p>
+                <p>No Logs</p>
             </div>
-            <div class="link-col">
+            <div class="footer-col">
                 <h4>Legal</h4>
-                <a href="#">Terms of Void</a>
-                <a href="#">No-Log Policy</a>
-                <a href="#">Transparency</a>
+                <p>Terms of Void</p>
+                <p>No-Log Policy</p>
+                <p>Privacy Manifesto</p>
+                <p>Transparency</p>
             </div>
-            <div class="link-col">
-                <h4>Connect</h4>
-                <a href="#">support@abyss.link</a>
-                <a href="#">PGP Key: 0x4B...</a>
-                <a href="#">Tor Node: .onion</a>
+            <div class="footer-col">
+                <h4>Access</h4>
+                <p><a href="rooms.html" style="color: var(--text-main); text-decoration: none;">Active Rooms</a></p>
+                <p><a href="#" onclick="openCreateModal(); return false;" style="color: var(--text-main); text-decoration: none;">Create Session</a></p>
+                <p>Documentation</p>
+                <p>API Access</p>
             </div>
         </div>
         <div style="width: 100%; margin-top: 3rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
@@ -676,54 +537,61 @@
         </div>
     </footer>
 
-    <!-- MODALS -->
+    <!-- Create Room Modal -->
     <div id="createModal" class="modal">
         <div class="modal-content">
-            <h2>Create New Room</h2>
+            <h2>Create Session</h2>
             <form id="createForm" onsubmit="handleCreateRoom(event)">
                 <div class="form-group">
                     <label>Room Topic</label>
-                    <input type="text" id="topicInput" required placeholder="What's this room about?">
+                    <input type="text" id="topicInput" required placeholder="Session identifier">
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="passwordInput" required placeholder="Set a strong password">
+                    <label>Access Key</label>
+                    <input type="password" id="passwordInput" required placeholder="Encryption passphrase">
                 </div>
                 <div class="modal-actions">
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Create</button>
+                    <button type="submit" class="btn" style="flex: 1;">Initialize</button>
                     <button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Room Created Success Modal -->
     <div id="successModal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
-            <h2 style="color: var(--text-main);">✓ Room Created</h2>
+            <h2>Session Active</h2>
             
             <div class="info-box">
-                <p>Room ID (share this):</p>
+                <p>Room Identifier:</p>
                 <div class="value" id="roomIdDisplay" onclick="copyToClipboard('roomIdDisplay')"></div>
             </div>
 
             <div class="info-box">
-                <p>Creator Key (save this):</p>
+                <p>Creator Key (Destruction Authority):</p>
                 <div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')"></div>
             </div>
 
             <div class="warning">
-                // IMPORTANT: Share Room ID and password separately. Save your creator key.
+                ⚠️ PROTOCOL: Distribute Room ID and access key through separate channels. Save creator key for emergency termination. This session will auto-destruct in 24 hours.
             </div>
 
-            <button class="btn btn-primary" onclick="enterCreatedRoom()" style="width: 100%;">
-                Enter Room →
+            <button class="btn" onclick="enterCreatedRoom()" style="width: 100%;">
+                Enter Session →
             </button>
         </div>
     </div>
 
     <script>
+        // Configuration - Backend URL
+        const API_URL = 'https://abysslink.onrender.com';
+
+        // Store current room data
+        let currentRoom = null;
+
         // --- PROFESSIONAL DECIPHER GLITCH EFFECT ---
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
         
         document.querySelectorAll('.decipher-text').forEach(element => {
             const originalText = element.getAttribute('data-value');
@@ -753,70 +621,74 @@
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setClearColor(0x050505);
         document.getElementById('webgl-stage').appendChild(renderer.domElement);
 
-        // --- ASSET GROUPS ---
-        const heroGroup = new THREE.Group();
-        const infraGroup = new THREE.Group();
-        const voidGroup = new THREE.Group();
+        // --- ASSET 1: THE GRID ---
+        const gridGroup = new THREE.Group();
         
-        scene.add(heroGroup);
-        scene.add(infraGroup);
-        scene.add(voidGroup);
+        const gridHelper = new THREE.GridHelper(100, 100, 0x222222, 0x111111);
+        gridHelper.position.y = -10;
+        gridGroup.add(gridHelper);
 
-        // --- HERO: TERRAIN ---
-        const terrainGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
-        const terrainMat = new THREE.MeshBasicMaterial({ color: 0x222222, wireframe: true, transparent: true, opacity: 0.15 });
-        const terrain = new THREE.Mesh(terrainGeo, terrainMat);
-        terrain.rotation.x = -Math.PI / 2;
-        terrain.position.y = -15;
-        
-        const pos = terrainGeo.attributes.position;
-        for (let i = 0; i < pos.count; i++) {
-            const z = pos.getZ(i);
-            const x = pos.getX(i);
-            const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 5 + Math.random() * 2;
-            pos.setZ(i, z + noise);
-        }
-        terrainGeo.computeVertexNormals();
-        heroGroup.add(terrain);
-
-        const dustGeo = new THREE.BufferGeometry();
-        const dustCount = 3000;
-        const dustPos = new Float32Array(dustCount * 3);
-        for(let i=0; i<dustCount*3; i++) {
-            dustPos[i] = (Math.random() - 0.5) * 200;
-        }
-        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-        const dustMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
-        const dust = new THREE.Points(dustGeo, dustMat);
-        heroGroup.add(dust);
-
-        // --- INFRA: MONOLITHS ---
-        const monoGeo = new THREE.TetrahedronGeometry(2, 0);
-        const monoMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        const monoliths = [];
+        const blockGeo = new THREE.BoxGeometry(1, 1, 1);
+        const blockMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.1 });
         
         for(let i=0; i<20; i++) {
-            const m = new THREE.Mesh(monoGeo, monoMat.clone());
-            m.position.set((Math.random()-0.5)*80, (Math.random()-0.5)*40, (Math.random()-0.5)*60);
-            infraGroup.add(m);
-            monoliths.push(m);
+            const block = new THREE.Mesh(blockGeo, blockMat);
+            block.position.set(
+                (Math.random() - 0.5) * 60,
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 60
+            );
+            block.rotation.set(Math.random(), Math.random(), Math.random());
+            gridGroup.add(block);
+        }
+        scene.add(gridGroup);
+
+        // --- ASSET 2: THE NETWORK ---
+        const networkGroup = new THREE.Group();
+        const particlesGeo = new THREE.BufferGeometry();
+        const pCount = 2000;
+        const pPos = new Float32Array(pCount * 3);
+        const pSizes = new Float32Array(pCount);
+
+        for(let i=0; i<pCount*3; i++) {
+            pPos[i] = (Math.random() - 0.5) * 80;
+        }
+        for(let i=0; i<pCount; i++) {
+            pSizes[i] = Math.random() * 2;
         }
 
-        // --- VOID: CYLINDER ---
-        const voidGeo = new THREE.CylinderGeometry(20, 20, 80, 32, 1, true);
-        const voidMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        const voidCylinder = new THREE.Mesh(voidGeo, voidMat);
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        particlesGeo.setAttribute('size', new THREE.BufferAttribute(pSizes, 1));
+
+        const pMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.1,
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending
+        });
+        const networkParticles = new THREE.Points(particlesGeo, pMat);
+        networkGroup.add(networkParticles);
+        scene.add(networkGroup);
+
+        // --- ASSET 3: THE VOID ---
+        const voidGroup = new THREE.Group();
+        const lineGeo = new THREE.CylinderGeometry(15, 15, 60, 32, 1, true);
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
+        const voidCylinder = new THREE.Mesh(lineGeo, lineMat);
         voidGroup.add(voidCylinder);
+        scene.add(voidGroup);
 
         camera.position.z = 30;
         camera.position.y = 5;
 
-        // --- SCROLL ANIMATIONS ---
+        // --- ANIMATION & SCROLL LOGIC ---
         gsap.registerPlugin(ScrollTrigger);
 
         document.querySelectorAll('.content-wrapper').forEach(content => {
@@ -833,22 +705,7 @@
             });
         });
 
-        // Steps Animation
-        document.querySelectorAll('.step').forEach(step => {
-            gsap.to(step, {
-                scrollTrigger: {
-                    trigger: step,
-                    start: "top 85%",
-                    toggleActions: "play none none reverse"
-                },
-                opacity: 1,
-                x: 0,
-                duration: 1.2,
-                ease: "power3.out"
-            });
-        });
-
-        const timeline = gsap.timeline({
+        const masterTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
@@ -857,30 +714,19 @@
             }
         });
 
-        // Adjusted for longer page (Source 1 content)
-        timeline
-            // HERO -> FEATURES
-            .to(camera.position, { z: 40, y: 15, duration: 3 }, 0)
-            .to(terrainMat, { opacity: 0, duration: 2 }, 0)
-            .to(dustMat, { opacity: 0.1, duration: 2 }, 0)
-            .to(monoMat, { opacity: 0.15, duration: 2 }, 1)
-
-            // FEATURES -> HOW IT WORKS
-            .to(monoliths, { 
-                x: (i) => monoliths[i].position.x * 2, 
-                duration: 3 
-            }, 3)
-            .to(monoMat, { opacity: 0, duration: 2 }, 3)
-            .to(voidMat, { opacity: 0.1, duration: 2 }, 4)
-            .to(voidCylinder.rotation, { z: Math.PI * 0.2, duration: 3 }, 3)
-
-            // HOW IT WORKS -> PRIVACY
-            .to(camera.position, { z: 50, y: -10, duration: 3 }, 6)
-            .to(voidCylinder.rotation, { z: Math.PI * 0.5, duration: 3 }, 6)
-
-            // PRIVACY -> FOOTER
-            .to(camera.position, { z: 20, y: 0, duration: 3 }, 9)
-            .to(voidMat, { opacity: 0, duration: 2 }, 10);
+        masterTimeline
+            .to(gridGroup.position, { z: -50, duration: 3 }, 0)
+            .to(gridGroup.rotation, { x: -0.2, duration: 3 }, 0)
+            .to(camera.position, { z: 40, y: 10, duration: 3 }, 0)
+            .to(blockMat, { opacity: 0, duration: 2 }, 0)
+            .to(pMat, { opacity: 0.8, duration: 2 }, 1)
+            .to(networkParticles.rotation, { y: Math.PI * 0.5, duration: 3 }, 3)
+            .to(networkGroup.scale, { x: 0, y: 0, z: 0, duration: 2 }, 4)
+            .to(pMat, { opacity: 0, duration: 2 }, 4)
+            .to(lineMat, { opacity: 0.1, duration: 2 }, 4.5)
+            .to(voidCylinder.rotation, { z: Math.PI * 0.2, duration: 3 }, 5)
+            .to(camera.position, { z: 20, y: -5, duration: 3 }, 7)
+            .to(lineMat, { opacity: 0, duration: 2 }, 8);
 
         // --- RENDER LOOP ---
         const clock = new THREE.Clock();
@@ -889,21 +735,21 @@
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
 
-            terrain.position.z = (time * 5) % 10;
-            
-            const positions = dustGeo.attributes.position.array;
-            for(let i=0; i<dustCount; i++) {
-                positions[i*3 + 1] += Math.sin(time * 2 + i) * 0.01;
-            }
-            dustGeo.attributes.position.needsUpdate = true;
-
-            monoliths.forEach((m, i) => {
-                m.rotation.x += 0.005;
-                m.rotation.y += 0.005;
-                m.position.y += Math.sin(time + i) * 0.02;
+            gridGroup.children.forEach((child, i) => {
+                if(child.geometry && child.geometry.type === 'BoxGeometry') {
+                    child.position.y += Math.sin(time + i) * 0.01;
+                }
             });
 
+            const positions = networkParticles.geometry.attributes.position.array;
+            for(let i=0; i<pCount; i++) {
+                const ix = i * 3;
+                positions[ix+1] += Math.sin(time * 0.5 + positions[ix] * 0.1) * 0.02;
+            }
+            networkParticles.geometry.attributes.position.needsUpdate = true;
+
             voidCylinder.rotation.y -= 0.001;
+            camera.position.x += (Math.sin(time * 0.5) * 0.5 - camera.position.x) * 0.01;
 
             renderer.render(scene, camera);
         }
@@ -916,10 +762,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // --- SOURCE 1 LOGIC (MODALS & API) ---
-        const API_URL = 'https://abysslink.onrender.com';
-        let currentRoom = null;
-
+        // --- MODAL FUNCTIONS ---
         function openCreateModal() {
             document.getElementById('createModal').style.display = 'flex';
             document.getElementById('topicInput').focus();
@@ -934,8 +777,10 @@
             document.getElementById('successModal').style.display = 'none';
         }
 
+        // --- ROOM CREATION ---
         async function handleCreateRoom(event) {
             event.preventDefault();
+
             const topic = document.getElementById('topicInput').value.trim();
             const password = document.getElementById('passwordInput').value;
 
@@ -946,11 +791,13 @@
                     body: JSON.stringify({ topic, password })
                 });
 
-                if (!response.ok) throw new Error('Failed to create room');
+                if (!response.ok) {
+                    throw new Error('Failed to create room');
+                }
 
                 const data = await response.json();
+
                 const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-                
                 currentRoom = {
                     roomId: data.roomId,
                     topic: topic,
@@ -969,7 +816,7 @@
                 document.getElementById('successModal').style.display = 'flex';
 
             } catch (error) {
-                alert('Error creating room. Make sure backend is running.');
+                alert('Error creating room. Please check backend connection.');
                 console.error(error);
             }
         }
@@ -979,8 +826,10 @@
             navigator.clipboard.writeText(text).then(() => {
                 const el = document.getElementById(elementId);
                 const original = el.textContent;
-                el.textContent = '[COPIED]';
-                setTimeout(() => el.textContent = original, 1000);
+                el.textContent = 'COPIED';
+                setTimeout(() => {
+                    el.textContent = original;
+                }, 1000);
             });
         }
 
