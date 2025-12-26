@@ -1,21 +1,16 @@
 {
-  "version": 2,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/landing.html"
+      "source": "/",
+      "destination": "/landing.html"
     },
     {
-      "src": "/rooms",
-      "dest": "/rooms.html"
+      "source": "/rooms",
+      "destination": "/rooms.html"
     },
     {
-      "src": "/chat",
-      "dest": "/chat.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/chat",
+      "destination": "/chat.html"
     }
   ]
 }
