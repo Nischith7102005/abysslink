@@ -27,15 +27,15 @@
         
         :root {
             --black: #000000;
-            --dark-gray: #0a0a0a;
+            --dark-gray: #0f0f0f;
             --gray: #1a1a1a;
+            --dust-gray: #2a2a2a;
             --white: #ffffff;
-            --off-white: #e0e0e0;
-            --subtle-white: rgba(255, 255, 255, 0.1);
+            --off-white: #d0d0d0;
         }
         
         body { 
-            background: var(--black);
+            background: var(--dark-gray);
             color: var(--white);
             font-family: 'Rajdhani', sans-serif;
             overflow-x: hidden;
@@ -57,10 +57,9 @@
             width: 100%;
             height: 100vh;
             z-index: 0;
-            opacity: 0.4;
         }
 
-        /* Grain texture overlay */
+        /* Dusty atmospheric background */
         body::before {
             content: '';
             position: fixed;
@@ -68,10 +67,40 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-            opacity: 0.03;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.01) 0%, transparent 70%);
             pointer-events: none;
             z-index: 1;
+        }
+
+        /* Film grain texture */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 2;
+            animation: grain 0.5s steps(10) infinite;
+        }
+
+        @keyframes grain {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -10%); }
+            20% { transform: translate(-15%, 5%); }
+            30% { transform: translate(7%, -25%); }
+            40% { transform: translate(-5%, 25%); }
+            50% { transform: translate(-15%, 10%); }
+            60% { transform: translate(15%, 0%); }
+            70% { transform: translate(0%, 15%); }
+            80% { transform: translate(3%, 35%); }
+            90% { transform: translate(-10%, 10%); }
         }
 
         /* Navigation */
@@ -85,7 +114,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+            background: linear-gradient(180deg, rgba(15,15,15,0.95) 0%, transparent 100%);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
@@ -94,7 +124,8 @@
             font-weight: 700;
             color: var(--white);
             font-family: 'Orbitron', monospace;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.15em;
+            transition: transform 0.3s ease;
         }
 
         .nav-links {
@@ -107,10 +138,26 @@
             color: var(--off-white);
             text-decoration: none;
             font-size: 0.9rem;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
             font-weight: 500;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--white);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
         }
 
         .nav-link:hover {
@@ -134,18 +181,38 @@
             margin: 0 auto;
         }
 
-        /* GLITCH EFFECT */
+        /* ADVANCED GLITCH EFFECT */
+        .glitch-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
         .glitch {
             position: relative;
-            font-size: clamp(4rem, 12vw, 10rem);
+            font-size: clamp(4rem, 12vw, 11rem);
             font-weight: 900;
             font-family: 'Orbitron', monospace;
             letter-spacing: 0.05em;
             color: var(--white);
             text-transform: uppercase;
-            animation: glitch-skew 1s infinite;
+            display: inline-block;
+            will-change: transform;
         }
 
+        /* Individual letter animation */
+        .glitch span {
+            display: inline-block;
+            position: relative;
+            animation: letterFloat 3s ease-in-out infinite;
+            animation-delay: calc(var(--i) * 0.1s);
+        }
+
+        @keyframes letterFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Glitch layers */
         .glitch::before,
         .glitch::after {
             content: attr(data-text);
@@ -154,51 +221,213 @@
             left: 0;
             width: 100%;
             height: 100%;
+            opacity: 0.8;
         }
 
         .glitch::before {
             left: 2px;
-            text-shadow: -2px 0 #fff;
+            text-shadow: -2px 0 rgba(255, 255, 255, 0.7);
             clip: rect(44px, 450px, 56px, 0);
             animation: glitch-anim 5s infinite linear alternate-reverse;
         }
 
         .glitch::after {
             left: -2px;
-            text-shadow: -2px 0 #fff, 2px 2px #000;
-            animation: glitch-anim2 1s infinite linear alternate-reverse;
+            text-shadow: 2px 0 rgba(255, 255, 255, 0.7);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 3s infinite linear alternate-reverse;
         }
 
+        /* Technical glitch - parts breaking */
         @keyframes glitch-anim {
-            0% { clip: rect(31px, 9999px, 94px, 0); }
-            20% { clip: rect(60px, 9999px, 5px, 0); }
-            40% { clip: rect(69px, 9999px, 40px, 0); }
-            60% { clip: rect(95px, 9999px, 68px, 0); }
-            80% { clip: rect(12px, 9999px, 99px, 0); }
-            100% { clip: rect(83px, 9999px, 61px, 0); }
+            0% { 
+                clip: rect(10px, 9999px, 31px, 0);
+                transform: skew(0.3deg);
+            }
+            5% { 
+                clip: rect(70px, 9999px, 71px, 0);
+                transform: skew(0.1deg);
+            }
+            10% { 
+                clip: rect(60px, 9999px, 80px, 0);
+                transform: skew(0.5deg);
+            }
+            15% { 
+                clip: rect(90px, 9999px, 100px, 0);
+                transform: skew(0.2deg);
+            }
+            20% { 
+                clip: rect(20px, 9999px, 95px, 0);
+                transform: skew(0.4deg);
+            }
+            25% { 
+                clip: rect(85px, 9999px, 40px, 0);
+                transform: skew(0deg);
+            }
+            30% { 
+                clip: rect(44px, 9999px, 56px, 0);
+                transform: skew(0.3deg);
+            }
+            35% { 
+                clip: rect(50px, 9999px, 90px, 0);
+                transform: skew(0.1deg);
+            }
+            40% { 
+                clip: rect(25px, 9999px, 45px, 0);
+                transform: skew(0.5deg);
+            }
+            45% { 
+                clip: rect(75px, 9999px, 35px, 0);
+                transform: skew(0deg);
+            }
+            50% { 
+                clip: rect(15px, 9999px, 85px, 0);
+                transform: skew(0.2deg);
+            }
+            55% { 
+                clip: rect(95px, 9999px, 25px, 0);
+                transform: skew(0.4deg);
+            }
+            60% { 
+                clip: rect(35px, 9999px, 75px, 0);
+                transform: skew(0.1deg);
+            }
+            65% { 
+                clip: rect(55px, 9999px, 65px, 0);
+                transform: skew(0.3deg);
+            }
+            70% { 
+                clip: rect(5px, 9999px, 105px, 0);
+                transform: skew(0deg);
+            }
+            75% { 
+                clip: rect(65px, 9999px, 15px, 0);
+                transform: skew(0.5deg);
+            }
+            80% { 
+                clip: rect(45px, 9999px, 55px, 0);
+                transform: skew(0.2deg);
+            }
+            85% { 
+                clip: rect(80px, 9999px, 30px, 0);
+                transform: skew(0.4deg);
+            }
+            90% { 
+                clip: rect(30px, 9999px, 70px, 0);
+                transform: skew(0.1deg);
+            }
+            95% { 
+                clip: rect(100px, 9999px, 20px, 0);
+                transform: skew(0.3deg);
+            }
+            100% { 
+                clip: rect(40px, 9999px, 60px, 0);
+                transform: skew(0deg);
+            }
         }
 
         @keyframes glitch-anim2 {
-            0% { clip: rect(65px, 9999px, 119px, 0); }
-            20% { clip: rect(52px, 9999px, 74px, 0); }
-            40% { clip: rect(79px, 9999px, 85px, 0); }
-            60% { clip: rect(58px, 9999px, 124px, 0); }
-            80% { clip: rect(35px, 9999px, 93px, 0); }
-            100% { clip: rect(88px, 9999px, 45px, 0); }
+            0% { 
+                clip: rect(65px, 9999px, 100px, 0);
+                transform: skew(0.5deg);
+            }
+            5% { 
+                clip: rect(25px, 9999px, 45px, 0);
+                transform: skew(0.2deg);
+            }
+            10% { 
+                clip: rect(95px, 9999px, 15px, 0);
+                transform: skew(0.4deg);
+            }
+            15% { 
+                clip: rect(35px, 9999px, 85px, 0);
+                transform: skew(0.1deg);
+            }
+            20% { 
+                clip: rect(75px, 9999px, 55px, 0);
+                transform: skew(0.3deg);
+            }
+            25% { 
+                clip: rect(5px, 9999px, 105px, 0);
+                transform: skew(0deg);
+            }
+            30% { 
+                clip: rect(55px, 9999px, 35px, 0);
+                transform: skew(0.5deg);
+            }
+            35% { 
+                clip: rect(85px, 9999px, 65px, 0);
+                transform: skew(0.2deg);
+            }
+            40% { 
+                clip: rect(15px, 9999px, 95px, 0);
+                transform: skew(0.4deg);
+            }
+            45% { 
+                clip: rect(105px, 9999px, 5px, 0);
+                transform: skew(0.1deg);
+            }
+            50% { 
+                clip: rect(45px, 9999px, 75px, 0);
+                transform: skew(0.3deg);
+            }
+            55% { 
+                clip: rect(20px, 9999px, 50px, 0);
+                transform: skew(0deg);
+            }
+            60% { 
+                clip: rect(90px, 9999px, 30px, 0);
+                transform: skew(0.5deg);
+            }
+            65% { 
+                clip: rect(60px, 9999px, 90px, 0);
+                transform: skew(0.2deg);
+            }
+            70% { 
+                clip: rect(10px, 9999px, 80px, 0);
+                transform: skew(0.4deg);
+            }
+            75% { 
+                clip: rect(70px, 9999px, 40px, 0);
+                transform: skew(0.1deg);
+            }
+            80% { 
+                clip: rect(40px, 9999px, 70px, 0);
+                transform: skew(0.3deg);
+            }
+            85% { 
+                clip: rect(100px, 9999px, 10px, 0);
+                transform: skew(0deg);
+            }
+            90% { 
+                clip: rect(50px, 9999px, 60px, 0);
+                transform: skew(0.5deg);
+            }
+            95% { 
+                clip: rect(80px, 9999px, 20px, 0);
+                transform: skew(0.2deg);
+            }
+            100% { 
+                clip: rect(30px, 9999px, 100px, 0);
+                transform: skew(0.4deg);
+            }
         }
 
-        @keyframes glitch-skew {
-            0% { transform: skew(0deg); }
-            10% { transform: skew(-2deg); }
-            20% { transform: skew(2deg); }
-            30% { transform: skew(-1deg); }
-            40% { transform: skew(1deg); }
-            50% { transform: skew(0deg); }
-            60% { transform: skew(0deg); }
-            70% { transform: skew(0deg); }
-            80% { transform: skew(0deg); }
-            90% { transform: skew(0deg); }
-            100% { transform: skew(0deg); }
+        /* Random flicker effect */
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            41%, 43% { opacity: 0.4; }
+            42% { opacity: 0.8; }
+            92%, 94% { opacity: 0.3; }
+            93% { opacity: 0.9; }
+        }
+
+        .glitch::before {
+            animation: glitch-anim 5s infinite linear alternate-reverse, flicker 3s infinite;
+        }
+
+        .glitch::after {
+            animation: glitch-anim2 3s infinite linear alternate-reverse, flicker 2s infinite;
         }
 
         /* Hero Section */
@@ -212,7 +441,7 @@
             color: var(--off-white);
             margin: 2rem 0 3rem;
             font-weight: 300;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.15em;
             text-transform: uppercase;
             opacity: 0;
             animation: fadeIn 1s ease 0.5s forwards;
@@ -247,6 +476,7 @@
             text-transform: uppercase;
             position: relative;
             overflow: hidden;
+            background: transparent;
         }
 
         .btn::before {
@@ -257,7 +487,8 @@
             width: 100%;
             height: 100%;
             background: rgba(255, 255, 255, 0.1);
-            transition: left 0.3s ease;
+            transition: left 0.5s ease;
+            transform: skewX(-20deg);
         }
 
         .btn:hover::before {
@@ -273,6 +504,7 @@
         .btn-primary:hover {
             background: transparent;
             color: var(--white);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
         }
 
         .btn-secondary {
@@ -284,6 +516,7 @@
         .btn-secondary:hover {
             background: var(--white);
             color: var(--black);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
         }
 
         /* Section Headers */
@@ -298,7 +531,7 @@
             font-size: clamp(2.5rem, 5vw, 4rem);
             font-weight: 700;
             margin-bottom: 1rem;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             font-family: 'Orbitron', monospace;
             text-transform: uppercase;
         }
@@ -321,13 +554,14 @@
         }
 
         .feature-card {
-            background: rgba(255, 255, 255, 0.02);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 3rem 2rem;
-            transition: all 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             opacity: 0;
             transform: translateY(30px);
+            backdrop-filter: blur(10px);
         }
 
         .feature-card::before {
@@ -338,17 +572,30 @@
             width: 0;
             height: 2px;
             background: var(--white);
-            transition: width 0.4s ease;
+            transition: width 0.5s ease;
         }
 
-        .feature-card:hover::before {
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 0;
+            height: 2px;
+            background: var(--white);
+            transition: width 0.5s ease;
+        }
+
+        .feature-card:hover::before,
+        .feature-card:hover::after {
             width: 100%;
         }
 
         .feature-card:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
             border-color: rgba(255, 255, 255, 0.3);
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .feature-icon {
@@ -370,7 +617,7 @@
         .feature-description {
             font-size: 0.95rem;
             color: var(--off-white);
-            line-height: 1.6;
+            line-height: 1.7;
             font-weight: 300;
         }
 
@@ -385,16 +632,19 @@
         .process-step {
             position: relative;
             padding: 2.5rem;
-            background: rgba(255, 255, 255, 0.02);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            transition: all 0.5s ease;
             opacity: 0;
             transform: translateY(30px);
+            backdrop-filter: blur(10px);
         }
 
         .process-step:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
             border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .step-number {
@@ -402,7 +652,7 @@
             font-weight: 900;
             font-family: 'Orbitron', monospace;
             color: var(--white);
-            opacity: 0.1;
+            opacity: 0.08;
             margin-bottom: 1rem;
             line-height: 1;
         }
@@ -419,24 +669,25 @@
         .step-description {
             font-size: 0.95rem;
             color: var(--off-white);
-            line-height: 1.6;
+            line-height: 1.7;
             font-weight: 300;
         }
 
         /* Privacy List */
         .privacy-box {
-            background: rgba(255, 255, 255, 0.02);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 3rem 2.5rem;
             margin-top: 3rem;
             opacity: 0;
             transform: translateY(30px);
+            backdrop-filter: blur(10px);
         }
 
         .privacy-list {
             list-style: none;
             font-size: 1.1rem;
-            line-height: 2.5;
+            line-height: 2.8;
         }
 
         .privacy-list li {
@@ -445,6 +696,7 @@
             color: var(--off-white);
             font-weight: 300;
             letter-spacing: 0.03em;
+            transition: all 0.3s ease;
         }
 
         .privacy-list li::before {
@@ -453,6 +705,16 @@
             left: 0;
             color: var(--white);
             font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .privacy-list li:hover {
+            color: var(--white);
+            transform: translateX(5px);
+        }
+
+        .privacy-list li:hover::before {
+            left: 5px;
         }
 
         /* Final CTA */
@@ -465,7 +727,7 @@
             font-size: clamp(2.5rem, 5vw, 4.5rem);
             font-weight: 700;
             margin-bottom: 1.5rem;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             font-family: 'Orbitron', monospace;
             text-transform: uppercase;
         }
@@ -487,6 +749,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -494,12 +757,13 @@
         }
 
         .modal-content {
-            background: var(--dark-gray);
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%);
             border: 2px solid rgba(255, 255, 255, 0.2);
             padding: 3rem;
             max-width: 500px;
             width: 90%;
-            animation: slideUp 0.3s ease;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
         }
 
         @keyframes slideUp {
@@ -519,7 +783,7 @@
             color: var(--white);
             font-weight: 600;
             font-family: 'Orbitron', monospace;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
         }
 
@@ -552,6 +816,7 @@
             outline: none;
             border-color: var(--white);
             background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
         }
 
         .modal-actions {
@@ -605,10 +870,11 @@
         /* Corner Brackets */
         .corner-bracket {
             position: fixed;
-            width: 40px;
-            height: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 50px;
+            height: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
             z-index: 101;
+            transition: all 0.3s ease;
         }
 
         .corner-bracket.top-left {
@@ -688,7 +954,11 @@
     <section class="content-section">
         <div class="section-container">
             <div class="hero-content">
-                <h1 class="glitch" data-text="ABYSSLINK">ABYSSLINK</h1>
+                <div class="glitch-wrapper">
+                    <h1 class="glitch" data-text="ABYSSLINK">
+                        <span style="--i:0">A</span><span style="--i:1">B</span><span style="--i:2">Y</span><span style="--i:3">S</span><span style="--i:4">S</span><span style="--i:5">L</span><span style="--i:6">I</span><span style="--i:7">N</span><span style="--i:8">K</span>
+                    </h1>
+                </div>
                 <p class="hero-subtitle">Anonymous • Ephemeral • Untraceable</p>
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
@@ -860,9 +1130,9 @@
 
         // === THREE.JS SETUP ===
         const scene = new THREE.Scene();
-        scene.fog = new THREE.Fog(0x000000, 8, 25);
+        scene.fog = new THREE.Fog(0x0f0f0f, 10, 30);
 
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
         const renderer = new THREE.WebGLRenderer({ 
             antialias: true,
             alpha: true
@@ -870,48 +1140,49 @@
         
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x000000, 0);
+        renderer.setClearColor(0x0f0f0f, 1);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // MINIMAL BLOOM FOR SUBTLE GLOW
+        // VERY SUBTLE BLOOM
         const composer = new THREE.EffectComposer(renderer);
         const renderPass = new THREE.RenderPass(scene, camera);
         composer.addPass(renderPass);
 
         const bloomPass = new THREE.UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.3,  // Very subtle
-            0.4,
+            0.2,  // Very subtle glow
+            0.5,
             0.95
         );
         composer.addPass(bloomPass);
 
-        // SAMURAI-INSPIRED GEOMETRY: Dodecahedron with modifiers
-        const geometry = new THREE.DodecahedronGeometry(2, 1);
+        // ICOSAHEDRON (More professional than dodecahedron)
+        const geometry = new THREE.IcosahedronGeometry(2.5, 2);
         
-        // Edges geometry for wireframe look
+        // Wireframe edges
         const edges = new THREE.EdgesGeometry(geometry);
         const lineMaterial = new THREE.LineBasicMaterial({ 
             color: 0xffffff,
             transparent: true,
-            opacity: 0.6
+            opacity: 0.4
         });
         const wireframe = new THREE.LineSegments(edges, lineMaterial);
         scene.add(wireframe);
 
-        // INNER CORE
-        const coreMaterial = new THREE.MeshBasicMaterial({
+        // Inner solid
+        const coreMaterial = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             transparent: true,
-            opacity: 0.05,
-            wireframe: false
+            opacity: 0.03,
+            roughness: 0.8,
+            metalness: 0.2
         });
         const core = new THREE.Mesh(geometry, coreMaterial);
         scene.add(core);
 
-        // ROTATING RINGS (Samurai aesthetic)
-        function createRing(radius, thickness, opacity) {
-            const ringGeo = new THREE.TorusGeometry(radius, thickness, 8, 32);
+        // ORBITAL RINGS
+        function createRing(radius, thickness, opacity, segments = 64) {
+            const ringGeo = new THREE.TorusGeometry(radius, thickness, 8, segments);
             const ringMat = new THREE.MeshBasicMaterial({ 
                 color: 0xffffff,
                 transparent: true,
@@ -921,73 +1192,78 @@
             return new THREE.Mesh(ringGeo, ringMat);
         }
 
-        const ring1 = createRing(3.5, 0.03, 0.4);
+        const ring1 = createRing(4, 0.02, 0.25);
         ring1.rotation.x = Math.PI / 2;
         scene.add(ring1);
 
-        const ring2 = createRing(4, 0.02, 0.3);
+        const ring2 = createRing(4.8, 0.015, 0.2);
         ring2.rotation.y = Math.PI / 3;
+        ring2.rotation.z = Math.PI / 6;
         scene.add(ring2);
 
-        const ring3 = createRing(4.5, 0.02, 0.2);
-        ring3.rotation.z = Math.PI / 4;
+        const ring3 = createRing(5.5, 0.01, 0.15);
+        ring3.rotation.x = Math.PI / 4;
+        ring3.rotation.y = Math.PI / 4;
         scene.add(ring3);
 
-        // PARTICLE FIELD (Cubes)
-        const particlesCount = 500;
-        const particlesGeometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
-        const particlesMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.3
-        });
-        
-        const particles = new THREE.InstancedMesh(particlesGeometry, particlesMaterial, particlesCount);
-        const dummy = new THREE.Object3D();
-        
-        const positions = [];
-        for(let i = 0; i < particlesCount; i++) {
-            const r = (Math.random() * 10) + 5;
+        // PARTICLE DUST FIELD
+        const particlesCount = 800;
+        const particlesGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particlesCount * 3);
+        const velocities = [];
+
+        for(let i = 0; i < particlesCount * 3; i += 3) {
+            const r = 8 + Math.random() * 12;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             
-            const x = r * Math.sin(phi) * Math.cos(theta);
-            const y = r * Math.sin(phi) * Math.sin(theta);
-            const z = r * Math.cos(phi);
-            
-            positions.push({ x, y, z });
-            
-            dummy.position.set(x, y, z);
-            dummy.rotation.set(
-                Math.random() * Math.PI,
-                Math.random() * Math.PI,
-                Math.random() * Math.PI
-            );
-            dummy.scale.setScalar(Math.random());
-            dummy.updateMatrix();
-            particles.setMatrixAt(i, dummy.matrix);
+            positions[i] = r * Math.sin(phi) * Math.cos(theta);
+            positions[i + 1] = r * Math.sin(phi) * Math.sin(theta);
+            positions[i + 2] = r * Math.cos(phi);
+
+            velocities.push({
+                x: (Math.random() - 0.5) * 0.02,
+                y: (Math.random() - 0.5) * 0.02,
+                z: (Math.random() - 0.5) * 0.02
+            });
         }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
         scene.add(particles);
 
-        // SUBTLE LIGHTING
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        // LIGHTING
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
         scene.add(ambientLight);
 
-        const pointLight = new THREE.PointLight(0xffffff, 0.5, 30);
-        pointLight.position.set(5, 5, 5);
-        scene.add(pointLight);
+        const pointLight1 = new THREE.PointLight(0xffffff, 0.6, 40);
+        pointLight1.position.set(8, 8, 8);
+        scene.add(pointLight1);
 
-        camera.position.z = 10;
+        const pointLight2 = new THREE.PointLight(0xffffff, 0.4, 40);
+        pointLight2.position.set(-8, -8, 8);
+        scene.add(pointLight2);
 
-        // MOUSE PARALLAX
+        camera.position.z = 12;
+
+        // MOUSE PARALLAX VARIABLES
         let mouseX = 0;
         let mouseY = 0;
-        let targetX = 0;
-        let targetY = 0;
+        let targetMouseX = 0;
+        let targetMouseY = 0;
 
         window.addEventListener('mousemove', (e) => {
-            mouseX = (e.clientX / window.innerWidth) - 0.5;
-            mouseY = (e.clientY / window.innerHeight) - 0.5;
+            targetMouseX = (e.clientX / window.innerWidth) - 0.5;
+            targetMouseY = (e.clientY / window.innerHeight) - 0.5;
         });
 
         // SCROLL ANIMATIONS WITH GSAP
@@ -1008,13 +1284,12 @@
             });
         });
 
-        // Animate feature cards
+        // Animate feature cards with stagger
         gsap.utils.toArray('.feature-card').forEach((card, index) => {
             gsap.to(card, {
                 opacity: 1,
                 y: 0,
                 duration: 0.8,
-                delay: index * 0.1,
                 scrollTrigger: {
                     trigger: card,
                     start: "top 85%",
@@ -1030,7 +1305,6 @@
                 opacity: 1,
                 y: 0,
                 duration: 0.8,
-                delay: index * 0.1,
                 scrollTrigger: {
                     trigger: step,
                     start: "top 85%",
@@ -1040,7 +1314,7 @@
             });
         });
 
-        // Animate privacy box
+        // Privacy box
         gsap.to('.privacy-box', {
             opacity: 1,
             y: 0,
@@ -1053,20 +1327,20 @@
             }
         });
 
-        // 3D SCENE SCROLL ANIMATION
+        // 3D scene scroll animation
         const scrollTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
                 end: "bottom bottom",
-                scrub: 1
+                scrub: 1.5
             }
         });
 
         scrollTimeline
-            .to(wireframe.rotation, { x: Math.PI * 2, y: Math.PI * 2, duration: 5 })
-            .to(core.rotation, { x: -Math.PI * 2, y: -Math.PI * 2, duration: 5 }, "<")
-            .to(camera.position, { z: 15, duration: 5 }, "<");
+            .to(camera.position, { z: 18, duration: 3 })
+            .to(wireframe.rotation, { x: Math.PI, y: Math.PI, duration: 3 }, "<")
+            .to(camera.position, { z: 8, duration: 3 });
 
         // ANIMATION LOOP
         const clock = new THREE.Clock();
@@ -1074,30 +1348,56 @@
         function animate() {
             const time = clock.getElapsedTime();
 
-            // Smooth mouse follow
-            targetX += (mouseX - targetX) * 0.05;
-            targetY += (mouseY - targetY) * 0.05;
+            // SMOOTH MOUSE FOLLOW
+            mouseX += (targetMouseX - mouseX) * 0.03;
+            mouseY += (targetMouseY - mouseY) * 0.03;
 
-            // Core rotation based on mouse
-            wireframe.rotation.x += 0.001;
-            wireframe.rotation.y += 0.002;
-            wireframe.rotation.x += targetY * 0.1;
-            wireframe.rotation.y += targetX * 0.1;
+            // WIREFRAME follows mouse (primary interaction)
+            wireframe.rotation.y = mouseX * 0.8;
+            wireframe.rotation.x = -mouseY * 0.8;
+            wireframe.rotation.z += 0.001;
 
-            core.rotation.x = wireframe.rotation.x;
-            core.rotation.y = wireframe.rotation.y;
+            core.rotation.copy(wireframe.rotation);
 
-            // Rings independent rotation
-            ring1.rotation.z = time * 0.1;
-            ring2.rotation.x = time * 0.12;
-            ring3.rotation.y = time * 0.08;
+            // RINGS independent rotation
+            ring1.rotation.z += 0.002;
+            ring2.rotation.x += 0.003;
+            ring3.rotation.y += 0.0015;
 
-            // Particles gentle movement
-            particles.rotation.y = time * 0.02;
+            // PARTICLES gentle drift
+            const positions = particles.geometry.attributes.position.array;
+            for(let i = 0; i < positions.length; i += 3) {
+                const vel = velocities[i / 3];
+                positions[i] += vel.x;
+                positions[i + 1] += vel.y;
+                positions[i + 2] += vel.z;
 
-            // Camera parallax
-            camera.position.x = targetX * 1;
-            camera.position.y = -targetY * 1;
+                // Boundary check - respawn if too far
+                const distance = Math.sqrt(
+                    positions[i] ** 2 + 
+                    positions[i + 1] ** 2 + 
+                    positions[i + 2] ** 2
+                );
+                
+                if (distance > 20) {
+                    const r = 8 + Math.random() * 4;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    
+                    positions[i] = r * Math.sin(phi) * Math.cos(theta);
+                    positions[i + 1] = r * Math.sin(phi) * Math.sin(theta);
+                    positions[i + 2] = r * Math.cos(phi);
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // CAMERA parallax
+            camera.position.x = mouseX * 2;
+            camera.position.y = -mouseY * 2;
+
+            // LIGHTS follow mouse
+            pointLight1.position.x = 8 + mouseX * 5;
+            pointLight1.position.y = 8 + mouseY * 5;
 
             composer.render();
             requestAnimationFrame(animate);
@@ -1166,7 +1466,7 @@
                 document.getElementById('successModal').style.display = 'flex';
 
             } catch (error) {
-                alert('Error creating room. Backend waking up (30s). Retry.');
+                alert('Error creating room. Backend waking up (~30s). Please retry.');
                 console.error(error);
             }
         }
