@@ -27,9 +27,8 @@
         
         :root {
             --black: #000000;
-            --dark-gray: #0f0f0f;
+            --dark-gray: #0a0a0a;
             --gray: #1a1a1a;
-            --dust-gray: #2a2a2a;
             --white: #ffffff;
             --off-white: #d0d0d0;
         }
@@ -59,23 +58,25 @@
             z-index: 0;
         }
 
-        /* Dusty atmospheric background */
-        body::before {
-            content: '';
+        /* Cloud background with fade on scroll */
+        .cloud-background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.01) 0%, transparent 70%);
+                radial-gradient(ellipse at 20% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 30%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 40% 70%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
+            opacity: 1;
+            transition: opacity 0.3s ease;
             pointer-events: none;
             z-index: 1;
         }
 
-        /* Film grain texture */
+        /* Film grain */
         body::after {
             content: '';
             position: fixed;
@@ -83,11 +84,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-            opacity: 0.4;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            opacity: 0.5;
             pointer-events: none;
             z-index: 2;
-            animation: grain 0.5s steps(10) infinite;
+            animation: grain 0.5s steps(8) infinite;
         }
 
         @keyframes grain {
@@ -114,7 +115,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(180deg, rgba(15,15,15,0.95) 0%, transparent 100%);
+            background: linear-gradient(180deg, rgba(10,10,10,0.95) 0%, transparent 100%);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
@@ -125,7 +126,6 @@
             color: var(--white);
             font-family: 'Orbitron', monospace;
             letter-spacing: 0.15em;
-            transition: transform 0.3s ease;
         }
 
         .nav-links {
@@ -181,7 +181,7 @@
             margin: 0 auto;
         }
 
-        /* ADVANCED GLITCH EFFECT */
+        /* ADVANCED INDIVIDUAL LETTER GLITCH */
         .glitch-wrapper {
             position: relative;
             display: inline-block;
@@ -196,238 +196,111 @@
             color: var(--white);
             text-transform: uppercase;
             display: inline-block;
-            will-change: transform;
         }
 
-        /* Individual letter animation */
-        .glitch span {
+        /* Each letter container */
+        .glitch-letter {
             display: inline-block;
             position: relative;
-            animation: letterFloat 3s ease-in-out infinite;
-            animation-delay: calc(var(--i) * 0.1s);
+            animation: letterFloat 4s ease-in-out infinite;
+            animation-delay: calc(var(--i) * 0.2s);
         }
 
+        /* Subtle float */
         @keyframes letterFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(1px, -2px); }
+            50% { transform: translate(-1px, 1px); }
+            75% { transform: translate(1px, 1px); }
         }
 
-        /* Glitch layers */
-        .glitch::before,
-        .glitch::after {
-            content: attr(data-text);
+        /* Individual letter glitch effect - frame pieces missing */
+        .glitch-letter::before,
+        .glitch-letter::after {
+            content: attr(data-letter);
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            opacity: 0.8;
+            opacity: 0;
         }
 
-        .glitch::before {
-            left: 2px;
-            text-shadow: -2px 0 rgba(255, 255, 255, 0.7);
-            clip: rect(44px, 450px, 56px, 0);
-            animation: glitch-anim 5s infinite linear alternate-reverse;
+        /* First fragment - top part */
+        .glitch-letter::before {
+            clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+            animation: glitchFragment1 calc(1s + var(--i) * 0.3s) infinite;
+            animation-delay: calc(var(--i) * 0.1s);
         }
 
-        .glitch::after {
-            left: -2px;
-            text-shadow: 2px 0 rgba(255, 255, 255, 0.7);
-            clip: rect(44px, 450px, 56px, 0);
-            animation: glitch-anim2 3s infinite linear alternate-reverse;
+        /* Second fragment - bottom part */
+        .glitch-letter::after {
+            clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+            animation: glitchFragment2 calc(1.2s + var(--i) * 0.3s) infinite;
+            animation-delay: calc(var(--i) * 0.15s);
         }
 
-        /* Technical glitch - parts breaking */
-        @keyframes glitch-anim {
-            0% { 
-                clip: rect(10px, 9999px, 31px, 0);
-                transform: skew(0.3deg);
+        @keyframes glitchFragment1 {
+            0%, 90% { 
+                opacity: 0; 
+                transform: translate(0, 0);
             }
-            5% { 
-                clip: rect(70px, 9999px, 71px, 0);
-                transform: skew(0.1deg);
+            91% { 
+                opacity: 1; 
+                transform: translate(-3px, -2px);
             }
-            10% { 
-                clip: rect(60px, 9999px, 80px, 0);
-                transform: skew(0.5deg);
-            }
-            15% { 
-                clip: rect(90px, 9999px, 100px, 0);
-                transform: skew(0.2deg);
-            }
-            20% { 
-                clip: rect(20px, 9999px, 95px, 0);
-                transform: skew(0.4deg);
-            }
-            25% { 
-                clip: rect(85px, 9999px, 40px, 0);
-                transform: skew(0deg);
-            }
-            30% { 
-                clip: rect(44px, 9999px, 56px, 0);
-                transform: skew(0.3deg);
-            }
-            35% { 
-                clip: rect(50px, 9999px, 90px, 0);
-                transform: skew(0.1deg);
-            }
-            40% { 
-                clip: rect(25px, 9999px, 45px, 0);
-                transform: skew(0.5deg);
-            }
-            45% { 
-                clip: rect(75px, 9999px, 35px, 0);
-                transform: skew(0deg);
-            }
-            50% { 
-                clip: rect(15px, 9999px, 85px, 0);
-                transform: skew(0.2deg);
-            }
-            55% { 
-                clip: rect(95px, 9999px, 25px, 0);
-                transform: skew(0.4deg);
-            }
-            60% { 
-                clip: rect(35px, 9999px, 75px, 0);
-                transform: skew(0.1deg);
-            }
-            65% { 
-                clip: rect(55px, 9999px, 65px, 0);
-                transform: skew(0.3deg);
-            }
-            70% { 
-                clip: rect(5px, 9999px, 105px, 0);
-                transform: skew(0deg);
-            }
-            75% { 
-                clip: rect(65px, 9999px, 15px, 0);
-                transform: skew(0.5deg);
-            }
-            80% { 
-                clip: rect(45px, 9999px, 55px, 0);
-                transform: skew(0.2deg);
-            }
-            85% { 
-                clip: rect(80px, 9999px, 30px, 0);
-                transform: skew(0.4deg);
-            }
-            90% { 
-                clip: rect(30px, 9999px, 70px, 0);
-                transform: skew(0.1deg);
+            93% { 
+                opacity: 0; 
+                transform: translate(2px, 1px);
             }
             95% { 
-                clip: rect(100px, 9999px, 20px, 0);
-                transform: skew(0.3deg);
+                opacity: 1; 
+                transform: translate(-1px, -1px);
             }
-            100% { 
-                clip: rect(40px, 9999px, 60px, 0);
-                transform: skew(0deg);
-            }
-        }
-
-        @keyframes glitch-anim2 {
-            0% { 
-                clip: rect(65px, 9999px, 100px, 0);
-                transform: skew(0.5deg);
-            }
-            5% { 
-                clip: rect(25px, 9999px, 45px, 0);
-                transform: skew(0.2deg);
-            }
-            10% { 
-                clip: rect(95px, 9999px, 15px, 0);
-                transform: skew(0.4deg);
-            }
-            15% { 
-                clip: rect(35px, 9999px, 85px, 0);
-                transform: skew(0.1deg);
-            }
-            20% { 
-                clip: rect(75px, 9999px, 55px, 0);
-                transform: skew(0.3deg);
-            }
-            25% { 
-                clip: rect(5px, 9999px, 105px, 0);
-                transform: skew(0deg);
-            }
-            30% { 
-                clip: rect(55px, 9999px, 35px, 0);
-                transform: skew(0.5deg);
-            }
-            35% { 
-                clip: rect(85px, 9999px, 65px, 0);
-                transform: skew(0.2deg);
-            }
-            40% { 
-                clip: rect(15px, 9999px, 95px, 0);
-                transform: skew(0.4deg);
-            }
-            45% { 
-                clip: rect(105px, 9999px, 5px, 0);
-                transform: skew(0.1deg);
-            }
-            50% { 
-                clip: rect(45px, 9999px, 75px, 0);
-                transform: skew(0.3deg);
-            }
-            55% { 
-                clip: rect(20px, 9999px, 50px, 0);
-                transform: skew(0deg);
-            }
-            60% { 
-                clip: rect(90px, 9999px, 30px, 0);
-                transform: skew(0.5deg);
-            }
-            65% { 
-                clip: rect(60px, 9999px, 90px, 0);
-                transform: skew(0.2deg);
-            }
-            70% { 
-                clip: rect(10px, 9999px, 80px, 0);
-                transform: skew(0.4deg);
-            }
-            75% { 
-                clip: rect(70px, 9999px, 40px, 0);
-                transform: skew(0.1deg);
-            }
-            80% { 
-                clip: rect(40px, 9999px, 70px, 0);
-                transform: skew(0.3deg);
-            }
-            85% { 
-                clip: rect(100px, 9999px, 10px, 0);
-                transform: skew(0deg);
-            }
-            90% { 
-                clip: rect(50px, 9999px, 60px, 0);
-                transform: skew(0.5deg);
-            }
-            95% { 
-                clip: rect(80px, 9999px, 20px, 0);
-                transform: skew(0.2deg);
-            }
-            100% { 
-                clip: rect(30px, 9999px, 100px, 0);
-                transform: skew(0.4deg);
+            97%, 100% { 
+                opacity: 0; 
+                transform: translate(0, 0);
             }
         }
 
-        /* Random flicker effect */
-        @keyframes flicker {
+        @keyframes glitchFragment2 {
+            0%, 88% { 
+                opacity: 0; 
+                transform: translate(0, 0);
+            }
+            89% { 
+                opacity: 1; 
+                transform: translate(2px, 2px);
+            }
+            91% { 
+                opacity: 0; 
+                transform: translate(-2px, -1px);
+            }
+            94% { 
+                opacity: 1; 
+                transform: translate(1px, 1px);
+            }
+            96%, 100% { 
+                opacity: 0; 
+                transform: translate(0, 0);
+            }
+        }
+
+        /* Random flicker on whole letter */
+        @keyframes letterFlicker {
             0%, 100% { opacity: 1; }
-            41%, 43% { opacity: 0.4; }
-            42% { opacity: 0.8; }
-            92%, 94% { opacity: 0.3; }
-            93% { opacity: 0.9; }
+            50% { opacity: 0.95; }
+            51% { opacity: 0.4; }
+            52% { opacity: 1; }
+            85% { opacity: 1; }
+            86% { opacity: 0.6; }
+            87% { opacity: 1; }
         }
 
-        .glitch::before {
-            animation: glitch-anim 5s infinite linear alternate-reverse, flicker 3s infinite;
-        }
-
-        .glitch::after {
-            animation: glitch-anim2 3s infinite linear alternate-reverse, flicker 2s infinite;
+        .glitch-letter {
+            animation: letterFloat 4s ease-in-out infinite, 
+                       letterFlicker calc(3s + var(--i) * 0.5s) infinite;
+            animation-delay: calc(var(--i) * 0.2s);
         }
 
         /* Hero Section */
@@ -717,6 +590,52 @@
             left: 5px;
         }
 
+        /* About Section */
+        .about-box {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 4rem 3rem;
+            margin-top: 3rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .about-box h3 {
+            font-size: 2rem;
+            font-family: 'Orbitron', monospace;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.08em;
+        }
+
+        .about-box p {
+            font-size: 1.1rem;
+            color: var(--off-white);
+            line-height: 1.9;
+            max-width: 800px;
+            margin: 0 auto 1.5rem;
+            font-weight: 300;
+        }
+
+        .tech-stack {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .tech-badge {
+            padding: 0.5rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
         /* Final CTA */
         .cta-section {
             text-align: center;
@@ -927,12 +846,17 @@
                 width: 30px;
                 height: 30px;
             }
+
+            .tech-stack {
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
 <body>
 
     <div id="canvas-container"></div>
+    <div class="cloud-background" id="cloudBg"></div>
 
     <!-- Corner Brackets -->
     <div class="corner-bracket top-left"></div>
@@ -946,6 +870,7 @@
         <div class="nav-links">
             <a href="#features" class="nav-link">Features</a>
             <a href="#protocol" class="nav-link">Protocol</a>
+            <a href="#about" class="nav-link">About</a>
             <a href="rooms.html" class="nav-link">Rooms</a>
         </div>
     </nav>
@@ -955,8 +880,8 @@
         <div class="section-container">
             <div class="hero-content">
                 <div class="glitch-wrapper">
-                    <h1 class="glitch" data-text="ABYSSLINK">
-                        <span style="--i:0">A</span><span style="--i:1">B</span><span style="--i:2">Y</span><span style="--i:3">S</span><span style="--i:4">S</span><span style="--i:5">L</span><span style="--i:6">I</span><span style="--i:7">N</span><span style="--i:8">K</span>
+                    <h1 class="glitch">
+                        <span class="glitch-letter" data-letter="A" style="--i:0">A</span><span class="glitch-letter" data-letter="B" style="--i:1">B</span><span class="glitch-letter" data-letter="Y" style="--i:2">Y</span><span class="glitch-letter" data-letter="S" style="--i:3">S</span><span class="glitch-letter" data-letter="S" style="--i:4">S</span><span class="glitch-letter" data-letter="L" style="--i:5">L</span><span class="glitch-letter" data-letter="I" style="--i:6">I</span><span class="glitch-letter" data-letter="N" style="--i:7">N</span><span class="glitch-letter" data-letter="K" style="--i:8">K</span>
                     </h1>
                 </div>
                 <p class="hero-subtitle">Anonymous • Ephemeral • Untraceable</p>
@@ -978,32 +903,32 @@
             
             <div class="features-grid">
                 <div class="feature-card">
-                    <span class="feature-icon">◼</span>
+                    <span class="feature-icon">🕵️</span>
                     <h3 class="feature-title">Anonymous</h3>
                     <p class="feature-description">No accounts. No usernames. No identity. Pure anonymity.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">◻</span>
+                    <span class="feature-icon">⏱️</span>
                     <h3 class="feature-title">24h Decay</h3>
                     <p class="feature-description">Auto-destruct after 24 hours. Or vanish instantly.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">◼</span>
+                    <span class="feature-icon">🔐</span>
                     <h3 class="feature-title">Encrypted</h3>
                     <p class="feature-description">Password-protected. Invite-only access control.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">◻</span>
+                    <span class="feature-icon">💬</span>
                     <h3 class="feature-title">Real-Time</h3>
                     <p class="feature-description">Instant messaging with file sharing capabilities.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">◼</span>
+                    <span class="feature-icon">🔥</span>
                     <h3 class="feature-title">Zero Trace</h3>
                     <p class="feature-description">No logs. No backups. No recovery systems.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">◻</span>
+                    <span class="feature-icon">👁️</span>
                     <h3 class="feature-title">No Tracking</h3>
                     <p class="feature-description">No analytics. No cookies. Complete privacy.</p>
                 </div>
@@ -1061,6 +986,34 @@
                     <li>No chat history retention protocols</li>
                     <li>No backup or recovery systems</li>
                 </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section class="content-section" id="about">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">About</h2>
+                <p class="section-description">The philosophy behind ephemeral communication</p>
+            </div>
+            
+            <div class="about-box">
+                <h3>BUILT FOR PRIVACY</h3>
+                <p>
+                    AbyssLink was created on the principle that true privacy isn't about hiding data—it's about never collecting it in the first place. Every conversation exists only in the moment, disappearing completely when its purpose is served.
+                </p>
+                <p>
+                    No servers can be compromised because there's nothing to compromise. No accounts can be hacked because none exist. Your conversations vanish into the abyss, leaving no trace behind.
+                </p>
+                
+                <div class="tech-stack">
+                    <span class="tech-badge">Node.js</span>
+                    <span class="tech-badge">Socket.IO</span>
+                    <span class="tech-badge">Docker</span>
+                    <span class="tech-badge">Three.js</span>
+                    <span class="tech-badge">Zero-Knowledge</span>
+                </div>
             </div>
         </div>
     </section>
@@ -1128,11 +1081,18 @@
         // Configuration
         const API_URL = 'https://abysslink.onrender.com';
 
-        // === THREE.JS SETUP ===
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.Fog(0x0f0f0f, 10, 30);
+        // === CLOUD FADE ON SCROLL ===
+        window.addEventListener('scroll', () => {
+            const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+            const cloudBg = document.getElementById('cloudBg');
+            cloudBg.style.opacity = Math.max(0, 1 - (scrollPercent * 2));
+        });
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        // === THREE.JS DETECTIVE SCENE ===
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x0a0a0a, 15, 40);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
         const renderer = new THREE.WebGLRenderer({ 
             antialias: true,
             alpha: true
@@ -1140,80 +1100,126 @@
         
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x0f0f0f, 1);
+        renderer.setClearColor(0x0a0a0a, 1);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // VERY SUBTLE BLOOM
+        // Subtle bloom
         const composer = new THREE.EffectComposer(renderer);
         const renderPass = new THREE.RenderPass(scene, camera);
         composer.addPass(renderPass);
 
         const bloomPass = new THREE.UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.2,  // Very subtle glow
-            0.5,
+            0.15,
+            0.6,
             0.95
         );
         composer.addPass(bloomPass);
 
-        // ICOSAHEDRON (More professional than dodecahedron)
-        const geometry = new THREE.IcosahedronGeometry(2.5, 2);
-        
-        // Wireframe edges
-        const edges = new THREE.EdgesGeometry(geometry);
-        const lineMaterial = new THREE.LineBasicMaterial({ 
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.4
-        });
-        const wireframe = new THREE.LineSegments(edges, lineMaterial);
-        scene.add(wireframe);
+        // DETECTIVE HAT & MAGNIFYING GLASS (symbolic privacy)
+        const hatGroup = new THREE.Group();
 
-        // Inner solid
-        const coreMaterial = new THREE.MeshStandardMaterial({
+        // Hat brim (cylinder)
+        const brimGeo = new THREE.CylinderGeometry(2, 2.2, 0.2, 32);
+        const brimMat = new THREE.MeshStandardMaterial({ 
             color: 0xffffff,
-            transparent: true,
-            opacity: 0.03,
-            roughness: 0.8,
-            metalness: 0.2
+            roughness: 0.7,
+            metalness: 0.3,
+            wireframe: false
         });
-        const core = new THREE.Mesh(geometry, coreMaterial);
-        scene.add(core);
+        const brim = new THREE.Mesh(brimGeo, brimMat);
+        brim.position.y = 0;
+        hatGroup.add(brim);
 
-        // ORBITAL RINGS
-        function createRing(radius, thickness, opacity, segments = 64) {
-            const ringGeo = new THREE.TorusGeometry(radius, thickness, 8, segments);
-            const ringMat = new THREE.MeshBasicMaterial({ 
+        // Hat crown (cone)
+        const crownGeo = new THREE.CylinderGeometry(1.2, 1.5, 1.5, 32);
+        const crown = new THREE.Mesh(crownGeo, brimMat);
+        crown.position.y = 0.85;
+        hatGroup.add(crown);
+
+        // Hat wireframe outline
+        const hatEdges = new THREE.EdgesGeometry(brimGeo);
+        const hatLine = new THREE.LineSegments(hatEdges, new THREE.LineBasicMaterial({ 
+            color: 0xffffff, 
+            transparent: true, 
+            opacity: 0.6 
+        }));
+        hatGroup.add(hatLine);
+
+        scene.add(hatGroup);
+
+        // MAGNIFYING GLASS
+        const glassGroup = new THREE.Group();
+
+        // Glass lens (torus for ring)
+        const lensRing = new THREE.Mesh(
+            new THREE.TorusGeometry(1.2, 0.08, 16, 32),
+            new THREE.MeshStandardMaterial({ 
+                color: 0xffffff, 
+                metalness: 0.9, 
+                roughness: 0.1 
+            })
+        );
+        glassGroup.add(lensRing);
+
+        // Lens surface (circle)
+        const lensSurface = new THREE.Mesh(
+            new THREE.CircleGeometry(1.2, 32),
+            new THREE.MeshStandardMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.1,
+                side: THREE.DoubleSide
+            })
+        );
+        glassGroup.add(lensSurface);
+
+        // Handle (cylinder)
+        const handle = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.1, 2, 16),
+            new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        handle.position.set(0, -2, 0);
+        handle.rotation.z = Math.PI / 6;
+        glassGroup.add(handle);
+
+        glassGroup.position.set(3, -1, 2);
+        glassGroup.rotation.x = Math.PI / 6;
+        scene.add(glassGroup);
+
+        // EYE SYMBOL (privacy surveillance)
+        const eyeGroup = new THREE.Group();
+
+        // Eye outline (ellipse)
+        const eyeOutline = new THREE.Mesh(
+            new THREE.TorusGeometry(1, 0.05, 16, 32, Math.PI),
+            new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+        eyeOutline.rotation.x = Math.PI / 2;
+        eyeGroup.add(eyeOutline);
+
+        // Pupil (sphere)
+        const pupil = new THREE.Mesh(
+            new THREE.SphereGeometry(0.4, 32, 32),
+            new THREE.MeshStandardMaterial({ 
                 color: 0xffffff,
-                transparent: true,
-                opacity: opacity,
-                wireframe: true
-            });
-            return new THREE.Mesh(ringGeo, ringMat);
-        }
+                emissive: 0xffffff,
+                emissiveIntensity: 0.3
+            })
+        );
+        eyeGroup.add(pupil);
 
-        const ring1 = createRing(4, 0.02, 0.25);
-        ring1.rotation.x = Math.PI / 2;
-        scene.add(ring1);
+        eyeGroup.position.set(-3, 1, 1);
+        scene.add(eyeGroup);
 
-        const ring2 = createRing(4.8, 0.015, 0.2);
-        ring2.rotation.y = Math.PI / 3;
-        ring2.rotation.z = Math.PI / 6;
-        scene.add(ring2);
-
-        const ring3 = createRing(5.5, 0.01, 0.15);
-        ring3.rotation.x = Math.PI / 4;
-        ring3.rotation.y = Math.PI / 4;
-        scene.add(ring3);
-
-        // PARTICLE DUST FIELD
-        const particlesCount = 800;
+        // PARTICLES
+        const particlesCount = 600;
         const particlesGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particlesCount * 3);
         const velocities = [];
 
         for(let i = 0; i < particlesCount * 3; i += 3) {
-            const r = 8 + Math.random() * 12;
+            const r = 10 + Math.random() * 15;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             
@@ -1222,9 +1228,9 @@
             positions[i + 2] = r * Math.cos(phi);
 
             velocities.push({
-                x: (Math.random() - 0.5) * 0.02,
-                y: (Math.random() - 0.5) * 0.02,
-                z: (Math.random() - 0.5) * 0.02
+                x: (Math.random() - 0.5) * 0.015,
+                y: (Math.random() - 0.5) * 0.015,
+                z: (Math.random() - 0.5) * 0.015
             });
         }
 
@@ -1232,9 +1238,9 @@
 
         const particlesMaterial = new THREE.PointsMaterial({
             color: 0xffffff,
-            size: 0.05,
+            size: 0.04,
             transparent: true,
-            opacity: 0.4,
+            opacity: 0.3,
             blending: THREE.AdditiveBlending
         });
 
@@ -1242,20 +1248,20 @@
         scene.add(particles);
 
         // LIGHTING
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
         scene.add(ambientLight);
 
-        const pointLight1 = new THREE.PointLight(0xffffff, 0.6, 40);
-        pointLight1.position.set(8, 8, 8);
-        scene.add(pointLight1);
+        const spotLight = new THREE.SpotLight(0xffffff, 1, 50, Math.PI / 6);
+        spotLight.position.set(10, 10, 10);
+        scene.add(spotLight);
 
-        const pointLight2 = new THREE.PointLight(0xffffff, 0.4, 40);
-        pointLight2.position.set(-8, -8, 8);
-        scene.add(pointLight2);
+        const rimLight = new THREE.PointLight(0x00d4ff, 0.5, 30);
+        rimLight.position.set(-10, 5, -5);
+        scene.add(rimLight);
 
-        camera.position.z = 12;
+        camera.position.z = 15;
 
-        // MOUSE PARALLAX VARIABLES
+        // MOUSE INTERACTION
         let mouseX = 0;
         let mouseY = 0;
         let targetMouseX = 0;
@@ -1266,10 +1272,10 @@
             targetMouseY = (e.clientY / window.innerHeight) - 0.5;
         });
 
-        // SCROLL ANIMATIONS WITH GSAP
+        // GSAP ANIMATIONS
         gsap.registerPlugin(ScrollTrigger);
 
-        // Animate section headers
+        // Section headers
         gsap.utils.toArray('.section-header').forEach((header) => {
             gsap.to(header, {
                 opacity: 1,
@@ -1284,8 +1290,8 @@
             });
         });
 
-        // Animate feature cards with stagger
-        gsap.utils.toArray('.feature-card').forEach((card, index) => {
+        // Feature cards
+        gsap.utils.toArray('.feature-card').forEach((card) => {
             gsap.to(card, {
                 opacity: 1,
                 y: 0,
@@ -1299,8 +1305,8 @@
             });
         });
 
-        // Animate process steps
-        gsap.utils.toArray('.process-step').forEach((step, index) => {
+        // Process steps
+        gsap.utils.toArray('.process-step').forEach((step) => {
             gsap.to(step, {
                 opacity: 1,
                 y: 0,
@@ -1314,33 +1320,35 @@
             });
         });
 
-        // Privacy box
-        gsap.to('.privacy-box', {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            scrollTrigger: {
-                trigger: '.privacy-box',
-                start: "top 80%",
-                end: "top 50%",
-                scrub: 1
-            }
+        // Privacy & About boxes
+        ['.privacy-box', '.about-box'].forEach(selector => {
+            gsap.to(selector, {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                scrollTrigger: {
+                    trigger: selector,
+                    start: "top 80%",
+                    end: "top 50%",
+                    scrub: 1
+                }
+            });
         });
 
-        // 3D scene scroll animation
+        // 3D scene scroll
         const scrollTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
                 end: "bottom bottom",
-                scrub: 1.5
+                scrub: 2
             }
         });
 
         scrollTimeline
-            .to(camera.position, { z: 18, duration: 3 })
-            .to(wireframe.rotation, { x: Math.PI, y: Math.PI, duration: 3 }, "<")
-            .to(camera.position, { z: 8, duration: 3 });
+            .to(camera.position, { z: 20, duration: 3 })
+            .to(hatGroup.rotation, { x: Math.PI * 2, y: Math.PI * 2, duration: 3 }, "<")
+            .to(camera.position, { z: 10, duration: 3 });
 
         // ANIMATION LOOP
         const clock = new THREE.Clock();
@@ -1348,23 +1356,26 @@
         function animate() {
             const time = clock.getElapsedTime();
 
-            // SMOOTH MOUSE FOLLOW
-            mouseX += (targetMouseX - mouseX) * 0.03;
-            mouseY += (targetMouseY - mouseY) * 0.03;
+            // Smooth mouse
+            mouseX += (targetMouseX - mouseX) * 0.02;
+            mouseY += (targetMouseY - mouseY) * 0.02;
 
-            // WIREFRAME follows mouse (primary interaction)
-            wireframe.rotation.y = mouseX * 0.8;
-            wireframe.rotation.x = -mouseY * 0.8;
-            wireframe.rotation.z += 0.001;
+            // Hat follows mouse
+            hatGroup.rotation.y = mouseX * 1.2;
+            hatGroup.rotation.x = -mouseY * 0.8;
+            hatGroup.rotation.z += 0.002;
 
-            core.rotation.copy(wireframe.rotation);
+            // Glass rotation
+            glassGroup.rotation.y = time * 0.3 + mouseX * 0.5;
+            glassGroup.rotation.x = Math.sin(time * 0.5) * 0.2;
 
-            // RINGS independent rotation
-            ring1.rotation.z += 0.002;
-            ring2.rotation.x += 0.003;
-            ring3.rotation.y += 0.0015;
+            // Eye follows mouse
+            eyeGroup.rotation.y = -mouseX * 0.8;
+            eyeGroup.rotation.x = mouseY * 0.5;
+            pupil.position.x = mouseX * 0.3;
+            pupil.position.y = -mouseY * 0.3;
 
-            // PARTICLES gentle drift
+            // Particles
             const positions = particles.geometry.attributes.position.array;
             for(let i = 0; i < positions.length; i += 3) {
                 const vel = velocities[i / 3];
@@ -1372,15 +1383,14 @@
                 positions[i + 1] += vel.y;
                 positions[i + 2] += vel.z;
 
-                // Boundary check - respawn if too far
                 const distance = Math.sqrt(
                     positions[i] ** 2 + 
                     positions[i + 1] ** 2 + 
                     positions[i + 2] ** 2
                 );
                 
-                if (distance > 20) {
-                    const r = 8 + Math.random() * 4;
+                if (distance > 25) {
+                    const r = 10 + Math.random() * 5;
                     const theta = Math.random() * Math.PI * 2;
                     const phi = Math.acos(2 * Math.random() - 1);
                     
@@ -1391,13 +1401,9 @@
             }
             particles.geometry.attributes.position.needsUpdate = true;
 
-            // CAMERA parallax
+            // Camera
             camera.position.x = mouseX * 2;
             camera.position.y = -mouseY * 2;
-
-            // LIGHTS follow mouse
-            pointLight1.position.x = 8 + mouseX * 5;
-            pointLight1.position.y = 8 + mouseY * 5;
 
             composer.render();
             requestAnimationFrame(animate);
