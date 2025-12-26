@@ -3,17 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Anonymous Ephemeral Chat</title>
+    <title>AbyssLink | Anonymous Ephemeral Infrastructure</title>
     
     <!-- IMPORTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/GlitchPass.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
@@ -27,24 +20,20 @@
         }
         
         :root {
-            --black: #000000;
-            --dark-gray: #050505;
-            --white: #ffffff;
-            --off-white: #d0d0d0;
-            --accent-blue: #2d4f6c;
-            --accent-purple: #4a4e69;
+            --bg: #030303;
+            --accent: #ffffff;
+            --dim: #444444;
+            --text-main: #e0e0e0;
+            --font-main: 'Rajdhani', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
         }
         
         body { 
-            background: var(--dark-gray);
-            color: var(--white);
-            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-main);
             overflow-x: hidden;
-            scrollbar-width: none; /* Firefox */
-        }
-        
-        body::-webkit-scrollbar { 
-            display: none; /* Chrome/Safari */
+            line-height: 1.6;
         }
 
         #canvas-container {
@@ -53,947 +42,474 @@
             left: 0;
             width: 100%;
             height: 100vh;
-            z-index: -1;
-            transition: opacity 1s ease;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        /* Subtle Noise Overlay for Texture */
-        .noise-overlay {
+        /* SECTION BACKGROUND TRANSITIONS */
+        .bg-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/%3E%3C/svg%3E');
+            z-index: 1;
             pointer-events: none;
-            z-index: 5;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            transition: background 1.5s ease;
         }
 
-        /* Scroll Progress Bar */
-        .scroll-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--white), rgba(255,255,255,0.2));
-            z-index: 1000;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-
-        /* Navigation */
+        /* NAVIGATION */
         nav {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 100;
-            padding: 2rem 4rem;
+            padding: 1.5rem 3rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(180deg, rgba(5,5,5,0.9) 0%, transparent 100%);
-            backdrop-filter: blur(5px);
-            transition: padding 0.3s ease;
-        }
-
-        nav.scrolled {
-            padding: 1.5rem 4rem;
-            background: rgba(5,5,5,0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
         .logo {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            color: var(--white);
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 0.2em;
+            font-family: var(--font-title);
+            letter-spacing: 0.3em;
+            color: var(--accent);
         }
 
         .nav-links {
             display: flex;
-            gap: 3rem;
+            gap: 2rem;
         }
 
         .nav-link {
-            color: var(--off-white);
+            color: var(--dim);
             text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-            font-weight: 500;
+            font-size: 0.8rem;
             letter-spacing: 0.1em;
             text-transform: uppercase;
+            transition: color 0.3s ease;
         }
 
-        .nav-link:hover {
-            color: var(--white);
-        }
+        .nav-link:hover { color: var(--accent); }
 
-        /* Content Sections */
-        .content-section {
+        /* CONTENT SECTIONS */
+        .section {
             position: relative;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 2rem;
             z-index: 10;
-            /* No background color, letting Three.js show through */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 10%;
         }
 
-        .section-container {
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        /* Typography & Glitch */
-        .hero-title {
-            font-size: clamp(3.5rem, 10vw, 9rem);
-            font-weight: 900;
-            font-family: 'Orbitron', monospace;
-            letter-spacing: -0.02em;
-            color: var(--white);
-            text-transform: uppercase;
-            line-height: 0.9;
-            margin-bottom: 1rem;
-            position: relative;
+        .container {
+            max-width: 1000px;
             opacity: 0;
             transform: translateY(30px);
         }
 
-        .hero-subtitle {
-            font-size: clamp(1rem, 1.5vw, 1.4rem);
-            color: var(--off-white);
-            margin-bottom: 3rem;
-            font-weight: 300;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        /* Professional Text Glitch Effect */
+        /* VANISHING GLITCH TITLE */
         .glitch-text {
-            position: relative;
-            display: inline-block;
-        }
-
-        .glitch-text::before,
-        .glitch-text::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--dark-gray); /* Matches body bg */
-        }
-
-        .glitch-text::before {
-            left: 2px;
-            text-shadow: -1px 0 #ff00c1;
-            clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
-            animation: glitch-anim-1 2.5s infinite linear alternate-reverse;
-        }
-
-        .glitch-text::after {
-            left: -2px;
-            text-shadow: -1px 0 #00fff9;
-            clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
-            animation: glitch-anim-2 3s infinite linear alternate-reverse;
-        }
-
-        @keyframes glitch-anim-1 {
-            0% { clip-path: inset(20% 0 80% 0); }
-            20% { clip-path: inset(60% 0 10% 0); }
-            40% { clip-path: inset(40% 0 50% 0); }
-            60% { clip-path: inset(80% 0 5% 0); }
-            80% { clip-path: inset(10% 0 60% 0); }
-            100% { clip-path: inset(30% 0 30% 0); }
-        }
-
-        @keyframes glitch-anim-2 {
-            0% { clip-path: inset(10% 0 60% 0); }
-            20% { clip-path: inset(30% 0 20% 0); }
-            40% { clip-path: inset(70% 0 10% 0); }
-            60% { clip-path: inset(20% 0 50% 0); }
-            80% { clip-path: inset(60% 0 20% 0); }
-            100% { clip-path: inset(5% 0 80% 0); }
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 1.2rem 3rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border: 1px solid var(--white);
-            background: transparent;
-            color: var(--white);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            font-family: 'Rajdhani', sans-serif;
+            font-family: var(--font-title);
+            font-size: clamp(3rem, 10vw, 7rem);
+            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.1em;
             position: relative;
-            overflow: hidden;
-            opacity: 0;
-            transform: translateY(20px);
+            margin-bottom: 1rem;
         }
 
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: var(--white);
-            transition: left 0.4s ease;
-            z-index: -1;
+        .glitch-text span {
+            display: inline-block;
+            position: relative;
+        }
+
+        /* Keyframe for vanishing parts of letters */
+        @keyframes vanish {
+            0%, 80%, 100% { opacity: 1; transform: scale(1); }
+            85% { opacity: 0; transform: scale(0.95) skewX(20deg); filter: blur(2px); }
+            90% { opacity: 0.5; transform: scale(1.05); }
+            95% { opacity: 0; transform: skewX(-20deg); }
+        }
+
+        .vanishing-letter {
+            animation: vanish 4s infinite;
+            animation-delay: var(--delay);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-bottom: 2rem;
+        }
+
+        /* GRID COMPONENTS */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 2rem;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 1px solid var(--accent);
+        }
+
+        .card h3 {
+            font-family: var(--font-title);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            color: var(--dim);
+        }
+
+        /* BUTTONS */
+        .btn {
+            background: none;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 1rem 3rem;
+            font-family: var(--font-title);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2rem;
+            display: inline-block;
+            text-decoration: none;
         }
 
         .btn:hover {
-            color: var(--black);
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
         }
 
-        .btn:hover::before {
-            left: 0;
+        /* FINAL ABOUT SECTION - SMALL & CLEAN */
+        .about-footer {
+            padding: 4rem 10%;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            z-index: 10;
+            position: relative;
+            background: #000;
         }
 
-        /* Section Headers */
-        .section-header {
-            margin-bottom: 4rem;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease-out;
-        }
-
-        .section-header.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .section-title {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-            letter-spacing: 0.05em;
-            font-family: 'Orbitron', monospace;
-            text-transform: uppercase;
-        }
-
-        .section-desc {
-            font-size: 1.1rem;
-            color: var(--off-white);
-            max-width: 600px;
-            font-weight: 300;
-            letter-spacing: 0.05em;
-        }
-
-        /* Feature Grid */
-        .features-grid {
+        .about-footer-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: 1fr 2fr;
             gap: 2rem;
-        }
-
-        .feature-item {
-            padding: 2.5rem;
-            border-left: 1px solid rgba(255,255,255,0.2);
-            background: linear-gradient(90deg, rgba(255,255,255,0.02) 0%, transparent 100%);
-            transition: all 0.4s ease;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        .feature-item.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .feature-item:hover {
-            border-left-color: var(--white);
-            background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 100%);
-            padding-left: 3rem;
-        }
-
-        .feature-name {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            color: var(--white);
-        }
-
-        .feature-text {
-            font-size: 0.95rem;
-            color: var(--off-white);
-            line-height: 1.6;
-            font-weight: 300;
-        }
-
-        /* Protocol Steps */
-        .process-steps {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            justify-content: space-between;
-        }
-
-        .step {
-            flex: 1 1 200px;
-            text-align: center;
-            opacity: 0;
-            transform: scale(0.9);
-            transition: all 0.5s ease;
-        }
-
-        .step.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .step-num {
-            font-family: 'Orbitron', monospace;
-            font-size: 4rem;
-            color: rgba(255,255,255,0.1);
-            line-height: 1;
-            margin-bottom: 1rem;
-            transition: color 0.3s;
-        }
-
-        .step:hover .step-num {
-            color: var(--white);
-        }
-
-        /* About Section */
-        .about-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 4rem;
-            margin-top: 2rem;
-        }
-
-        .about-text p {
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-            color: var(--off-white);
-            line-height: 1.8;
-            font-weight: 300;
-        }
-
-        .about-stats {
-            display: flex;
-            gap: 3rem;
-            margin-top: 3rem;
-            padding-top: 3rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .stat h4 {
-            font-size: 2.5rem;
-            font-family: 'Orbitron', monospace;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat span {
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.1em;
-            color: var(--off-white);
-        }
-
-        /* Contact Section */
-        .contact-container {
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        .contact-container.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(10px);
-            z-index: 2000;
-            justify-content: center;
             align-items: center;
         }
 
-        .modal-content {
-            background: rgba(20, 20, 20, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 3rem;
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-        }
-
-        .modal h2 {
-            font-family: 'Orbitron', monospace;
-            margin-bottom: 2rem;
-            text-transform: uppercase;
-        }
-
-        .input-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.8rem;
-            text-transform: uppercase;
+        .about-small {
+            font-size: 0.75rem;
+            color: #666;
             letter-spacing: 0.1em;
-            color: var(--off-white);
+            text-transform: uppercase;
+            max-width: 600px;
         }
 
-        .input-group input {
-            width: 100%;
-            padding: 1rem;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.3);
-            color: var(--white);
-            font-family: inherit;
-            font-size: 1rem;
+        .copyright {
+            font-size: 0.7rem;
+            color: #333;
+            font-family: var(--font-title);
         }
 
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--white);
-            background: rgba(255,255,255,0.05);
-        }
+        /* REMOVE SCROLLBAR FOR CLEAN LOOK */
+        body::-webkit-scrollbar { display: none; }
 
         @media (max-width: 768px) {
-            nav { padding: 1.5rem 2rem; }
-            .process-steps { flex-direction: column; }
-            .about-stats { flex-direction: column; gap: 1.5rem; }
+            .section { padding: 0 5%; }
+            .about-footer-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <div class="noise-overlay"></div>
-    <div class="scroll-bar" id="scrollBar"></div>
-
     <div id="canvas-container"></div>
+    <div class="bg-overlay" id="overlay"></div>
 
-    <!-- Navigation -->
-    <nav id="navbar">
-        <div class="logo">ABYSSLINK</div>
+    <nav>
+        <div class="logo">ABYSS.LNK</div>
         <div class="nav-links">
-            <a href="#features" class="nav-link">Core</a>
-            <a href="#protocol" class="nav-link">Protocol</a>
-            <a href="#about" class="nav-link">About</a>
-            <a href="#contact" class="nav-link">Contact</a>
+            <a href="#features" class="nav-link">System</a>
+            <a href="#protocol" class="nav-link">Core</a>
+            <a href="#privacy" class="nav-link">Nexus</a>
         </div>
     </nav>
 
-    <!-- HERO SECTION -->
-    <section class="content-section" id="hero">
-        <div class="section-container">
-            <div class="hero-title glitch-text" data-text="ABYSSLINK">
-                ABYSSLINK
-            </div>
-            <p class="hero-subtitle">Anonymous • Ephemeral • Untraceable</p>
-            <button class="btn" onclick="openModal()">Initialize Session</button>
+    <!-- HERO -->
+    <section class="section">
+        <div class="container" id="hero-content">
+            <h1 class="glitch-text" id="main-glitch"></h1>
+            <p class="subtitle">Ephemeral Communication Layer</p>
+            <a href="#cta" class="btn">Connect</a>
         </div>
     </section>
 
-    <!-- FEATURES SECTION -->
-    <section class="content-section" id="features">
-        <div class="section-container">
-            <div class="section-header">
-                <h2 class="section-title">Core Protocol</h2>
-                <p class="section-desc">A decentralized approach to ephemeral communication.</p>
-            </div>
-            
-            <div class="features-grid">
-                <div class="feature-item">
-                    <div class="feature-name">Anonymous</div>
-                    <div class="feature-text">Zero footprint. No accounts, no usernames, no IP logging. Pure anonymity.</div>
+    <!-- FEATURES -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2 class="subtitle">System Architecture</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>ZERO PERSISTENCE</h3>
+                    <p>In-memory processing ensures no data touch-points on physical disks.</p>
                 </div>
-                <div class="feature-item">
-                    <div class="feature-name">Ephemeral</div>
-                    <div class="feature-text">Self-destructing messages. Configurable decay from minutes to 24 hours.</div>
+                <div class="card">
+                    <h3>ASYMMETRIC TUNNEL</h3>
+                    <p>Dynamic routing pathways that dissolve upon session termination.</p>
                 </div>
-                <div class="feature-item">
-                    <div class="feature-name">Encrypted</div>
-                    <div class="feature-text">End-to-end encryption with zero-knowledge architecture. Server blind.</div>
+                <div class="card">
+                    <h3>ENTROPIC NODES</h3>
+                    <p>Nodes are generated randomly across a distributed mesh network.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- PROTOCOL SECTION -->
-    <section class="content-section" id="protocol">
-        <div class="section-container">
-            <div class="section-header">
-                <h2 class="section-title">The Process</h2>
-                <p class="section-desc">Four steps to secure communication.</p>
-            </div>
-            
-            <div class="process-steps">
-                <div class="step">
-                    <div class="step-num">01</div>
-                    <div class="feature-name">Create</div>
-                    <div class="feature-text">Generate a secure room ID.</div>
+    <!-- CORE PROTOCOL -->
+    <section class="section" id="protocol">
+        <div class="container">
+            <h2 class="subtitle">The Void Protocol</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>HANDSHAKE</h3>
+                    <p>A multi-factor cryptographic exchange with no identity exchange.</p>
                 </div>
-                <div class="step">
-                    <div class="step-num">02</div>
-                    <div class="feature-name">Distribute</div>
-                    <div class="feature-text">Share ID and password offline.</div>
+                <div class="card">
+                    <h3>TRANSMISSION</h3>
+                    <p>End-to-end encrypted packet flows with artificial latency jitter.</p>
                 </div>
-                <div class="step">
-                    <div class="step-num">03</div>
-                    <div class="feature-name">Execute</div>
-                    <div class="feature-text">Chat freely without metadata.</div>
-                </div>
-                <div class="step">
-                    <div class="step-num">04</div>
-                    <div class="feature-name">Terminate</div>
-                    <div class="feature-text">Keys are purged automatically.</div>
+                <div class="card">
+                    <h3>OBLIVION</h3>
+                    <p>Automated purging of all session metadata every 3600 seconds.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- PRIVACY SECTION -->
-    <section class="content-section" id="privacy">
-        <div class="section-container">
-            <div class="section-header">
-                <h2 class="section-title">Data Non-Existence</h2>
-                <p class="section-desc">We don't store data. We don't sell data. We don't have data.</p>
-            </div>
-            <div style="max-width: 800px; margin: 0 auto;">
-                <p style="font-size: 1.2rem; line-height: 1.8; color: var(--off-white);">
-                    Traditional privacy tools protect data after it is collected. 
-                    AbyssLink prevents data from existing in a recoverable state in the first place.
-                    Every message exists only in volatile memory, encrypted, and scattered across temporary nodes.
-                    When the timer expires, the memory is overwritten. 
-                    No backups. No logs. No possibility of recovery.
-                </p>
+    <!-- NEXUS -->
+    <section class="section" id="privacy">
+        <div class="container">
+            <h2 class="subtitle">Nexus Anonymity</h2>
+            <div class="card" style="max-width: 600px;">
+                <h3>NON-ATTRIBUTABLE DESIGN</h3>
+                <p>AbyssLink functions on the philosophy of the "White Room". Every user enters without a signature, communicates within a transient space, and leaves no footprints. Our wireframe infrastructure visualizes the complex routing paths that mask your origin point.</p>
             </div>
         </div>
     </section>
 
-    <!-- ABOUT US SECTION -->
-    <section class="content-section" id="about">
-        <div class="section-container">
-            <div class="about-grid">
-                <div class="about-text">
-                    <div class="section-header visible" style="margin-bottom: 2rem;">
-                        <h2 class="section-title">About Us</h2>
-                        <p class="section-desc">Built by cryptographers, for activists, journalists, and humans.</p>
-                    </div>
-                    <p>
-                        Founded in 2024, AbyssLink emerged from a simple premise: privacy shouldn't require configuration. 
-                        Our team consists of former security researchers and open-source contributors who grew tired of centralized surveillance.
-                    </p>
-                    <p>
-                        We believe that the future of the internet relies on ephemeral, decentralized protocols. 
-                        We are not a VC-backed startup with a monetization plan; we are a collective funded by grants and privacy-conscious donors.
-                    </p>
-                </div>
-                <div class="about-text">
-                    <div class="section-header visible" style="margin-bottom: 2rem;">
-                        <h2 class="section-title">The Stack</h2>
-                        <p class="section-desc">Technologies that respect privacy by design.</p>
-                    </div>
-                    <p>
-                        Our architecture utilizes WebRTC for peer-to-peer signaling without intermediaries.
-                        Encryption is handled by Signal Protocol ratcheting, ensuring forward secrecy.
-                        The UI is built with raw WebGL to avoid fingerprinting heavy frameworks.
-                    </p>
-                    
-                    <div class="about-stats">
-                        <div class="stat">
-                            <h4>0</h4>
-                            <span>Data Points Stored</span>
-                        </div>
-                        <div class="stat">
-                            <h4>256</h4>
-                            <span>Bit Encryption</span>
-                        </div>
-                        <div class="stat">
-                            <h4>100%</h4>
-                            <span>Open Source</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- CTA -->
+    <section class="section" id="cta" style="text-align: center; align-items: center;">
+        <div class="container" style="max-width: 100%;">
+            <h2 class="glitch-text" style="font-size: clamp(2rem, 6vw, 4rem);">Initialize Session</h2>
+            <p class="subtitle" style="margin-top: 1rem;">Vanish into the Abyss</p>
+            <button class="btn" style="margin-top: 3rem;">Begin Transmission</button>
         </div>
     </section>
 
-    <!-- CONTACT SECTION -->
-    <section class="content-section" id="contact">
-        <div class="section-container contact-container">
-            <div class="section-header visible">
-                <h2 class="section-title">Contact</h2>
-                <p class="section-desc">We do not track you. How can we help?</p>
-            </div>
-            <p style="margin-bottom: 2rem; color: var(--off-white);">
-                We use PGP for all sensitive communication. 
-                Please verify the fingerprint before sending sensitive information.
-            </p>
-            <button class="btn" onclick="alert('PGP Key Copied to Clipboard (Simulation)')">Get PGP Key</button>
-        </div>
-    </section>
-
-    <!-- CREATE ROOM MODAL -->
-    <div id="createModal" class="modal">
-        <div class="modal-content">
-            <h2>Create Session</h2>
-            <div class="input-group">
-                <label>Session Topic</label>
-                <input type="text" placeholder="e.g. Project Delta">
-            </div>
-            <div class="input-group">
-                <label>Password</label>
-                <input type="password" placeholder="********">
-            </div>
-            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
-                <button class="btn" onclick="closeModal()">Cancel</button>
-                <button class="btn" style="background: white; color: black;" onclick="closeModal()">Create</button>
+    <!-- ABOUT FOOTER -->
+    <footer class="about-footer">
+        <div class="about-footer-grid">
+            <div class="logo" style="font-size: 0.9rem; opacity: 0.5;">ABYSS.LNK</div>
+            <div class="about-small">
+                AbyssLink is a privacy-first research project exploring the limits of non-persistent digital communication. Built by a collective of security enthusiasts, we advocate for the right to vanish. No tracking, no logs, no remnants.
             </div>
         </div>
-    </div>
+        <div class="copyright" style="margin-top: 2rem; text-align: center;">
+            &copy; 2025 // NO_RIGHTS_RESERVED // OPEN_SOURCE_VOID
+        </div>
+    </footer>
 
     <script>
-        // === GSAP SETUP ===
-        gsap.registerPlugin(ScrollTrigger);
+        // --- TEXT INITIALIZATION (GLITCH) ---
+        const mainTitle = "ABYSSLINK";
+        const glitchContainer = document.getElementById('main-glitch');
+        
+        mainTitle.split('').forEach((char, i) => {
+            const span = document.createElement('span');
+            span.innerText = char;
+            span.className = 'vanishing-letter';
+            span.style.setProperty('--delay', `${Math.random() * 5}s`);
+            glitchContainer.appendChild(span);
+        });
 
-        // === THREE.JS SETUP ===
-        const container = document.getElementById('canvas-container');
+        // --- THREE.JS SETUP ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.035);
-
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 10;
-
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // === POST PROCESSING (Bloom + Glitch) ===
-        const composer = new THREE.EffectComposer(renderer);
-        const renderPass = new THREE.RenderPass(scene, camera);
-        composer.addPass(renderPass);
+        // --- HIGHER LEVEL ASSETS (WIREFRAMES) ---
+        
+        // 1. Complex Core (Hero)
+        const coreGeo = new THREE.IcosahedronGeometry(5, 1);
+        const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.2 });
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        scene.add(core);
 
-        // Bloom for atmosphere
-        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0;
-        bloomPass.strength = 0.4; // Subtle bloom
-        bloomPass.radius = 0.5;
-        composer.addPass(bloomPass);
+        const coreInnerGeo = new THREE.IcosahedronGeometry(3, 0);
+        const coreInner = new THREE.Mesh(coreInnerGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.4 }));
+        core.add(coreInner);
 
-        // Professional Glitch Pass (Off by default, controlled by ScrollTrigger)
-        const glitchPass = new THREE.GlitchPass();
-        glitchPass.goWild = false;
-        glitchPass.enabled = false;
-        composer.addPass(glitchPass);
-
-        // === CLOUDS / PARTICLES ASSETS ===
-        // Layer 1: Dense background fog particles
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particleCount = 2000;
-        const posArray = new Float32Array(particleCount * 3);
-        const randomArray = new Float32Array(particleCount * 3); // For animation
-
-        for(let i = 0; i < particleCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 40; // Spread wide
-            randomArray[i] = Math.random();
+        // 2. Cloud Simulation Particles
+        const cloudCount = 2000;
+        const cloudGeo = new THREE.BufferGeometry();
+        const cloudPositions = new Float32Array(cloudCount * 3);
+        for(let i=0; i < cloudCount * 3; i++) {
+            cloudPositions[i] = (Math.random() - 0.5) * 50;
         }
-
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        particlesGeometry.setAttribute('aRandom', new THREE.BufferAttribute(randomArray, 3));
-
-        // Custom shader for soft cloud smoke effect
-        const particlesMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                uTime: { value: 0 },
-                uColor: { value: new THREE.Color(0x888888) }
-            },
-            vertexShader: `
-                uniform float uTime;
-                attribute float aRandom;
-                varying float vAlpha;
-                void main() {
-                    vec3 pos = position;
-                    pos.x += sin(uTime * 0.1 + position.y * 0.1) * 0.5;
-                    pos.y += cos(uTime * 0.15 + position.x * 0.1) * 0.5;
-                    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-                    gl_Position = projectionMatrix * mvPosition;
-                    
-                    // Size attenuation
-                    gl_PointSize = (20.0 * aRandom + 10.0) * (1.0 / -mvPosition.z);
-                    
-                    // Distance alpha
-                    float dist = length(pos);
-                    vAlpha = smoothstep(20.0, 0.0, dist) * 0.4;
-                }
-            `,
-            fragmentShader: `
-                uniform vec3 uColor;
-                varying float vAlpha;
-                void main() {
-                    // Circular particle with soft edge
-                    vec2 center = gl_PointCoord - 0.5;
-                    float dist = length(center);
-                    if (dist > 0.5) discard;
-                    
-                    float strength = 1.0 - (dist * 2.0);
-                    strength = pow(strength, 2.0);
-                    
-                    gl_FragColor = vec4(uColor, strength * vAlpha);
-                }
-            `,
-            transparent: true,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending
+        cloudGeo.setAttribute('position', new THREE.BufferAttribute(cloudPositions, 3));
+        const cloudMat = new THREE.PointsMaterial({ 
+            size: 0.15, 
+            color: 0xffffff, 
+            transparent: true, 
+            opacity: 0.3, 
+            blending: THREE.AdditiveBlending 
         });
+        const cloudPoints = new THREE.Points(cloudGeo, cloudMat);
+        scene.add(cloudPoints);
 
-        const particleCloud = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(particleCloud);
+        // 3. Grid Mesh (Transition asset)
+        const gridGeo = new THREE.PlaneGeometry(100, 100, 40, 40);
+        const gridMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.05 });
+        const grid = new THREE.Mesh(gridGeo, gridMat);
+        grid.rotation.x = -Math.PI / 2;
+        grid.position.y = -10;
+        scene.add(grid);
 
-        // Layer 2: Geometric "Data" Shapes (Icosahedrons)
-        const geometryGroup = new THREE.Group();
-        scene.add(geometryGroup);
+        // 4. Data Sphere (Nexus)
+        const sphereGeo = new THREE.SphereGeometry(8, 32, 32);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
+        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+        scene.add(sphere);
 
-        const geoMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x2d4f6c, 
-            wireframe: true,
-            transparent: true,
-            opacity: 0.1
-        });
+        camera.position.z = 15;
 
-        // Create 3 large abstract shapes
-        for(let i=0; i<3; i++) {
-            const geom = new THREE.IcosahedronGeometry(Math.random() * 4 + 2, 1);
-            const mesh = new THREE.Mesh(geom, geoMaterial);
-            mesh.position.set(
-                (Math.random() - 0.5) * 30,
-                (Math.random() - 0.5) * 20,
-                (Math.random() - 0.5) * 10 - 10
-            );
-            geometryGroup.add(mesh);
-        }
+        // --- SCROLL ANIMATIONS (GSAP) ---
+        gsap.registerPlugin(ScrollTrigger);
 
-        // === INTERACTION & ANIMATION ===
-
-        // 1. Hero Animations
-        const tl = gsap.timeline();
-        tl.to('.hero-title', { opacity: 1, y: 0, duration: 1.5, ease: 'power3.out' })
-          .to('.hero-subtitle', { opacity: 1, y: 0, duration: 1.5, ease: 'power3.out' }, '-=1')
-          .to('.btn', { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=1');
-
-        // 2. Scroll Progress Bar
-        ScrollTrigger.create({
-            trigger: "body",
-            start: "top top",
-            end: "bottom bottom",
-            onUpdate: (self) => {
-                document.getElementById('scrollBar').style.width = (self.progress * 100) + '%';
-            }
-        });
-
-        // 3. Navbar style change
-        ScrollTrigger.create({
-            start: 'top -80',
-            onUpdate: (self) => {
-                const nav = document.getElementById('navbar');
-                if(self.direction === 1) { // Scrolling down
-                    nav.classList.add('scrolled');
-                } else {
-                    nav.classList.remove('scrolled');
-                }
-            }
-        });
-
-        // 4. Section Reveal Animations
-        gsap.utils.toArray('.section-header').forEach(header => {
-            gsap.to(header, {
+        // Fade in containers
+        document.querySelectorAll('.container').forEach(cont => {
+            gsap.to(cont, {
                 scrollTrigger: {
-                    trigger: header,
-                    start: "top 80%",
+                    trigger: cont,
+                    start: "top 85%",
                     toggleActions: "play none none reverse"
                 },
                 opacity: 1,
                 y: 0,
-                duration: 1
+                duration: 1.2,
+                ease: "power2.out"
             });
         });
 
-        gsap.utils.toArray('.feature-item').forEach((item, i) => {
-            gsap.to(item, {
-                scrollTrigger: {
-                    trigger: item,
-                    start: "top 85%"
-                },
-                opacity: 1,
-                y: 0,
-                duration: 0.8,
-                delay: i * 0.1
-            });
-        });
-
-        gsap.utils.toArray('.step').forEach((step, i) => {
-            gsap.to(step, {
-                scrollTrigger: {
-                    trigger: step,
-                    start: "top 85%"
-                },
-                opacity: 1,
-                scale: 1,
-                duration: 0.8,
-                delay: i * 0.15
-            });
-        });
-
-        gsap.to('.contact-container', {
-            scrollTrigger: {
-                trigger: '.contact-container',
-                start: "top 80%"
-            },
-            opacity: 1,
-            y: 0,
-            duration: 1
-        });
-
-        // === ADVANCED THREE.JS SCROLL ANIMATIONS ===
+        // Background color & Camera logic
+        const overlay = document.getElementById('overlay');
         
-        // Move camera and rotate scene based on scroll
-        // Creates the "different transitions as scrolling occurs" effect
-        
-        // Section 1 to 2: Move into clouds
-        gsap.to(camera.position, {
+        const scrollTimeline = gsap.timeline({
             scrollTrigger: {
-                trigger: "#features",
-                start: "top bottom",
-                end: "top top",
-                scrub: 1
-            },
-            z: 5, // Zoom in
-            y: -1
-        });
-
-        // Section 2 to 3: Rotate camera and rotate geometry
-        gsap.to(geometryGroup.rotation, {
-            scrollTrigger: {
-                trigger: "#protocol",
-                start: "top bottom",
-                end: "bottom top",
-                scrub: 1
-            },
-            y: Math.PI, // Spin shapes
-            x: 0.5
-        });
-
-        // Section 3 to 4: Fly through clouds faster, change fog color slightly (simulated by opacity)
-        gsap.to(particlesMaterial.uniforms.uColor.value, {
-            scrollTrigger: {
-                trigger: "#about",
-                start: "top bottom",
-                end: "center center",
-                scrub: 1
-            },
-            r: 0.2, g: 0.3, b: 0.4 // Darker mood
-        });
-
-        // Section 4: High speed zoom to "glitch" into contact
-        gsap.timeline({
-            scrollTrigger: {
-                trigger: "#contact",
-                start: "top bottom",
-                end: "top center",
-                scrub: 1
-            }
-        })
-        .to(camera.position, { z: 2 }, 0)
-        .to(geometryGroup.position, { z: -5 }, 0);
-
-        // PROFESSIONAL GLITCH TRIGGER
-        // Enable glitch pass only when scrolling quickly or at specific points
-        let scrollTimeout;
-        window.addEventListener('scroll', () => {
-            glitchPass.enabled = true;
-            glitchPass.curF = 50; // Duration of glitch frame
-            glitchPass.goWild = false; // Keep it aesthetic, not crazy
-
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                glitchPass.enabled = false;
-            }, 100); // Short glitch on scroll movement
-        });
-
-        // Also trigger a glitch when entering the About section
-        ScrollTrigger.create({
-            trigger: "#about",
-            start: "top 60%",
-            onEnter: () => {
-                glitchPass.enabled = true;
-                glitchPass.goWild = true; // Slightly wilder once
-                setTimeout(() => { glitchPass.enabled = false; }, 200);
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1.5
             }
         });
 
-        // === RENDER LOOP ===
-        const clock = new THREE.Clock();
+        scrollTimeline
+            // To System
+            .to(camera.position, { z: 25, y: 5, x: 2, duration: 2 })
+            .to(coreMat, { opacity: 0.05, duration: 1 }, "<")
+            .to(overlay, { background: "radial-gradient(circle at center, transparent 0%, rgba(10,15,30,0.8) 100%)", duration: 1 }, "<")
+            
+            // To Protocol
+            .to(camera.position, { z: 10, y: -5, x: -5, duration: 2 })
+            .to(grid.position, { y: 0, duration: 2 }, "<")
+            .to(gridMat, { opacity: 0.15, duration: 1 }, "<")
+            .to(overlay, { background: "radial-gradient(circle at center, transparent 0%, rgba(10,10,10,0.9) 100%)", duration: 1 }, "<")
+            
+            // To Nexus
+            .to(camera.position, { z: 30, y: 0, x: 0, duration: 2 })
+            .to(sphereMat, { opacity: 0.1, duration: 1 }, "<")
+            .to(sphere.rotation, { y: Math.PI, duration: 2 }, "<")
+            
+            // To CTA
+            .to(camera.position, { z: 5, y: 0, x: 0, duration: 2 })
+            .to(cloudMat, { size: 0.5, opacity: 0.5, duration: 1 }, "<")
+            .to(overlay, { background: "radial-gradient(circle at center, transparent 0%, rgba(20,0,0,0.3) 100%)", duration: 1 }, "<");
 
+        // --- RENDER LOOP ---
         function animate() {
-            const time = clock.getElapsedTime();
-            particlesMaterial.uniforms.uTime.value = time;
-
-            // Subtle ambient rotation
-            particleCloud.rotation.y = time * 0.05;
-            geometryGroup.rotation.x += 0.001;
-            geometryGroup.rotation.y += 0.001;
-
-            composer.render();
             requestAnimationFrame(animate);
+            
+            const time = Date.now() * 0.001;
+
+            // Subtle motions
+            core.rotation.y += 0.002;
+            core.rotation.x += 0.001;
+            coreInner.rotation.y -= 0.005;
+
+            sphere.rotation.y += 0.001;
+            
+            cloudPoints.rotation.y += 0.0005;
+            
+            // Cloud "Wave" Effect
+            const positions = cloudGeo.attributes.position.array;
+            for(let i=0; i<cloudCount; i++) {
+                const ix = i * 3;
+                positions[ix + 1] += Math.sin(time + positions[ix]) * 0.01;
+            }
+            cloudGeo.attributes.position.needsUpdate = true;
+
+            // Grid "Breathing"
+            grid.position.y += Math.sin(time * 0.5) * 0.005;
+
+            renderer.render(scene, camera);
         }
 
         animate();
 
-        // === RESIZE ===
+        // Handle Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // === MODAL ===
-        const modal = document.getElementById('createModal');
-        function openModal() {
-            modal.style.display = 'flex';
-        }
-        function closeModal() {
-            modal.style.display = 'none';
-        }
-        
-        // Close modal on outside click
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
+        // Smooth scrolling for links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
     </script>
 </body>
 </html>
