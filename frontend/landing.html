@@ -617,6 +617,9 @@
     </div>
 
     <script>
+        // Configuration - Backend URL
+        const API_URL = 'https://abysslink.onrender.com';
+
         // Generate particles
         function createParticles() {
             const hero = document.getElementById('hero');
@@ -680,7 +683,7 @@
             const password = document.getElementById('passwordInput').value;
 
             try {
-                const response = await fetch('http://localhost:5000/api/rooms/create', {
+                const response = await fetch(`${API_URL}/api/rooms/create`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ topic, password })

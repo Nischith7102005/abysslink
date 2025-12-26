@@ -465,6 +465,9 @@
 
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script>
+        // Configuration - Backend URL
+        const API_URL = 'https://abysslink.onrender.com';
+
         // Get room ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
@@ -475,7 +478,7 @@
         }
 
         // Initialize variables
-        const socket = io('http://localhost:5000');
+        const socket = io(API_URL);
         let mySocketId = null;
         let roomData = null;
         let timerInterval = null;
@@ -501,7 +504,7 @@
         // Join room with password
         async function joinRoom(password) {
             try {
-                const response = await fetch('http://localhost:5000/api/rooms/join', {
+                const response = await fetch(`${API_URL}/api/rooms/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ roomId, password })
@@ -587,7 +590,7 @@
             });
 
             socket.on('room_vanished', () => {
-                alert('This room has been destroyed');
+                alert('This room has been destroyed by the creator');
                 removeRoomFromStorage();
                 window.location.href = 'rooms.html';
             });
@@ -671,7 +674,7 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch(`http://localhost:5000/api/rooms/${roomId}/upload`, {
+                const response = await fetch(`${API_URL}/api/rooms/${roomId}/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -698,7 +701,7 @@
             }
 
             const fileEl = document.createElement('a');
-            fileEl.href = `http://localhost:5000${file.url}`;
+            fileEl.href = `${API_URL}${file.url}`;
             fileEl.target = '_blank';
             fileEl.className = 'file-item';
             fileEl.innerHTML = `
@@ -762,7 +765,7 @@
 
         // Confirm vanish
         function confirmVanish() {
-            if (!confirm('This will permanently destroy this room and all its contents.\n\nAre you absolutely sure?')) {
+            if (!confirm('⚠️ This will permanently destroy this room and all its contents for everyone.\n\nAre you absolutely sure?')) {
                 return;
             }
 
@@ -777,7 +780,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:5000/api/rooms/vanish', {
+                const response = await fetch(`${API_URL}/api/rooms/vanish`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
