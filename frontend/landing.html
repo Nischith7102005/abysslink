@@ -3,19 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Anonymous Ephemeral Chat</title>
+    <title>AbyssLink | Structural Privacy Protocol</title>
     
+    <!-- IMPORTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@500;800;900&display=swap" rel="stylesheet">
 
     <style>
         * { 
@@ -25,28 +20,21 @@
         }
         
         :root {
-            --black: #000000;
-            --dark-gray: #050508;
-            --gray: #12121a;
-            --white: #ffffff;
-            --off-white: #b8b8c0;
-            --accent: #6366f1;
+            --bg: #050505;
+            --accent: #ffffff;
+            --dim-text: #a0a0a0;
+            --font-body: 'Rajdhani', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --reading-width: 70ch;
         }
         
         body { 
-            background: var(--dark-gray);
-            color: var(--white);
-            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg);
+            color: var(--accent);
+            font-family: var(--font-body);
             overflow-x: hidden;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.15) transparent;
-        }
-
-        body::-webkit-scrollbar { width: 3px; }
-        body::-webkit-scrollbar-track { background: transparent; }
-        body::-webkit-scrollbar-thumb { 
-            background: rgba(255,255,255,0.15); 
-            border-radius: 2px; 
+            line-height: 1.8;
+            font-size: 18px; /* Optimized base for average reading */
         }
 
         #canvas-container {
@@ -56,1547 +44,462 @@
             width: 100%;
             height: 100vh;
             z-index: 0;
+            pointer-events: none;
         }
 
-        /* Section Backgrounds */
-        .section-bg {
+        /* SECTION BACKGROUND COLOR TRANSITIONS */
+        .scene-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
             z-index: -1;
-            opacity: 0;
-            transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #050505;
         }
 
-        .section-bg.active {
-            opacity: 1;
-        }
-
-        .bg-hero {
-            background: 
-                radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
-                linear-gradient(180deg, #050508 0%, #0a0a12 100%);
-        }
-
-        .bg-features {
-            background: 
-                radial-gradient(ellipse at 80% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 20% 70%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
-                linear-gradient(180deg, #0a0a12 0%, #080810 100%);
-        }
-
-        .bg-protocol {
-            background: 
-                radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 10% 90%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-                linear-gradient(180deg, #080810 0%, #06060c 100%);
-        }
-
-        .bg-privacy {
-            background: 
-                radial-gradient(ellipse at 90% 20%, rgba(99, 102, 241, 0.07) 0%, transparent 50%),
-                radial-gradient(ellipse at 30% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
-                linear-gradient(180deg, #06060c 0%, #050508 100%);
-        }
-
-        .bg-cta {
-            background: 
-                radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 60%),
-                linear-gradient(180deg, #050508 0%, #030306 100%);
-        }
-
-        /* Fog/Cloud Effect */
-        .fog-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.4;
-        }
-
-        .fog-1 {
-            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='fog'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='3' seed='1'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='60'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23fog)' fill='%23ffffff' opacity='0.03'/%3E%3C/svg%3E");
-            animation: fogDrift1 60s linear infinite;
-        }
-
-        .fog-2 {
-            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='fog2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='4' seed='5'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='50'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23fog2)' fill='%23ffffff' opacity='0.02'/%3E%3C/svg%3E");
-            animation: fogDrift2 80s linear infinite;
-            animation-delay: -20s;
-        }
-
-        @keyframes fogDrift1 {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
-        @keyframes fogDrift2 {
-            0% { transform: translateX(-50%); }
-            100% { transform: translateX(0); }
-        }
-
-        /* Navigation */
+        /* NAVIGATION */
         nav {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 100;
-            padding: 1.8rem 3rem;
+            padding: 1.5rem 4rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(180deg, rgba(5,5,8,0.95) 0%, transparent 100%);
-            backdrop-filter: blur(12px);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        nav.scrolled {
-            padding: 1.2rem 3rem;
-            background: rgba(5,5,8,0.98);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(180deg, rgba(5,5,5,1) 0%, transparent 100%);
         }
 
         .logo {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--white);
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 0.2em;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2.5rem;
-            align-items: center;
-        }
-
-        .nav-link {
-            color: var(--off-white);
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            letter-spacing: 0.08em;
+            font-size: 1.1rem;
+            font-weight: 800;
+            font-family: var(--font-title);
+            letter-spacing: 0.4em;
+            color: var(--accent);
             text-transform: uppercase;
-            position: relative;
         }
 
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: var(--white);
-            transition: width 0.3s ease;
-        }
-
-        .nav-link:hover::after { width: 100%; }
-        .nav-link:hover { color: var(--white); }
-
-        /* Content Sections */
-        .content-section {
+        /* CONTENT STYLING */
+        .section {
             position: relative;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 2rem;
             z-index: 10;
-        }
-
-        .section-container {
-            max-width: 1300px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 5rem 0;
-        }
-
-        /* VANISHING GLITCH EFFECT */
-        .glitch-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-
-        .glitch {
-            position: relative;
-            font-size: clamp(3.5rem, 11vw, 10rem);
-            font-weight: 900;
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 0.08em;
-            color: var(--white);
-            text-transform: uppercase;
-            display: inline-block;
-        }
-
-        .glitch-letter {
-            display: inline-block;
-            position: relative;
-            animation: letterVanish calc(4s + var(--i) * 0.5s) ease-in-out infinite;
-            animation-delay: calc(var(--i) * 0.3s);
-        }
-
-        @keyframes letterVanish {
-            0%, 85%, 100% { 
-                opacity: 1;
-                transform: translateY(0) scaleY(1);
-                filter: blur(0);
-            }
-            88% { 
-                opacity: 0.3;
-                transform: translateY(-2px) scaleY(0.95);
-                filter: blur(1px);
-            }
-            90% { 
-                opacity: 0;
-                transform: translateY(3px) scaleY(0.8);
-                filter: blur(2px);
-            }
-            92% { 
-                opacity: 0;
-                transform: translateY(-5px) scaleY(0.6);
-                filter: blur(3px);
-            }
-            94% { 
-                opacity: 0.5;
-                transform: translateY(2px) scaleY(0.9);
-                filter: blur(1px);
-            }
-            96% {
-                opacity: 0.2;
-                transform: translateY(-1px) scaleY(1);
-                filter: blur(0.5px);
-            }
-        }
-
-        .glitch-letter::before {
-            content: attr(data-letter);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 50%;
-            overflow: hidden;
-            color: rgba(99, 102, 241, 0.8);
-            clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
-            animation: glitchSliceTop calc(6s + var(--i) * 0.3s) ease-in-out infinite;
-            animation-delay: calc(var(--i) * 0.2s);
-            opacity: 0;
-        }
-
-        .glitch-letter::after {
-            content: attr(data-letter);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            color: rgba(168, 85, 247, 0.6);
-            clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
-            animation: glitchSliceBottom calc(7s + var(--i) * 0.4s) ease-in-out infinite;
-            animation-delay: calc(var(--i) * 0.25s);
-            opacity: 0;
-        }
-
-        @keyframes glitchSliceTop {
-            0%, 90%, 100% { 
-                opacity: 0;
-                transform: translate(0, 0);
-            }
-            92% { 
-                opacity: 1;
-                transform: translate(-4px, -2px);
-            }
-            94% { 
-                opacity: 0.5;
-                transform: translate(3px, 1px);
-            }
-            96% { 
-                opacity: 0;
-            }
-        }
-
-        @keyframes glitchSliceBottom {
-            0%, 88%, 100% { 
-                opacity: 0;
-                transform: translate(0, 0);
-            }
-            90% { 
-                opacity: 1;
-                transform: translate(3px, 2px);
-            }
-            93% { 
-                opacity: 0.5;
-                transform: translate(-2px, -1px);
-            }
-            95% { 
-                opacity: 0;
-            }
-        }
-
-        /* Hero Section */
-        .hero-content {
-            text-align: center;
-            padding: 0 2rem;
-        }
-
-        .hero-subtitle {
-            font-size: clamp(0.9rem, 1.8vw, 1.2rem);
-            color: var(--off-white);
-            margin: 2rem 0 3rem;
-            font-weight: 300;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            opacity: 0;
-            animation: fadeIn 1s ease 0.5s forwards;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        /* Buttons */
-        .btn-group {
             display: flex;
-            gap: 1.5rem;
+            flex-direction: column;
             justify-content: center;
-            flex-wrap: wrap;
+            padding: 0 10%;
+        }
+
+        .container {
+            max-width: var(--reading-width);
             opacity: 0;
-            animation: fadeIn 1s ease 1s forwards;
+            transform: translateY(20px);
         }
 
-        .btn {
-            padding: 1.1rem 2.8rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: 0;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            text-decoration: none;
-            display: inline-block;
-            font-family: 'Rajdhani', sans-serif;
-            border: none;
-            letter-spacing: 0.12em;
+        /* FAST VANISHING GLITCH TITLE */
+        .glitch-text {
+            font-family: var(--font-title);
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            color: var(--accent);
             text-transform: uppercase;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .btn:hover::before { left: 100%; }
-
-        .btn-primary {
-            background: var(--white);
-            color: var(--black);
-            border: 1px solid var(--white);
-        }
-
-        .btn-primary:hover {
-            background: transparent;
-            color: var(--white);
-            box-shadow: 0 0 40px rgba(255,255,255,0.2);
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.4);
-            color: var(--white);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--white);
-            box-shadow: 0 0 30px rgba(255,255,255,0.15);
-            transform: translateY(-2px);
-        }
-
-        /* Section Headers */
-        .section-header {
-            text-align: center;
-            margin-bottom: 4rem;
-            opacity: 0;
-            transform: translateY(40px);
-        }
-
-        .section-header.visible {
-            opacity: 1;
-            transform: translateY(0);
-            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .section-title {
-            font-size: clamp(2rem, 4vw, 3.2rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-            letter-spacing: 0.1em;
-            font-family: 'Orbitron', monospace;
-            text-transform: uppercase;
-        }
-
-        .section-description {
-            font-size: 1rem;
-            color: var(--off-white);
-            max-width: 550px;
-            margin: 1.5rem auto 0;
-            font-weight: 300;
-            letter-spacing: 0.04em;
-            line-height: 1.7;
-        }
-
-        /* Feature Grid */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .feature-card {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.06);
-            padding: 2.5rem 2rem;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            opacity: 0;
-            transform: translateY(40px);
-            backdrop-filter: blur(10px);
-        }
-
-        .feature-card.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .feature-card::before,
-        .feature-card::after {
-            content: '';
-            position: absolute;
-            background: rgba(255,255,255,0.5);
-            transition: all 0.5s ease;
-        }
-
-        .feature-card::before {
-            top: 0;
-            left: 0;
-            width: 0;
-            height: 1px;
-        }
-
-        .feature-card::after {
-            bottom: 0;
-            right: 0;
-            width: 0;
-            height: 1px;
-        }
-
-        .feature-card:hover::before,
-        .feature-card:hover::after {
-            width: 100%;
-        }
-
-        .feature-card:hover {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.15);
-            transform: translateY(-8px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        }
-
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 1.5rem;
-            stroke: var(--white);
-            stroke-width: 1;
-            fill: none;
-            opacity: 0.8;
-            transition: all 0.3s ease;
-        }
-
-        .feature-card:hover .feature-icon {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .feature-title {
-            font-size: 1.15rem;
-            font-weight: 600;
-            margin-bottom: 0.6rem;
-            color: var(--white);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .feature-description {
-            font-size: 0.9rem;
-            color: var(--off-white);
-            line-height: 1.7;
-            font-weight: 300;
-        }
-
-        /* Process Steps */
-        .process-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 2rem;
-        }
-
-        .process-step {
-            position: relative;
-            padding: 2rem;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.06);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-            transform: translateX(-30px);
-            backdrop-filter: blur(10px);
-        }
-
-        .process-step.visible {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .process-step:hover {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.15);
-            transform: translateY(-5px);
-        }
-
-        .step-number {
-            font-size: 4rem;
-            font-weight: 900;
-            font-family: 'Orbitron', monospace;
-            color: var(--white);
-            opacity: 0.06;
-            margin-bottom: 0.5rem;
-            line-height: 1;
-        }
-
-        .step-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.4rem;
-            color: var(--white);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .step-description {
-            font-size: 0.9rem;
-            color: var(--off-white);
-            line-height: 1.6;
-            font-weight: 300;
-        }
-
-        /* Privacy List */
-        .privacy-box {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.06);
-            padding: 2.5rem;
-            opacity: 0;
-            transform: scale(0.97);
-            backdrop-filter: blur(10px);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .privacy-box.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .privacy-list {
-            list-style: none;
-            font-size: 1rem;
-            line-height: 2.5;
-            columns: 2;
-            column-gap: 3rem;
-        }
-
-        .privacy-list li {
-            position: relative;
-            padding-left: 1.5rem;
-            color: var(--off-white);
-            font-weight: 300;
-            letter-spacing: 0.02em;
-            transition: all 0.3s ease;
-            break-inside: avoid;
-        }
-
-        .privacy-list li::before {
-            content: "//";
-            position: absolute;
-            left: 0;
-            color: rgba(255,255,255,0.3);
-            font-weight: 400;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.8rem;
-        }
-
-        .privacy-list li:hover {
-            color: var(--white);
-            transform: translateX(5px);
-        }
-
-        /* CTA Section */
-        .cta-section {
-            text-align: center;
-            padding: 6rem 2rem;
-        }
-
-        .cta-title {
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-            letter-spacing: 0.1em;
-            font-family: 'Orbitron', monospace;
-            text-transform: uppercase;
-        }
-
-        .cta-description {
-            font-size: 1.1rem;
-            color: var(--off-white);
-            margin-bottom: 2.5rem;
-            font-weight: 300;
             letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
         }
 
-        /* About Section - Small & Last */
-        .about-section {
-            padding: 3rem 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
+        .glitch-text span {
+            display: inline-block;
+            position: relative;
+        }
+
+        @keyframes rapidVanish {
+            0%, 70%, 100% { opacity: 1; transform: scale(1) translate(0); filter: blur(0); }
+            72% { opacity: 0; transform: scale(0.9) translate(-5px, 2px); filter: blur(2px); }
+            74% { opacity: 1; transform: scale(1.1) translate(5px, -2px); }
+            76% { opacity: 0; transform: translate(0); }
+            78% { opacity: 1; }
+        }
+
+        .vanishing-letter {
+            animation: rapidVanish 3s infinite;
+            animation-delay: var(--delay);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--dim-text);
+            margin-bottom: 2.5rem;
+            font-weight: 600;
+        }
+
+        p {
+            font-size: 1.25rem; /* Ideal for desktop reading distance */
+            color: var(--dim-text);
+            margin-bottom: 2rem;
+            max-width: 60ch;
+        }
+
+        /* GRID COMPONENTS */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
             margin-top: 2rem;
         }
 
-        .about-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 3rem;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .about-content.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .about-text {
-            flex: 1;
-            max-width: 500px;
-        }
-
-        .about-text h4 {
-            font-size: 0.75rem;
-            letter-spacing: 0.2em;
-            color: var(--off-white);
+        .card h3 {
+            font-family: var(--font-title);
+            font-size: 0.85rem;
             margin-bottom: 0.8rem;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+        }
+
+        .card p {
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        /* BUTTONS */
+        .btn {
+            background: var(--accent);
+            border: none;
+            color: var(--bg);
+            padding: 1.2rem 3.5rem;
+            font-family: var(--font-title);
+            font-weight: 800;
             text-transform: uppercase;
-            font-weight: 500;
-        }
-
-        .about-text p {
-            font-size: 0.9rem;
-            color: var(--off-white);
-            line-height: 1.7;
-            font-weight: 300;
-        }
-
-        .about-links {
-            display: flex;
-            gap: 2rem;
-        }
-
-        .about-link {
-            color: var(--off-white);
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
             text-decoration: none;
-            font-size: 0.8rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            transition: color 0.3s ease;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255,255,255,0.3);
+        }
+
+        /* ABOUT FOOTER */
+        .about-footer {
+            padding: 3rem 10% 5rem;
+            z-index: 10;
             position: relative;
+            background: #000;
         }
 
-        .about-link::after {
-            content: '';
-            position: absolute;
-            bottom: -3px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: var(--white);
-            transition: width 0.3s ease;
+        .about-small {
+            font-size: 0.85rem;
+            color: #555;
+            letter-spacing: 0.05em;
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+            border-top: 1px solid #222;
+            padding-top: 2rem;
         }
 
-        .about-link:hover {
-            color: var(--white);
-        }
-
-        .about-link:hover::after {
-            width: 100%;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(15px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: rgba(15,15,20,0.98);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 2.5rem;
-            max-width: 450px;
-            width: 90%;
-            animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes modalIn {
-            from { transform: translateY(20px) scale(0.98); opacity: 0; }
-            to { transform: translateY(0) scale(1); opacity: 1; }
-        }
-
-        .modal-content h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1.8rem;
-            color: var(--white);
-            font-weight: 600;
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .form-group {
-            margin-bottom: 1.3rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.4rem;
-            color: var(--off-white);
-            font-size: 0.8rem;
-            font-weight: 500;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.9rem 1rem;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(0,0,0,0.4);
-            color: var(--white);
-            font-size: 0.95rem;
-            font-family: inherit;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: rgba(255,255,255,0.4);
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.8rem;
-        }
-
-        .modal-actions .btn {
-            flex: 1;
-            padding: 1rem;
-        }
-
-        /* Scroll Indicator */
-        .scroll-indicator {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 50;
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
-
-        .scroll-indicator.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .scroll-indicator span {
-            display: block;
-            width: 20px;
-            height: 30px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 10px;
-            position: relative;
-        }
-
-        .scroll-indicator span::before {
-            content: '';
-            position: absolute;
-            top: 6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 3px;
-            height: 6px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 2px;
-            animation: scrollPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes scrollPulse {
-            0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            50% { opacity: 0.3; transform: translateX(-50%) translateY(6px); }
-        }
+        /* REMOVE SCROLLBAR */
+        body::-webkit-scrollbar { display: none; }
 
         @media (max-width: 768px) {
-            nav { padding: 1.2rem 1.5rem; }
-            .nav-links { gap: 1.5rem; }
-            .nav-link { font-size: 0.75rem; }
-            .features-grid, .process-grid { grid-template-columns: 1fr; }
-            .privacy-list { columns: 1; }
-            .about-content { flex-direction: column; text-align: center; }
-            .about-links { justify-content: center; }
-            .modal-actions { flex-direction: column; }
+            .section { padding: 0 5%; }
+            .grid { grid-template-columns: 1fr; }
+            body { font-size: 16px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Section Backgrounds -->
-    <div class="section-bg bg-hero active" id="bgHero"></div>
-    <div class="section-bg bg-features" id="bgFeatures"></div>
-    <div class="section-bg bg-protocol" id="bgProtocol"></div>
-    <div class="section-bg bg-privacy" id="bgPrivacy"></div>
-    <div class="section-bg bg-cta" id="bgCta"></div>
-
-    <!-- Fog Layers -->
-    <div class="fog-layer fog-1"></div>
-    <div class="fog-layer fog-2"></div>
-
-    <!-- Three.js Canvas -->
+    <div class="scene-bg" id="bg-manager"></div>
     <div id="canvas-container"></div>
 
-    <!-- Navigation -->
-    <nav id="mainNav">
-        <div class="logo">ABYSSLINK</div>
-        <div class="nav-links">
-            <a href="#features" class="nav-link">Features</a>
-            <a href="#protocol" class="nav-link">Protocol</a>
-            <a href="#privacy" class="nav-link">Privacy</a>
-        </div>
+    <nav>
+        <div class="logo">ABYSSLINK.SYS</div>
     </nav>
 
-    <!-- Scroll Indicator -->
-    <div class="scroll-indicator" id="scrollIndicator">
-        <span></span>
-    </div>
+    <!-- SECTION 1: HERO (THE CORE) -->
+    <section class="section" id="hero">
+        <div class="container">
+            <h1 class="glitch-text" id="hero-glitch"></h1>
+            <p class="subtitle">Structural Void Protocol</p>
+            <p>Architecting environments where data exists only in transit. No persistence, no trail, absolute structural anonymity.</p>
+            <a href="#features" class="btn">Initialize</a>
+        </div>
+    </section>
 
-    <!-- HERO SECTION -->
-    <section class="content-section" id="hero" data-section="hero">
-        <div class="section-container">
-            <div class="hero-content">
-                <div class="glitch-wrapper">
-                    <h1 class="glitch">
-                        <span class="glitch-letter" data-letter="A" style="--i:0">A</span><span class="glitch-letter" data-letter="B" style="--i:1">B</span><span class="glitch-letter" data-letter="Y" style="--i:2">Y</span><span class="glitch-letter" data-letter="S" style="--i:3">S</span><span class="glitch-letter" data-letter="S" style="--i:4">S</span><span class="glitch-letter" data-letter="L" style="--i:5">L</span><span class="glitch-letter" data-letter="I" style="--i:6">I</span><span class="glitch-letter" data-letter="N" style="--i:7">N</span><span class="glitch-letter" data-letter="K" style="--i:8">K</span>
-                    </h1>
+    <!-- SECTION 2: SYSTEM (THE GRID) -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2 class="glitch-text" id="sys-glitch" style="font-size: 3.5rem;">Network</h2>
+            <p class="subtitle">Distributed Mesh</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>NODAL ENTROPY</h3>
+                    <p>Randomized node propagation across a global wireframe architecture.</p>
                 </div>
-                <p class="hero-subtitle">Anonymous / Ephemeral / Untraceable</p>
-                <div class="btn-group">
-                    <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
-                    <a href="#features" class="btn btn-secondary">Explore</a>
+                <div class="card">
+                    <h3>ZERO STATE</h3>
+                    <p>Every session generates a new cryptographic root, purged on exit.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- FEATURES SECTION -->
-    <section class="content-section" id="features" data-section="features">
-        <div class="section-container">
-            <div class="section-header">
-                <h2 class="section-title">Core Protocol</h2>
-                <p class="section-description">Engineered for absolute privacy and ephemeral communication architecture</p>
-            </div>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <svg class="feature-icon" viewBox="0 0 48 48">
-                        <circle cx="24" cy="24" r="10" stroke-dasharray="4 2"/>
-                        <circle cx="24" cy="24" r="18"/>
-                        <line x1="24" y1="6" x2="24" y2="2"/>
-                        <line x1="24" y1="46" x2="24" y2="42"/>
-                        <line x1="6" y1="24" x2="2" y2="24"/>
-                        <line x1="46" y1="24" x2="42" y2="24"/>
-                    </svg>
-                    <h3 class="feature-title">Anonymous</h3>
-                    <p class="feature-description">No accounts. No usernames. No identity traces. Complete anonymity.</p>
+    <!-- SECTION 3: PROTOCOL (THE HELIX) -->
+    <section class="section" id="protocol">
+        <div class="container">
+            <h2 class="glitch-text" id="pro-glitch" style="font-size: 3.5rem;">Protocol</h2>
+            <p class="subtitle">The Void Handshake</p>
+            <p>Secure asymmetric tunneling utilizing quantum-resistant noise generation to mask packet frequency and metadata origin.</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>OBSFUCATION</h3>
+                    <p>Layered noise injection to neutralize pattern analysis.</p>
                 </div>
-                <div class="feature-card">
-                    <svg class="feature-icon" viewBox="0 0 48 48">
-                        <circle cx="24" cy="24" r="20"/>
-                        <polyline points="24,12 24,24 32,28"/>
-                        <path d="M40,24 A16,16 0 0,1 24,40" stroke-dasharray="3 2"/>
-                    </svg>
-                    <h3 class="feature-title">24h Decay</h3>
-                    <p class="feature-description">Auto-destruct protocol after 24 hours. Or vanish instantly on demand.</p>
-                </div>
-                <div class="feature-card">
-                    <svg class="feature-icon" viewBox="0 0 48 48">
-                        <rect x="14" y="22" width="20" height="18" rx="2"/>
-                        <path d="M18,22 V16 A6,6 0 0,1 30,16 V22"/>
-                        <circle cx="24" cy="32" r="2"/>
-                        <line x1="24" y1="34" x2="24" y2="36"/>
-                    </svg>
-                    <h3 class="feature-title">Encrypted</h3>
-                    <p class="feature-description">Password-protected rooms with invite-only access control systems.</p>
-                </div>
-                <div class="feature-card">
-                    <svg class="feature-icon" viewBox="0 0 48 48">
-                        <rect x="6" y="10" width="26" height="18" rx="2"/>
-                        <rect x="16" y="20" width="26" height="18" rx="2"/>
-                        <line x1="22" y1="26" x2="36" y2="26"/>
-                        <line x1="22" y1="30" x2="32" y2="30"/>
-                    </svg>
-                    <h3 class="feature-title">Real-Time</h3>
-                    <p class="feature-description">Instant messaging with file sharing capabilities across all devices.</p>
-                </div>
-                <div class="feature-card">
-                    <svg class="feature-icon" viewBox="0 0 48 48">
-                        <path d="M24,4 L24,14 M24,34 L24,44"/>
-                        <path d="M14,14 L24,24 L34,14"/>
-                        <path d="M14,34 L24,24 L34,34"/>
-                        <circle cx="24" cy="24" r="4"/>
-                    </svg>
-                    <h3 class="feature-title">Zero Trace</h3>
-                    <p class="feature-description">No logs. No backups. No recovery systems. Complete data void.</p>
-                </div>
-                <div class="feature-card">
-                    <svg class="feature-icon" viewBox="0 0 48 48">
-                        <circle cx="24" cy="20" r="8"/>
-                        <circle cx="24" cy="20" r="3"/>
-                        <path d="M10,20 Q24,35 38,20"/>
-                        <line x1="4" y1="4" x2="44" y2="44" stroke-dasharray="4 3"/>
-                    </svg>
-                    <h3 class="feature-title">No Tracking</h3>
-                    <p class="feature-description">No analytics. No cookies. No fingerprinting. Complete privacy.</p>
+                <div class="card">
+                    <h3>PURGE</h3>
+                    <p>Instantaneous memory-wipe protocols for all active buffers.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- PROTOCOL SECTION -->
-    <section class="content-section" id="protocol" data-section="protocol">
-        <div class="section-container">
-            <div class="section-header">
-                <h2 class="section-title">Protocol</h2>
-                <p class="section-description">Four-step secure communication process</p>
-            </div>
-            
-            <div class="process-grid">
-                <div class="process-step">
-                    <div class="step-number">01</div>
-                    <h3 class="step-title">Initialize</h3>
-                    <p class="step-description">Set topic and password. Receive unique invite link and creator key.</p>
-                </div>
-                <div class="process-step">
-                    <div class="step-number">02</div>
-                    <h3 class="step-title">Distribute</h3>
-                    <p class="step-description">Share link through private channels. Transmit password separately.</p>
-                </div>
-                <div class="process-step">
-                    <div class="step-number">03</div>
-                    <h3 class="step-title">Communicate</h3>
-                    <p class="step-description">Anonymous real-time messaging. Encrypted file transfer enabled.</p>
-                </div>
-                <div class="process-step">
-                    <div class="step-number">04</div>
-                    <h3 class="step-title">Terminate</h3>
-                    <p class="step-description">24h auto-destruct or manual instant deletion with creator key.</p>
-                </div>
-            </div>
+    <!-- SECTION 4: NEXUS (THE SPHERE) -->
+    <section class="section" id="privacy">
+        <div class="container">
+            <h2 class="glitch-text" id="priv-glitch" style="font-size: 3.5rem;">Anonymity</h2>
+            <p class="subtitle">Invisible Presence</p>
+            <p>You are not a user; you are a temporary signature. AbyssLink removes the burden of identity, allowing for pure, unlinked communication.</p>
         </div>
     </section>
 
-    <!-- PRIVACY SECTION -->
-    <section class="content-section" id="privacy" data-section="privacy">
-        <div class="section-container">
-            <div class="section-header">
-                <h2 class="section-title">Privacy Architecture</h2>
-                <p class="section-description">True privacy through data non-existence</p>
-            </div>
-            
-            <div class="privacy-box">
-                <ul class="privacy-list">
-                    <li>No user accounts or registration</li>
-                    <li>No permanent message storage</li>
-                    <li>No tracking or analytics</li>
-                    <li>No participant identification</li>
-                    <li>No chat history retention</li>
-                    <li>No backup or recovery systems</li>
-                </ul>
-            </div>
+    <!-- SECTION 5: CTA -->
+    <section class="section" id="cta" style="align-items: center; text-align: center;">
+        <div class="container" style="max-width: 100%;">
+            <h2 class="glitch-text" id="cta-glitch" style="font-size: 4rem;">Vanish</h2>
+            <p class="subtitle">Final Termination Point</p>
+            <button class="btn">Enter the Abyss</button>
         </div>
     </section>
 
-    <!-- CTA SECTION -->
-    <section class="content-section" id="cta" data-section="cta">
-        <div class="section-container">
-            <div class="cta-section">
-                <h2 class="cta-title">Initialize Session</h2>
-                <p class="cta-description">Create room. Communicate. Vanish.</p>
-                <button class="btn btn-primary" onclick="openCreateModal()" style="padding: 1.2rem 3.5rem;">
-                    Begin
-                </button>
-            </div>
-
-            <!-- ABOUT SECTION - Small & Last -->
-            <div class="about-section" id="about">
-                <div class="about-content">
-                    <div class="about-text">
-                        <h4>About AbyssLink</h4>
-                        <p>Built on the principle that true privacy means never collecting data in the first place. Every conversation exists only in the moment, vanishing completely into the abyss.</p>
-                    </div>
-                    <div class="about-links">
-                        <a href="#" class="about-link" target="_blank">Documentation</a>
-                        <a href="#" class="about-link" target="_blank">GitHub</a>
-                        <a href="#" class="about-link" target="_blank">Contact</a>
-                    </div>
-                </div>
-            </div>
+    <!-- ABOUT SECTION - SMALL, AT THE VERY END -->
+    <footer class="about-footer">
+        <div class="about-small">
+            AbyssLink is a non-profit security collective focused on decentralized, non-attributable infrastructure. We develop open-source tools to protect the digital right to be forgotten.
+            <br><br>
+            // NODE_256 // ENCRYPTED_OBLIVION // 2025
         </div>
-    </section>
-
-    <!-- CREATE ROOM MODAL -->
-    <div id="createModal" class="modal">
-        <div class="modal-content">
-            <h2>Create Room</h2>
-            <form id="createForm" onsubmit="handleCreateRoom(event)">
-                <div class="form-group">
-                    <label>Topic</label>
-                    <input type="text" id="topicInput" required placeholder="Room topic" autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="passwordInput" required placeholder="Set password" autocomplete="off">
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn btn-primary">Create</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    </footer>
 
     <script>
-        // === THREE.JS SCENE ===
+        // --- TEXT INITIALIZATION (FAST GLITCH) ---
+        function applyGlitch(id, text) {
+            const container = document.getElementById(id);
+            text.split('').forEach((char, i) => {
+                const span = document.createElement('span');
+                span.innerText = char === ' ' ? '\u00A0' : char;
+                span.className = 'vanishing-letter';
+                span.style.setProperty('--delay', `${Math.random() * 2}s`);
+                container.appendChild(span);
+            });
+        }
+
+        applyGlitch('hero-glitch', 'ABYSSLINK');
+        applyGlitch('sys-glitch', 'NETWORK');
+        applyGlitch('pro-glitch', 'PROTOCOL');
+        applyGlitch('priv-glitch', 'ANONYMITY');
+        applyGlitch('cta-glitch', 'VANISH');
+
+        // --- THREE.JS SCENE SETUP ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Post-processing
-        const composer = new THREE.EffectComposer(renderer);
-        composer.addPass(new THREE.RenderPass(scene, camera));
-        
-        const bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.4, 0.6, 0.9
+        // --- ASSET GROUPS (Unrelated Wireframes per section) ---
+        const heroGroup = new THREE.Group();
+        const sysGroup = new THREE.Group();
+        const proGroup = new THREE.Group();
+        const privGroup = new THREE.Group();
+        const ctaGroup = new THREE.Group();
+
+        scene.add(heroGroup, sysGroup, proGroup, privGroup, ctaGroup);
+
+        // 1. Hero: Icosahedron Core
+        const core = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(8, 1),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.15 })
         );
-        composer.addPass(bloomPass);
+        heroGroup.add(core);
 
-        // Materials
-        const wireMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.15
-        });
-
-        const lineMaterial = new THREE.LineBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.1
-        });
-
-        // === ADVANCED 3D ASSETS ===
-        const assetsGroup = new THREE.Group();
-        scene.add(assetsGroup);
-
-        // 1. LOCK - Security/Encryption
-        const lockGroup = new THREE.Group();
-        const lockBody = new THREE.Mesh(
-            new THREE.BoxGeometry(2.5, 3, 1),
-            wireMaterial.clone()
-        );
-        lockBody.position.y = -0.5;
-        lockGroup.add(lockBody);
-
-        const shackleGeom = new THREE.TorusGeometry(1, 0.2, 8, 16, Math.PI);
-        const shackle = new THREE.Mesh(shackleGeom, wireMaterial.clone());
-        shackle.rotation.z = Math.PI;
-        shackle.position.y = 1;
-        lockGroup.add(shackle);
-
-        const keyhole = new THREE.Mesh(
-            new THREE.CircleGeometry(0.3, 16),
-            wireMaterial.clone()
-        );
-        keyhole.position.z = 0.51;
-        keyhole.position.y = -0.3;
-        lockGroup.add(keyhole);
-
-        lockGroup.position.set(0, 0, -15);
-        lockGroup.visible = true;
-        assetsGroup.add(lockGroup);
-
-        // 2. NETWORK NODES - Communication
-        const networkGroup = new THREE.Group();
-        const nodePositions = [
-            [0, 0, 0], [3, 2, 1], [-3, 2, -1], [3, -2, -1], [-3, -2, 1],
-            [0, 3, 2], [0, -3, -2], [4, 0, -2], [-4, 0, 2]
-        ];
-
-        nodePositions.forEach(pos => {
-            const node = new THREE.Mesh(
-                new THREE.IcosahedronGeometry(0.3, 0),
-                wireMaterial.clone()
-            );
-            node.position.set(...pos);
-            networkGroup.add(node);
-        });
-
-        // Connection lines
-        const connections = [
-            [0, 1], [0, 2], [0, 3], [0, 4], [1, 5], [2, 5], [3, 6], [4, 6],
-            [1, 7], [3, 7], [2, 8], [4, 8], [5, 7], [5, 8], [6, 7], [6, 8]
-        ];
-
-        connections.forEach(([a, b]) => {
-            const points = [
-                new THREE.Vector3(...nodePositions[a]),
-                new THREE.Vector3(...nodePositions[b])
-            ];
-            const line = new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints(points),
-                lineMaterial.clone()
-            );
-            networkGroup.add(line);
-        });
-
-        networkGroup.position.set(0, 0, -15);
-        networkGroup.visible = false;
-        assetsGroup.add(networkGroup);
-
-        // 3. HOURGLASS - Ephemeral/Time
-        const hourglassGroup = new THREE.Group();
-        
-        const topCone = new THREE.Mesh(
-            new THREE.ConeGeometry(1.5, 2.5, 6, 1, true),
-            wireMaterial.clone()
-        );
-        topCone.position.y = 1.25;
-        hourglassGroup.add(topCone);
-
-        const bottomCone = new THREE.Mesh(
-            new THREE.ConeGeometry(1.5, 2.5, 6, 1, true),
-            wireMaterial.clone()
-        );
-        bottomCone.rotation.x = Math.PI;
-        bottomCone.position.y = -1.25;
-        hourglassGroup.add(bottomCone);
-
-        const center = new THREE.Mesh(
-            new THREE.TorusGeometry(0.3, 0.08, 8, 16),
-            wireMaterial.clone()
-        );
-        center.rotation.x = Math.PI / 2;
-        hourglassGroup.add(center);
-
-        // Sand particles
-        for (let i = 0; i < 30; i++) {
-            const sand = new THREE.Mesh(
-                new THREE.SphereGeometry(0.05, 4, 4),
-                wireMaterial.clone()
-            );
-            sand.position.set(
-                (Math.random() - 0.5) * 1,
-                Math.random() * 2 - 2.5,
-                (Math.random() - 0.5) * 1
-            );
-            hourglassGroup.add(sand);
+        // 2. System: Floating Data Nodes
+        const nodeGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        for(let i=0; i<40; i++) {
+            const node = new THREE.Mesh(nodeGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.1 }));
+            node.position.set((Math.random()-0.5)*40, (Math.random()-0.5)*40, (Math.random()-0.5)*40);
+            node.rotation.set(Math.random(), Math.random(), 0);
+            sysGroup.add(node);
         }
 
-        hourglassGroup.position.set(0, 0, -15);
-        hourglassGroup.visible = false;
-        assetsGroup.add(hourglassGroup);
-
-        // 4. SHIELD - Privacy
-        const shieldGroup = new THREE.Group();
-        
-        const shieldShape = new THREE.Shape();
-        shieldShape.moveTo(0, 2);
-        shieldShape.quadraticCurveTo(2, 1.5, 2, 0);
-        shieldShape.quadraticCurveTo(2, -1.5, 0, -2.5);
-        shieldShape.quadraticCurveTo(-2, -1.5, -2, 0);
-        shieldShape.quadraticCurveTo(-2, 1.5, 0, 2);
-
-        const shieldGeom = new THREE.ShapeGeometry(shieldShape);
-        const shield = new THREE.Mesh(shieldGeom, wireMaterial.clone());
-        shieldGroup.add(shield);
-
-        const shieldEdge = new THREE.LineLoop(
-            new THREE.BufferGeometry().setFromPoints(shieldShape.getPoints(32)),
-            new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 })
-        );
-        shieldGroup.add(shieldEdge);
-
-        // Inner cross
-        const crossV = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(0, 1.2, 0.1),
-                new THREE.Vector3(0, -1.5, 0.1)
-            ]),
-            lineMaterial.clone()
-        );
-        shieldGroup.add(crossV);
-
-        const crossH = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-1, 0, 0.1),
-                new THREE.Vector3(1, 0, 0.1)
-            ]),
-            lineMaterial.clone()
-        );
-        shieldGroup.add(crossH);
-
-        shieldGroup.position.set(0, 0, -15);
-        shieldGroup.visible = false;
-        assetsGroup.add(shieldGroup);
-
-        // 5. VOID PORTAL - Vanishing/Abyss
-        const portalGroup = new THREE.Group();
-        
-        for (let i = 0; i < 5; i++) {
+        // 3. Protocol: Wireframe Helix Tunnel
+        const helixCount = 100;
+        for(let i=0; i<helixCount; i++) {
             const ring = new THREE.Mesh(
-                new THREE.TorusGeometry(2.5 - i * 0.4, 0.05, 8, 32),
-                wireMaterial.clone()
+                new THREE.TorusGeometry(8, 0.05, 16, 32),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05 })
             );
-            ring.position.z = -i * 0.3;
-            ring.material.opacity = 0.15 - i * 0.02;
-            portalGroup.add(ring);
+            ring.position.z = -i * 2;
+            ring.rotation.z = i * 0.1;
+            proGroup.add(ring);
         }
 
-        // Spiral particles
-        for (let i = 0; i < 50; i++) {
-            const angle = (i / 50) * Math.PI * 4;
-            const radius = 0.3 + (i / 50) * 2;
-            const particle = new THREE.Mesh(
-                new THREE.SphereGeometry(0.04, 4, 4),
-                wireMaterial.clone()
-            );
-            particle.position.set(
-                Math.cos(angle) * radius,
-                Math.sin(angle) * radius,
-                -i * 0.05
-            );
-            portalGroup.add(particle);
+        // 4. Nexus: Complex Nested Spheres
+        const outerSphere = new THREE.Mesh(new THREE.SphereGeometry(12, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.05 }));
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(6, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.1 }));
+        privGroup.add(outerSphere, innerSphere);
+
+        // 5. CTA: Exploded Geometry
+        const fragmentGeo = new THREE.TetrahedronGeometry(2);
+        for(let i=0; i<50; i++) {
+            const frag = new THREE.Mesh(fragmentGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.1 }));
+            frag.position.set((Math.random()-0.5)*60, (Math.random()-0.5)*40, (Math.random()-0.5)*40);
+            ctaGroup.add(frag);
         }
 
-        portalGroup.position.set(0, 0, -15);
-        portalGroup.visible = false;
-        assetsGroup.add(portalGroup);
-
-        // Background particles (cloud-like)
-        const cloudParticles = [];
-        const cloudGeom = new THREE.BufferGeometry();
-        const cloudPositions = new Float32Array(2000 * 3);
-        
-        for (let i = 0; i < 2000 * 3; i += 3) {
-            cloudPositions[i] = (Math.random() - 0.5) * 80;
-            cloudPositions[i + 1] = (Math.random() - 0.5) * 50;
-            cloudPositions[i + 2] = (Math.random() - 0.5) * 60 - 20;
-        }
-        
-        cloudGeom.setAttribute('position', new THREE.BufferAttribute(cloudPositions, 3));
-        
-        const cloudMaterial = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 0.08,
-            transparent: true,
-            opacity: 0.15,
-            blending: THREE.AdditiveBlending
-        });
-        
-        const cloudPoints = new THREE.Points(cloudGeom, cloudMaterial);
-        scene.add(cloudPoints);
+        // Global Particle Cloud (Constant aesthetic)
+        const cloudGeo = new THREE.BufferGeometry();
+        const cloudPos = new Float32Array(1500 * 3);
+        for(let i=0; i<1500*3; i++) cloudPos[i] = (Math.random()-0.5)*100;
+        cloudGeo.setAttribute('position', new THREE.BufferAttribute(cloudPos, 3));
+        const cloud = new THREE.Points(cloudGeo, new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.3 }));
+        scene.add(cloud);
 
         camera.position.z = 20;
 
-        // === SCROLL & ANIMATION STATE ===
-        let currentSection = 0;
-        let targetCameraZ = 20;
-        let targetCameraY = 0;
-        let targetCameraX = 0;
-        let targetRotationY = 0;
-        let mouseX = 0, mouseY = 0;
-
-        const assets = [lockGroup, networkGroup, hourglassGroup, shieldGroup, portalGroup];
-        const sections = ['hero', 'features', 'protocol', 'privacy', 'cta'];
-        const backgrounds = ['bgHero', 'bgFeatures', 'bgProtocol', 'bgPrivacy', 'bgCta'];
-
-        // Mouse movement
-        window.addEventListener('mousemove', (e) => {
-            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
-        });
-
-        // === GSAP SCROLL ANIMATIONS ===
+        // --- SCROLL LOGIC & BACKGROUND TRANSITIONS ---
         gsap.registerPlugin(ScrollTrigger);
 
-        // Section transitions
-        sections.forEach((section, index) => {
+        const bgManager = document.getElementById('bg-manager');
+        const sections = [
+            { id: 'hero', color: '#050505', pos: { x: 0, y: 0, z: 20 }, rot: { x: 0, y: 0 } },
+            { id: 'features', color: '#050a15', pos: { x: 15, y: -10, z: 35 }, rot: { x: 0.4, y: 0.2 } },
+            { id: 'protocol', color: '#100515', pos: { x: -10, y: 10, z: 15 }, rot: { x: -0.2, y: -0.5 } },
+            { id: 'privacy', color: '#000000', pos: { x: 0, y: 0, z: 45 }, rot: { x: 0.5, y: 1.2 } },
+            { id: 'cta', color: '#150505', pos: { x: 0, y: 0, z: 10 }, rot: { x: 0, y: 0 } }
+        ];
+
+        // Fade groups out by default
+        [sysGroup, proGroup, privGroup, ctaGroup].forEach(g => g.visible = false);
+
+        sections.forEach((sec, i) => {
             ScrollTrigger.create({
-                trigger: `#${section}`,
-                start: "top center",
-                end: "bottom center",
-                onEnter: () => transitionToSection(index),
-                onEnterBack: () => transitionToSection(index)
+                trigger: `#${sec.id}`,
+                start: "top 60%",
+                end: "bottom 40%",
+                onEnter: () => {
+                    gsap.to(bgManager, { background: sec.color, duration: 1.5 });
+                    transitionCamera(sec.pos, sec.rot);
+                    updateVisibility(i);
+                },
+                onEnterBack: () => {
+                    gsap.to(bgManager, { background: sec.color, duration: 1.5 });
+                    transitionCamera(sec.pos, sec.rot);
+                    updateVisibility(i);
+                }
+            });
+
+            // Content fade
+            gsap.to(`#${sec.id} .container`, {
+                scrollTrigger: { trigger: `#${sec.id}`, start: "top 70%" },
+                opacity: 1,
+                y: 0,
+                duration: 1
             });
         });
 
-        function transitionToSection(index) {
-            currentSection = index;
-            
-            // Hide all backgrounds
-            backgrounds.forEach(bg => {
-                document.getElementById(bg).classList.remove('active');
-            });
-            // Show current
-            document.getElementById(backgrounds[index]).classList.add('active');
-
-            // Transition 3D assets
-            assets.forEach((asset, i) => {
-                gsap.to(asset.position, {
-                    z: i === index ? -12 : -30,
-                    duration: 1.5,
-                    ease: "power3.out"
-                });
-                gsap.to(asset.scale, {
-                    x: i === index ? 1 : 0.5,
-                    y: i === index ? 1 : 0.5,
-                    z: i === index ? 1 : 0.5,
-                    duration: 1.5,
-                    ease: "power3.out"
-                });
-                asset.visible = true;
-                gsap.to(asset.material || {}, {
-                    opacity: i === index ? 0.15 : 0,
-                    duration: 1
-                });
-            });
-
-            // Camera positions per section
-            const cameraSettings = [
-                { z: 20, y: 0, x: 0, rotY: 0 },
-                { z: 22, y: 1, x: 2, rotY: 0.1 },
-                { z: 18, y: -1, x: -2, rotY: -0.1 },
-                { z: 24, y: 2, x: 0, rotY: 0 },
-                { z: 16, y: 0, x: 0, rotY: 0 }
-            ];
-
-            const settings = cameraSettings[index];
-            targetCameraZ = settings.z;
-            targetCameraY = settings.y;
-            targetCameraX = settings.x;
-            targetRotationY = settings.rotY;
+        function transitionCamera(pos, rot) {
+            gsap.to(camera.position, { x: pos.x, y: pos.y, z: pos.z, duration: 2.5, ease: "power2.inOut" });
+            gsap.to(camera.rotation, { x: rot.x, y: rot.y, duration: 2.5, ease: "power2.inOut" });
         }
 
-        // Element animations
-        document.querySelectorAll('.section-header').forEach(header => {
-            ScrollTrigger.create({
-                trigger: header,
-                start: "top 80%",
-                onEnter: () => header.classList.add('visible')
+        function updateVisibility(index) {
+            const groups = [heroGroup, sysGroup, proGroup, privGroup, ctaGroup];
+            groups.forEach((g, i) => {
+                const targetOpacity = (i === index) ? 1 : 0;
+                if(i === index) g.visible = true;
+                
+                g.children.forEach(child => {
+                    gsap.to(child.material, { 
+                        opacity: targetOpacity * (child.material.initialOpacity || 0.1), 
+                        duration: 1.5,
+                        onComplete: () => { if(targetOpacity === 0) g.visible = false; }
+                    });
+                });
             });
+        }
+
+        // Store initial opacities
+        [heroGroup, sysGroup, proGroup, privGroup, ctaGroup].forEach(g => {
+            g.children.forEach(c => c.material.initialOpacity = c.material.opacity);
         });
 
-        document.querySelectorAll('.feature-card').forEach((card, i) => {
-            ScrollTrigger.create({
-                trigger: card,
-                start: "top 85%",
-                onEnter: () => {
-                    setTimeout(() => card.classList.add('visible'), i * 80);
-                }
-            });
-        });
-
-        document.querySelectorAll('.process-step').forEach((step, i) => {
-            ScrollTrigger.create({
-                trigger: step,
-                start: "top 85%",
-                onEnter: () => {
-                    setTimeout(() => step.classList.add('visible'), i * 120);
-                }
-            });
-        });
-
-        ScrollTrigger.create({
-            trigger: '.privacy-box',
-            start: "top 80%",
-            onEnter: () => document.querySelector('.privacy-box').classList.add('visible')
-        });
-
-        ScrollTrigger.create({
-            trigger: '.about-content',
-            start: "top 90%",
-            onEnter: () => document.querySelector('.about-content').classList.add('visible')
-        });
-
-        // Nav scroll effect
-        window.addEventListener('scroll', () => {
-            const scrollY = window.scrollY;
-            
-            if (scrollY > 50) {
-                document.getElementById('mainNav').classList.add('scrolled');
-            } else {
-                document.getElementById('mainNav').classList.remove('scrolled');
-            }
-
-            if (scrollY > 200) {
-                document.getElementById('scrollIndicator').classList.add('hidden');
-            } else {
-                document.getElementById('scrollIndicator').classList.remove('hidden');
-            }
-        });
-
-        // === ANIMATION LOOP ===
-        const clock = new THREE.Clock();
-
+        // --- RENDER LOOP ---
         function animate() {
-            const time = clock.getElapsedTime();
-
-            // Smooth camera movement
-            camera.position.z += (targetCameraZ - camera.position.z) * 0.03;
-            camera.position.y += (targetCameraY + mouseY * 2 - camera.position.y) * 0.03;
-            camera.position.x += (targetCameraX + mouseX * 3 - camera.position.x) * 0.03;
-            camera.rotation.y += (targetRotationY + mouseX * 0.1 - camera.rotation.y) * 0.02;
-
-            // Animate assets
-            lockGroup.rotation.y = time * 0.3;
-            lockGroup.rotation.x = Math.sin(time * 0.5) * 0.1;
-
-            networkGroup.rotation.y = time * 0.2;
-            networkGroup.rotation.x = time * 0.1;
-            networkGroup.children.forEach((child, i) => {
-                if (child.type === 'Mesh') {
-                    child.scale.setScalar(1 + Math.sin(time * 2 + i) * 0.2);
-                }
-            });
-
-            hourglassGroup.rotation.y = time * 0.25;
-            hourglassGroup.rotation.z = Math.sin(time * 0.3) * 0.05;
-
-            shieldGroup.rotation.y = Math.sin(time * 0.4) * 0.3;
-            shieldGroup.position.y = Math.sin(time * 0.6) * 0.3;
-
-            portalGroup.rotation.z = time * 0.5;
-            portalGroup.children.forEach((child, i) => {
-                if (child.type === 'Mesh' && child.geometry.type === 'TorusGeometry') {
-                    child.rotation.z = time * (0.2 + i * 0.1);
-                }
-            });
-
-            // Cloud movement
-            const cloudPos = cloudPoints.geometry.attributes.position.array;
-            for (let i = 0; i < cloudPos.length; i += 3) {
-                cloudPos[i] += Math.sin(time * 0.1 + i) * 0.002;
-                cloudPos[i + 1] += Math.cos(time * 0.1 + i) * 0.001;
-            }
-            cloudPoints.geometry.attributes.position.needsUpdate = true;
-
-            composer.render();
             requestAnimationFrame(animate);
+            const time = Date.now() * 0.0005;
+
+            core.rotation.y += 0.003;
+            core.rotation.x += 0.002;
+
+            sysGroup.children.forEach((n, i) => {
+                n.rotation.y += 0.01;
+                n.position.y += Math.sin(time + i) * 0.01;
+            });
+
+            proGroup.rotation.z += 0.005;
+            proGroup.children.forEach((r, i) => {
+                r.position.z += 0.01;
+                if(r.position.z > 0) r.position.z = -180;
+            });
+
+            outerSphere.rotation.y -= 0.002;
+            innerSphere.rotation.x += 0.005;
+
+            ctaGroup.rotation.y += 0.001;
+            ctaGroup.children.forEach((f, i) => {
+                f.position.y += Math.sin(time * 2 + i) * 0.02;
+            });
+
+            cloud.rotation.y += 0.0002;
+
+            renderer.render(scene, camera);
         }
 
         animate();
 
-        // Resize handler
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // === MODAL FUNCTIONS ===
-        function openCreateModal() {
-            document.getElementById('createModal').style.display = 'flex';
-            document.getElementById('topicInput').focus();
-        }
-
-        function closeCreateModal() {
-            document.getElementById('createModal').style.display = 'none';
-            document.getElementById('createForm').reset();
-        }
-
-        function handleCreateRoom(event) {
-            event.preventDefault();
-            const topic = document.getElementById('topicInput').value;
-            alert(`Room "${topic}" created successfully.`);
-            closeCreateModal();
-        }
-
-        // Smooth scroll
+        // Smooth Scroll
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
+            anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
             });
         });
-
-        // Escape closes modal
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeCreateModal();
-        });
-
-        // Initialize first section
-        transitionToSection(0);
     </script>
 </body>
 </html>
