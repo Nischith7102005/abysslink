@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Secure Transmission Layer</title>
-    
+    <title>AbyssLink | Anonymous Ephemeral Chat</title>
+
     <!-- IMPORTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    
+
     <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,8 +20,9 @@
             --bg: #000000;
             --text-main: #ffffff;
             --text-dim: #888888;
-            --accent: #ffffff;
+            --accent: #00d4ff;
             --border: #1a1a1a;
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         * {
@@ -50,14 +51,14 @@
             pointer-events: none;
         }
 
-        /* DEEP VIGNETTE FOR READABILITY */
-        .deep-vignette {
+        /* VIGNETTE */
+        .vignette {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, transparent 20%, var(--bg) 95%);
+            background: radial-gradient(circle at center, transparent 0%, var(--bg) 90%);
             z-index: 1;
             pointer-events: none;
         }
@@ -78,24 +79,107 @@
             font-family: 'Space Mono', monospace;
             font-weight: 700;
             letter-spacing: -0.05em;
-            font-size: 1.2rem;
             text-transform: uppercase;
-            mix-blend-mode: difference;
+            font-size: 1.2rem;
         }
 
         .nav-items a {
             font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--text-main);
             text-decoration: none;
             margin-left: 2rem;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
             opacity: 0.7;
             transition: opacity 0.3s;
         }
 
-        .nav-items a:hover { opacity: 1; }
+        .nav-items a:hover {
+            opacity: 1;
+        }
+
+        /* HERO SECTION */
+        #hero {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .hero-content {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        h1 {
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: 900;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff, #00d4ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .tagline {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: var(--text-dim);
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease 0.3s backwards;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 1s ease 0.6s backwards;
+        }
+
+        .btn {
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: #fff;
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0, 212, 255, 0.5);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #00d4ff;
+            border: 2px solid #00d4ff;
+        }
+
+        .btn-secondary:hover {
+            background: #00d4ff;
+            color: #000;
+        }
 
         /* SECTIONS */
         section {
@@ -104,287 +188,522 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center; /* CENTERED ALIGNMENT */
             padding: 0 8rem;
             z-index: 10;
-            text-align: center;
         }
 
         .content-wrapper {
-            max-width: 900px;
+            max-width: 800px;
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
+            text-align: center;
         }
 
-        /* TYPOGRAPHY */
-        h1 {
-            font-size: clamp(4rem, 12vw, 9rem);
-            font-weight: 800;
-            line-height: 0.85;
-            letter-spacing: -0.04em;
-            margin-bottom: 2rem;
-            text-transform: uppercase;
-            color: var(--text-main);
+        /* FEATURES SECTION */
+        #features {
+            background: #0a0a0a;
+            padding: 5rem 2rem;
         }
 
-        h2 {
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            font-weight: 200;
-            margin-bottom: 1.5rem;
-            letter-spacing: -0.03em;
-            color: var(--text-main);
+        .section-title {
+            text-align: center;
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            margin-bottom: 4rem;
+            background: linear-gradient(135deg, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        p {
-            font-size: 1.1rem;
-            color: var(--text-dim);
-            line-height: 1.7;
-            margin-bottom: 2rem;
-            font-weight: 300;
-        }
-
-        /* DECIPHER GLITCH TEXT */
-        .decipher-text {
-            display: inline-block;
-        }
-
-        /* LAYOUTS */
-        .grid-3 {
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 3rem;
-            margin-top: 4rem;
-            text-align: left;
-        }
-
-        .card {
-            padding: 2rem 0;
-            border-top: 1px solid var(--border);
-            transition: border-color 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: var(--accent);
-        }
-
-        .card h3 {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-            letter-spacing: 0.15em;
-            color: var(--text-main);
-        }
-
-        .card p {
-            font-size: 0.95rem;
-            color: var(--text-dim);
-            line-height: 1.5;
-        }
-
-        /* BUTTONS */
-        .btn {
-            display: inline-block;
-            background: transparent;
-            border: 1px solid var(--text-main);
-            color: var(--text-main);
-            padding: 1rem 3rem;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            margin-top: 2rem;
-            text-decoration: none;
-        }
-
-        .btn:hover {
-            background: var(--text-main);
-            color: var(--bg);
-            transform: scale(1.05);
-        }
-
-        /* ABOUT SECTION (SMALL, LAST) */
-        .about-footer {
-            padding: 5rem 8rem;
-            background: #050505;
-            border-top: 1px solid var(--border);
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 4rem;
-            z-index: 20;
-            position: relative;
-            text-align: left;
-        }
-
-        .footer-brand h3 {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.9rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-        }
-
-        .footer-brand p {
-            font-size: 0.9rem;
-            color: #444;
-            max-width: 300px;
-            line-height: 1.5;
-        }
-
-        .footer-links {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
         }
 
-        .link-col h4 {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.7rem;
-            color: #333;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 1rem;
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
         }
 
-        .link-col a {
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(0, 212, 255, 0.6);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
             display: block;
-            color: var(--text-dim);
-            text-decoration: none;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            transition: color 0.3s;
         }
 
-        .link-col a:hover { color: var(--text-main); }
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
 
+        .feature-card p {
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        /* HOW IT WORKS SECTION */
+        #how-it-works {
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a0a2e 100%);
+            padding: 8rem 2rem;
+        }
+
+        .steps {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            margin-bottom: 4rem;
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 0.6s ease;
+        }
+
+        .step.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .step:nth-child(even) {
+            flex-direction: row-reverse;
+            transform: translateX(50px);
+        }
+
+        .step:nth-child(even).visible {
+            transform: translateX(0);
+        }
+
+        .step-number {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .step-content h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+
+        .step-content p {
+            color: #aaa;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        /* PRIVACY SECTION */
+        #privacy {
+            background: #000;
+            padding: 8rem 2rem;
+            text-align: center;
+        }
+
+        .privacy-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .privacy-promise {
+            background: rgba(255, 0, 255, 0.1);
+            border: 2px solid rgba(255, 0, 255, 0.3);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-top: 3rem;
+        }
+
+        .privacy-promise ul {
+            list-style: none;
+            font-size: 1.2rem;
+            line-height: 2.5;
+            text-align: left;
+        }
+
+        .privacy-promise li:before {
+            content: "✓ ";
+            color: #00d4ff;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        /* FINAL CTA SECTION */
+        #final-cta {
+            background: linear-gradient(135deg, #1a0a2e 0%, #0a0a0a 100%);
+            padding: 8rem 2rem;
+            text-align: center;
+        }
+
+        /* MODALS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a0a2e, #0a0a0a);
+            padding: 3rem;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid #00d4ff;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            margin-bottom: 2rem;
+            color: #00d4ff;
+            font-size: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: #111;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: #1a1a1a;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .info-box p {
+            color: #aaa;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .info-box .value {
+            color: #00d4ff;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .warning {
+            color: #ff6b6b;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            padding: 1rem;
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            font-size: 2rem;
+            color: #00d4ff;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, 0); }
+            50% { transform: translate(-50%, 20px); }
+        }
+
+        /* RESPONSIVE */
         @media (max-width: 1024px) {
             section { padding: 0 4rem; }
-            .about-footer { padding: 4rem; grid-template-columns: 1fr; }
+            .about-section { padding: 3rem 2rem; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
         }
 
         @media (max-width: 768px) {
-            .grid-3 { grid-template-columns: 1fr; }
-            .footer-links { grid-template-columns: 1fr; }
+            h1 { font-size: 3rem; }
+            .cta-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .step {
+                flex-direction: column !important;
+                text-align: center;
+            }
+            .step-number {
+                margin: 0 auto;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-
+    <!-- 3D BACKGROUND -->
     <div id="webgl-stage"></div>
-    <div class="deep-vignette"></div>
+    <div class="vignette"></div>
 
     <nav>
         <div class="brand">AbyssLink</div>
         <div class="nav-items">
-            <a href="#infrastructure">System</a>
-            <a href="#security">Protocol</a>
-            <a href="#access">Connect</a>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#privacy">Privacy</a>
         </div>
     </nav>
 
-    <!-- HERO SECTION: CENTERED -->
+    <!-- HERO SECTION -->
     <section id="hero">
-        <div class="content-wrapper">
-            <!-- TITLE IS ABYSSLINK AND CENTERED -->
-            <h1 class="decipher-text" data-value="ABYSSLINK">ABYSSLINK</h1>
-            <p>
-                The invisible layer of the internet. 
-                Encrypted, ephemeral, and completely untraceable communication infrastructure.
-            </p>
-            <a href="#access" class="btn">Enter The Void</a>
+        <div class="hero-content">
+            <h1>ABYSSLINK</h1>
+            <p class="tagline">Anonymous. Ephemeral. Untraceable.</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
+                <a href="rooms.html" class="btn btn-secondary">Active Rooms</a>
+            </div>
         </div>
+        <div class="scroll-indicator">↓</div>
     </section>
 
-    <!-- INFRASTRUCTURE SECTION -->
-    <section id="infrastructure">
+    <!-- FEATURES SECTION -->
+    <section id="features">
         <div class="content-wrapper">
-            <h2>Digital Stealth</h2>
-            <p style="max-width: 500px;">
-                We operate in the shadows. Our architecture utilizes non-persistent memory nodes that self-destruct immediately after transmission. No trace. No footprint.
-            </p>
-            <div class="grid-3">
-                <div class="card">
-                    <h3>Volatile Storage</h3>
-                    <p>Data never touches a hard drive. It exists only in RAM, ensuring physical impossibility of recovery.</p>
+            <h2 class="section-title">Why AbyssLink?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎭</span>
+                    <h3>Completely Anonymous</h3>
+                    <p>No accounts, no usernames, no identity. Everyone is a ghost in the machine.</p>
                 </div>
-                <div class="card">
-                    <h3>Entropic Routing</h3>
-                    <p>Traffic paths are generated randomly and dissolved instantly, preventing traffic analysis.</p>
+                <div class="feature-card">
+                    <span class="feature-icon">⏱️</span>
+                    <h3>24-Hour Lifespan</h3>
+                    <p>Every room self-destructs after 24 hours. Or vanish instantly with one click.</p>
                 </div>
-                <div class="card">
-                    <h3>Zero-Knowledge</h3>
-                    <p>We do not know who you are, what you send, or who you connect to.</p>
+                <div class="feature-card">
+                    <span class="feature-icon">🔐</span>
+                    <h3>Invite-Only Access</h3>
+                    <p>Password-protected rooms. Share the link privately. Control who enters.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💬</span>
+                    <h3>Real-Time Chat</h3>
+                    <p>Instant messaging with file sharing. Everything disappears when the room does.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔥</span>
+                    <h3>Zero Trace</h3>
+                    <p>No chat logs. No backups. No recovery. Once it's gone, it's gone forever.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🌐</span>
+                    <h3>No Tracking</h3>
+                    <p>We don't know who you are, and we don't want to. Total privacy by design.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SECURITY SECTION -->
-    <section id="security">
+    <!-- HOW IT WORKS SECTION -->
+    <section id="how-it-works">
         <div class="content-wrapper">
-            <h2>Tactical Security</h2>
-            <p style="max-width: 600px; margin-bottom: 3rem;">
-                Our cryptographic standards are military-grade. We employ AES-256 for content and elliptic-curve protocols for key exchange.
-            </p>
-            <div class="grid-3" style="text-align: left;">
-                <div class="card">
-                    <h3>Handshake</h3>
-                    <p>Secure key exchange happens milliseconds before data flows. Keys are discarded upon session end.</p>
+            <h2 class="section-title">How It Works</h2>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">01</div>
+                <div class="step-content">
+                    <h3>Create a Room</h3>
+                    <p>Set a topic and password. Get an invite link and creator key. Share them separately for maximum security.</p>
                 </div>
-                <div class="card">
-                    <h3>Payload</h3>
-                    <p>All messages are encapsulated in noise packets, indistinguishable from standard web traffic.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">02</div>
+                <div class="step-content">
+                    <h3>Invite Participants</h3>
+                    <p>Send the link privately. Share the password through a different channel. Both are required to enter.</p>
                 </div>
-                <div class="card">
-                    <h3>Purge</h3>
-                    <p>Every 24 hours, or instantly upon command, the entire session is shredded.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">03</div>
+                <div class="step-content">
+                    <h3>Chat Anonymously</h3>
+                    <p>Everyone appears as an anonymous participant. Chat, share files, and communicate freely.</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">04</div>
+                <div class="step-content">
+                    <h3>Watch It Disappear</h3>
+                    <p>After 24 hours, everything vanishes automatically. Or trigger "Vanish Now" to destroy it instantly.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ACCESS SECTION -->
-    <section id="access">
-        <div class="content-wrapper">
-            <h2 class="decipher-text" data-value="READY_TO_VANISH">Ready To Vanish?</h2>
-            <p>
-                Initiate a secure session now. No registration required. No email needed. Just pure connection.
+    <!-- PRIVACY SECTION -->
+    <section id="privacy">
+        <div class="privacy-content">
+            <h2 class="section-title">Privacy by Design</h2>
+            <p style="font-size: 1.2rem; color: #aaa; line-height: 1.8; margin-bottom: 2rem;">
+                AbyssLink is built on the principle that true privacy means we can't access your data—because it doesn't exist.
             </p>
-            <button class="btn" style="margin-top: 3rem;">Initialize Link</button>
+            <div class="privacy-promise">
+                <ul>
+                    <li>No user accounts or registration</li>
+                    <li>No permanent storage of messages</li>
+                    <li>No tracking or analytics</li>
+                    <li>No way to identify participants</li>
+                    <li>No chat history retention</li>
+                    <li>No backups or recovery systems</li>
+                </ul>
+            </div>
         </div>
     </section>
 
-    <!-- ABOUT SECTION (SMALL, LAST) -->
-    <footer class="about-footer">
-        <div class="footer-brand">
-            <h3>AbyssLink</h3>
-            <p>
-                Designed for the digital warrior. We provide the tools to communicate freely in a monitored world. 
-                Our code is open source; our philosophy is absolute privacy.
+    <!-- FINAL CTA SECTION -->
+    <section id="final-cta">
+        <div class="content-wrapper">
+            <h2 class="section-title">Ready to Disappear?</h2>
+            <p style="font-size: 1.3rem; color: #888; margin-bottom: 3rem;">
+                Create a room. Have your conversation. Let it vanish.
             </p>
+            <button class="btn btn-primary" onclick="openCreateModal()" style="font-size: 1.3rem; padding: 1.5rem 4rem;">
+                Start Your First Room
+            </button>
         </div>
-        <div class="footer-links">
-            <div class="link-col">
-                <h4>Network</h4>
-                <a href="#">Nodes Status</a>
-                <a href="#">Encryption Keys</a>
-                <a href="#">Whitepaper</a>
-            </div>
-            <div class="link-col">
-                <h4>Legal</h4>
-                <a href="#">Terms of Service</a>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Canary Warrant</a>
-            </div>
+    </section>
+
+    <!-- Create Room Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <h2>Create New Room</h2>
+            <form id="createForm" onsubmit="handleCreateRoom(event)">
+                <div class="form-group">
+                    <label>Room Topic</label>
+                    <input type="text" id="topicInput" required placeholder="What's this room about?">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="passwordInput" required placeholder="Set a strong password">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Create</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
         </div>
-    </footer>
+    </div>
+
+    <!-- Room Created Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2>✓ Room Created!</h2>
+
+            <div class="info-box">
+                <p>Room ID (share this):</p>
+                <div class="value" id="roomIdDisplay" onclick="copyToClipboard('roomIdDisplay')"></div>
+            </div>
+
+            <div class="info-box">
+                <p>Creator Key (save this - only you have it!):</p>
+                <div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')" style="color: #ff00ff;"></div>
+            </div>
+
+            <div class="warning">
+                ⚠️ <strong>Important:</strong> Share the Room ID and password separately. Both are required to join. Save your creator key to destroy the room later.
+            </div>
+
+            <button class="btn btn-primary" onclick="enterCreatedRoom()" style="width: 100%;">
+                Enter Room →
+            </button>
+        </div>
+    </div>
 
     <script>
+        // Configuration - Backend URL
+        const API_URL = 'https://abysslink.onrender.com';
+
         // --- DECIPHER EFFECT FOR TITLES ---
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-        
+
         document.querySelectorAll('.decipher-text').forEach(element => {
             const originalText = element.getAttribute('data-value');
             let iterations = 0;
@@ -398,61 +717,161 @@
                         return chars[Math.floor(Math.random() * chars.length)];
                     })
                     .join("");
-                
-                if(iterations >= originalText.length) { 
+
+                if(iterations >= originalText.length) {
                     clearInterval(interval);
                 }
-                
+
                 iterations += 1/3;
             }, 30);
         });
 
-        // --- THREE.JS DETAILED SCENE ---
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.step').forEach(step => observer.observe(step));
+
+        // Modal functions
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+            document.getElementById('topicInput').focus();
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+            document.getElementById('createForm').reset();
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        // Store current room data
+        let currentRoom = null;
+
+        // Handle room creation
+        async function handleCreateRoom(event) {
+            event.preventDefault();
+
+            const topic = document.getElementById('topicInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/rooms/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create room');
+                }
+
+                const data = await response.json();
+
+                // Store in localStorage
+                const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
+                currentRoom = {
+                    roomId: data.roomId,
+                    topic: topic,
+                    password: password,
+                    creatorKey: data.creatorKey,
+                    expiresAt: data.expiresAt,
+                    isCreator: true
+                };
+                rooms.push(currentRoom);
+                localStorage.setItem('abysslink_rooms', JSON.stringify(rooms));
+
+                // Show success modal
+                document.getElementById('roomIdDisplay').textContent = data.roomId;
+                document.getElementById('creatorKeyDisplay').textContent = data.creatorKey;
+
+                closeCreateModal();
+                document.getElementById('successModal').style.display = 'flex';
+
+            } catch (error) {
+                alert('Error creating room. Make sure the backend is running.');
+                console.error(error);
+            }
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const el = document.getElementById(elementId);
+                const original = el.textContent;
+                el.textContent = 'Copied!';
+                setTimeout(() => {
+                    el.textContent = original;
+                }, 1000);
+            });
+        }
+
+        // Enter created room
+        function enterCreatedRoom() {
+            if (currentRoom) {
+                window.location.href = `chat.html?room=${currentRoom.roomId}`;
+            }
+        }
+
+        // Close modals on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeCreateModal();
+                closeSuccessModal();
+            }
+        });
+
+        // --- THREE.JS SETUP ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.015); // Deep fog
+        scene.fog = new THREE.FogExp2(0x000000, 0.015);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000);
         document.getElementById('webgl-stage').appendChild(renderer.domElement);
 
-        // GROUPS FOR SECTIONS
+        // --- ASSET 1: THE GRID (Infrastructure) ---
         const heroGroup = new THREE.Group();
-        const infraGroup = new THREE.Group();
-        const voidGroup = new THREE.Group();
-        
-        scene.add(heroGroup);
-        scene.add(infraGroup);
-        scene.add(voidGroup);
 
-        // --- HERO GROUP: TERRAIN + PARTICLES ---
-        
-        // 1. Wireframe Terrain
+        // Wireframe Terrain
         const terrainGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
-        const terrainMat = new THREE.MeshBasicMaterial({ color: 0x222222, wireframe: true, transparent: true, opacity: 0.15 });
+        const terrainMat = new THREE.MeshBasicMaterial({
+            color: 0x222222,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.15
+        });
         const terrain = new THREE.Mesh(terrainGeo, terrainMat);
         terrain.rotation.x = -Math.PI / 2;
         terrain.position.y = -15;
-        
-        // Deform terrain to look like mountains
+
+        // Deform terrain
         const pos = terrainGeo.attributes.position;
         for (let i = 0; i < pos.count; i++) {
             const z = pos.getZ(i);
             const x = pos.getX(i);
-            // Random height displacement
             const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 5 + Math.random() * 2;
             pos.setZ(i, z + noise);
         }
         terrainGeo.computeVertexNormals();
         heroGroup.add(terrain);
 
-        // 2. Floating Dust Particles (High Detail)
+        // Floating Dust Particles
         const dustGeo = new THREE.BufferGeometry();
         const dustCount = 4000;
         const dustPos = new Float32Array(dustCount * 3);
         const dustSizes = new Float32Array(dustCount);
-        
+
         for(let i=0; i<dustCount*3; i++) {
             dustPos[i] = (Math.random() - 0.5) * 200;
         }
@@ -471,52 +890,10 @@
         const dust = new THREE.Points(dustGeo, dustMat);
         heroGroup.add(dust);
 
-        // 3. Monoliths (Detailed Shapes)
-        const monoGeo = new THREE.TetrahedronGeometry(2, 0);
-        const monoMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        const monoliths = [];
-        
-        for(let i=0; i<15; i++) {
-            const m = new THREE.Mesh(monoGeo, monoMat.clone());
-            m.position.set((Math.random()-0.5)*60, (Math.random()-0.5)*30, (Math.random()-0.5)*40);
-            m.userData = { speed: Math.random() * 0.02, axis: Math.random() };
-            monoliths.push(m);
-            infraGroup.add(m);
-        }
+        scene.add(heroGroup);
 
-        // --- INFRA GROUP: CONNECTED NETWORK ---
-        const nodeGeo = new THREE.IcosahedronGeometry(1, 0);
-        const nodeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        const nodes = [];
-        
-        for(let i=0; i<30; i++) {
-            const n = new THREE.Mesh(nodeGeo, nodeMat.clone());
-            n.position.set((Math.random()-0.5)*50, (Math.random()-0.5)*30, (Math.random()-0.5)*30);
-            n.scale.setScalar(Math.random() * 2 + 1);
-            infraGroup.add(n);
-            nodes.push(n);
-        }
-
-        // Connect nodes with lines
-        const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-        const lineGeo = new THREE.BufferGeometry();
-        const linePositions = new Float32Array(nodes.length * nodes.length * 3); // Max connections
-        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-        const connections = new THREE.LineSegments(lineGeo, lineMat);
-        infraGroup.add(connections);
-
-        // --- VOID GROUP: SIMPLE CLEAN LINES ---
-        const voidGeo = new THREE.TorusKnotGeometry(15, 1, 200, 16);
-        const voidMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        const knot = new THREE.Mesh(voidGeo, voidMat);
-        voidGroup.add(knot);
-
-        camera.position.z = 30;
-
-        // --- GSAP SCROLL ANIMATION ---
-        gsap.registerPlugin(ScrollTrigger);
-
-        document.querySelectorAll('.content-wrapper').forEach(content => {
+        // Content Fade In
+        document.querySelectorAll('.content-wrapper, .hero-content').forEach(content => {
             gsap.to(content, {
                 scrollTrigger: {
                     trigger: content,
@@ -530,46 +907,16 @@
             });
         });
 
-        const timeline = gsap.timeline({
-            scrollTrigger: {
-                trigger: "body",
-                start: "top top",
-                end: "bottom bottom",
-                scrub: 1.5
-            }
-        });
+        camera.position.z = 30;
 
-        timeline
-            // HERO -> INFRA
-            .to(camera.position, { z: 40, y: 10, x: 10, duration: 3 })
-            .to(heroGroup.position, { y: -20, duration: 3 }, 0)
-            .to(terrainMat, { opacity: 0, duration: 2 }, 0)
-            .to(dustMat, { opacity: 0.1, duration: 2 }, 0)
-            .to(monoMat, { opacity: 0.15, duration: 2 }, 1)
-            .to(nodeMat, { opacity: 0.1, duration: 2 }, 1)
-            .to(lineMat, { opacity: 0.05, duration: 2 }, 1.5)
-
-            // INFRA -> VOID
-            .to(camera.position, { z: 50, y: -10, x: -10, duration: 3 }, 3)
-            .to(monoMat, { opacity: 0, duration: 2 }, 3)
-            .to(nodeMat, { opacity: 0, duration: 2 }, 3)
-            .to(lineMat, { opacity: 0, duration: 2 }, 3)
-            .to(voidMat, { opacity: 0.1, duration: 2 }, 4)
-            .to(knot.rotation, { z: Math.PI, duration: 3 }, 3)
-
-            // VOID -> FOOTER
-            .to(camera.position, { z: 20, y: 0, x: 0, duration: 3 }, 6)
-            .to(voidMat, { opacity: 0, duration: 2 }, 7);
-
-
-        // --- ANIMATION LOOP ---
+        // Animation Loop
         function animate() {
             requestAnimationFrame(animate);
             const time = Date.now() * 0.0005;
 
             // Terrain Movement
-            terrain.position.z = (time * 5) % 10; 
-            
+            terrain.position.z = (time * 5) % 10;
+
             // Dust movement
             const positions = dustGeo.attributes.position.array;
             for(let i=0; i<dustCount; i++) {
@@ -577,31 +924,12 @@
             }
             dustGeo.attributes.position.needsUpdate = true;
 
-            // Monoliths floating
-            monoliths.forEach(m => {
-                m.rotation.x += 0.005;
-                m.rotation.y += 0.005;
-                m.position.y += Math.sin(time + m.userData.axis) * 0.02;
-            });
-
-            // Network pulsing
-            nodes.forEach((n, i) => {
-                const scale = 1 + Math.sin(time * 3 + i) * 0.2;
-                n.scale.setScalar(scale);
-                
-                // Update lines logic (simple version for performance)
-                // Connecting nodes randomly creates dynamic "data flow" visual
-            });
-
-            // Void Knot
-            knot.rotation.x += 0.002;
-            knot.rotation.y += 0.003;
-
             renderer.render(scene, camera);
         }
 
         animate();
 
+        // Handle Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
