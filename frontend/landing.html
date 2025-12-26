@@ -3,327 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Stealth Communication Protocol</title>
+    <title>AbyssLink | Stealth Ephemeral Infrastructure</title>
     
     <!-- LIBRARIES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --white: #ffffff;
             --black: #000000;
-            --gray-900: #0a0a0a;
-            --gray-800: #111111;
-            --gray-400: #888888;
-            --font-display: 'Syncopate', sans-serif;
-            --font-body: 'Inter', sans-serif;
+            --gray-90: #111111;
+            --gray-80: #222222;
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-accent: 'Cinzel', serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition-speed: 1.2s;
         }
 
         * { 
             margin: 0; 
             padding: 0; 
             box-sizing: border-box; 
+            cursor: crosshair;
         }
 
         body {
             background-color: var(--black);
             color: var(--white);
-            font-family: var(--font-body);
+            font-family: var(--font-serif);
             overflow-x: hidden;
-            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* READING LEVEL OPTIMIZATION */
-        p {
-            font-size: clamp(1rem, 1.2vw, 1.15rem);
-            line-height: 1.8;
-            max-width: 650px;
-            font-weight: 300;
-            color: var(--gray-400);
-            letter-spacing: 0.02em;
-        }
-
+        /* TYPOGRAPHY OPTIMIZED FOR COMFORT */
         h1, h2, h3 {
-            font-family: var(--font-display);
+            font-family: var(--font-accent);
             text-transform: uppercase;
             letter-spacing: 0.2em;
         }
 
-        /* STAGE & BACKGROUNDS */
+        p {
+            font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+            line-height: 1.8;
+            max-width: 650px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1.5rem;
+        }
+
+        /* THREE JS STAGE */
         #stage {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100vh;
-            z-index: 1;
+            z-index: 0;
             pointer-events: none;
         }
 
-        .section-bg {
+        /* SECTION BACKGROUNDS (STEALTH TRANSITIONS) */
+        .bg-layer {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
+            z-index: -1;
             opacity: 0;
-            transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .bg-active { opacity: 1; }
-        
-        /* Samurai/Ninja Monochrome Palettes */
-        .bg-hero { background: radial-gradient(circle at center, #111 0%, #000 100%); }
-        .bg-stealth { background: linear-gradient(180deg, #000 0%, #080808 100%); }
-        .bg-void { background: radial-gradient(circle at 70% 30%, #151515 0%, #000 80%); }
-        .bg-final { background: #000; }
+        .active-bg { opacity: 1; }
 
-        /* FAST SLICING GLITCH */
-        .glitch-title {
-            font-size: clamp(2.5rem, 8vw, 6rem);
-            margin-bottom: 1.5rem;
-            position: relative;
-            display: inline-block;
-        }
+        .bg-1 { background: linear-gradient(to bottom, #000, #0a0a0a); }
+        .bg-2 { background: radial-gradient(circle at 70% 30%, #151515, #000); }
+        .bg-3 { background: linear-gradient(135deg, #000 0%, #080808 100%); }
+        .bg-4 { background: radial-gradient(circle at center, #111 0%, #000 100%); }
 
-        .char {
-            display: inline-block;
-            position: relative;
-            animation: sliceVanish 2.5s infinite;
-            animation-delay: var(--d);
-        }
-
-        @keyframes sliceVanish {
-            0%, 80%, 100% { opacity: 1; clip-path: inset(0 0 0 0); transform: translateX(0); }
-            82% { opacity: 0; clip-path: inset(50% 0 0 0); transform: translateX(10px); }
-            84% { opacity: 1; clip-path: inset(0 0 50% 0); transform: translateX(-10px); }
-            86% { opacity: 0; transform: skewX(20deg); }
-            88% { opacity: 1; transform: skewX(0); }
-        }
-
-        /* NAVIGATION */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 2.5rem 5vw;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .nav-logo {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 0.8rem;
-            letter-spacing: 0.5em;
-        }
-
-        /* CONTENT SECTIONS */
+        /* CONTENT WRAPPING */
         .section {
             position: relative;
             min-height: 100vh;
             display: flex;
             align-items: center;
-            padding: 0 10vw;
+            padding: 10vh 12vw;
             z-index: 10;
         }
 
-        .content-block {
+        .content-box {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateX(-40px);
+            border-left: 1px solid rgba(255,255,255,0.1);
+            padding-left: 3rem;
         }
 
-        .tagline {
-            font-family: var(--font-display);
-            font-size: 0.7rem;
-            color: var(--white);
-            margin-bottom: 1rem;
-            display: block;
-            opacity: 0.6;
-        }
-
-        /* DECORATIVE ELEMENTS */
-        .vertical-line {
-            width: 1px;
-            height: 100px;
-            background: linear-gradient(to bottom, transparent, var(--white), transparent);
-            margin: 2rem 0;
-        }
-
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 4rem;
-        }
-
-        .card {
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2.5rem;
-            background: rgba(255, 255, 255, 0.02);
-            transition: 0.4s ease;
-        }
-
-        .card:hover {
-            border-color: var(--white);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .card h3 {
-            font-size: 0.8rem;
-            margin-bottom: 1rem;
-        }
-
-        .btn {
+        /* NINJA SHARP GLITCH */
+        .glitch-word {
             display: inline-block;
-            margin-top: 3rem;
-            padding: 1.2rem 4rem;
-            border: 1px solid var(--white);
+            position: relative;
+        }
+
+        @keyframes vanishFlicker {
+            0%, 65%, 75%, 100% { opacity: 1; transform: scaleY(1); }
+            67% { opacity: 0; transform: scaleY(0); }
+            68% { opacity: 0.8; transform: skewX(20deg); }
+            70% { opacity: 0; }
+            72% { opacity: 1; transform: skewX(-20deg); }
+        }
+
+        .char {
+            display: inline-block;
+            animation: vanishFlicker 2.5s infinite;
+            animation-delay: var(--d);
+        }
+
+        /* BUTTONS (SAMURAI MINIMALISM) */
+        .btn-stealth {
+            display: inline-block;
+            margin-top: 2.5rem;
+            padding: 1rem 4rem;
+            background: transparent;
             color: var(--white);
+            border: 1px solid var(--white);
             text-decoration: none;
-            font-family: var(--font-display);
-            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
             letter-spacing: 0.4em;
-            transition: 0.3s;
+            transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
             position: relative;
             overflow: hidden;
         }
 
-        .btn:hover {
+        .btn-stealth:hover {
             background: var(--white);
             color: var(--black);
+            transform: translateX(10px);
         }
 
-        /* ABOUT SECTION (THE LAST) */
+        /* ABOUT SECTION (POST-INFRASTRUCTURE) */
         .about-footer {
-            padding: 5rem 10vw;
-            background: #000;
-            position: relative;
+            padding: 5rem 12vw;
+            background: var(--black);
             z-index: 20;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            border-top: 1px solid #111;
         }
 
-        .about-inner {
+        .about-wrap {
+            max-width: 1000px;
             display: grid;
-            grid-template-columns: 1fr 2fr;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 4rem;
         }
 
-        .about-small {
-            font-size: 0.75rem;
-            color: var(--gray-400);
-            max-width: 500px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
+        .about-col h5 {
+            font-family: var(--font-accent);
+            font-size: 0.65rem;
+            letter-spacing: 0.4em;
+            color: #444;
+            margin-bottom: 1.5rem;
         }
 
-        .legal {
-            margin-top: 4rem;
-            font-size: 0.6rem;
-            color: #333;
-            letter-spacing: 0.3em;
-            text-align: center;
-            font-family: var(--font-display);
+        .about-col p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #666;
+            font-style: italic;
         }
 
-        /* NO SCROLLBAR */
-        ::-webkit-scrollbar { display: none; }
-        body { -ms-overflow-style: none; scrollbar-width: none; }
-
-        @media (max-width: 768px) {
-            .about-inner { grid-template-columns: 1fr; }
-            .section { padding: 0 5vw; }
+        /* SCROLL INDICATOR */
+        .ink-bar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, #fff, transparent);
+            transform-origin: top;
+            z-index: 100;
         }
+
+        body::-webkit-scrollbar { display: none; }
+
     </style>
 </head>
 <body>
 
-    <nav>
-        <div class="nav-logo">ABYSS.LNK</div>
-        <div class="nav-logo" style="opacity: 0.3;">PROTOCOL v4.0</div>
-    </nav>
-
     <div id="stage"></div>
+    <div class="ink-bar" id="inkBar"></div>
 
-    <div class="section-bg bg-hero bg-active" id="bg-0"></div>
-    <div class="section-bg bg-stealth" id="bg-1"></div>
-    <div class="section-bg bg-void" id="bg-2"></div>
-    <div class="section-bg bg-final" id="bg-3"></div>
+    <div class="bg-layer bg-1 active-bg" id="bg-1"></div>
+    <div class="bg-layer bg-2" id="bg-2"></div>
+    <div class="bg-layer bg-3" id="bg-3"></div>
+    <div class="bg-layer bg-4" id="bg-4"></div>
 
-    <!-- HERO -->
-    <section class="section">
-        <div class="content-block" id="hero-text">
-            <span class="tagline">Initialization Sequence</span>
-            <h1 class="glitch-title" id="title-glitch"></h1>
-            <p>A stealth-grade communication infrastructure. Designed for the unseen. No traces, no logs, no persistence.</p>
-            <div class="vertical-line"></div>
+    <!-- HERO SECTION -->
+    <section class="section" id="hero">
+        <div class="content-box">
+            <h1 style="font-size: clamp(3rem, 8vw, 6rem); margin-bottom: 1rem;" id="main-title"></h1>
+            <p>Silence is the highest form of security. An ephemeral communication layer designed for those who must leave no trace.</p>
+            <a href="#logic" class="btn-stealth">INITIALIZE_SHADOW</a>
         </div>
     </section>
 
-    <!-- STEALTH MECHANICS -->
-    <section class="section" id="mechanics">
-        <div class="content-block">
-            <span class="tagline">The Blade</span>
-            <h2>Silent Routing</h2>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>GHOST NODES</h3>
-                    <p>Ephemeral exit points that dissolve within milliseconds of transmission.</p>
-                </div>
-                <div class="card">
-                    <h3>SHADOW MESH</h3>
-                    <p>Dynamic routing through a decentralized web of non-persistent memory states.</p>
-                </div>
+    <!-- LOGIC SECTION -->
+    <section class="section" id="logic">
+        <div class="content-box">
+            <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">The Ninja Protocol</h2>
+            <p>Every packet is a ghost. We utilize non-persistent memory stacks that dissolve upon transmission, ensuring data existence is measured in milliseconds.</p>
+            <p>No identifiers. No logs. Just the void.</p>
+        </div>
+    </section>
+
+    <!-- CRAFT SECTION -->
+    <section class="section" id="craft">
+        <div class="content-box">
+            <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">Samurai Precision</h2>
+            <p>Encryption is our blade. Using asymmetric cryptographic handshakes, we establish tunnels that are mathematically impossible to attribute to any singular entity.</p>
+            <div style="display: flex; gap: 2rem; margin-top: 2rem; font-family: var(--font-mono); font-size: 0.7rem; color: #444;">
+                <div>[01] ZERO_PERSISTENCE</div>
+                <div>[02] ENTROPIC_ROUTING</div>
             </div>
         </div>
     </section>
 
-    <!-- VOID PROTOCOL -->
+    <!-- VOID SECTION -->
     <section class="section" id="void">
-        <div class="content-block">
-            <span class="tagline">The Smoke</span>
-            <h2>Zero Footprint</h2>
-            <p>In the world of the digital samurai, survival depends on invisibility. AbyssLink ensures that metadata—the footprint of your existence—never touches the disk.</p>
-            <div class="vertical-line"></div>
+        <div class="content-box">
+            <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">Detective Intelligence</h2>
+            <p>Identify threats before they materialize. Our infrastructure masks traffic patterns to prevent heuristic analysis. You are not just hidden; you are invisible.</p>
+            <button class="btn-stealth">ACTIVATE_VOID</button>
         </div>
     </section>
 
-    <!-- HUB -->
-    <section class="section" id="nexus">
-        <div class="content-block" style="width: 100%; text-align: center;">
-            <span class="tagline">The Master</span>
-            <h2>Nexus Hub</h2>
-            <p style="margin: 0 auto;">Connect with the shadows. Enter the encrypted void.</p>
-            <a href="#" class="btn">Enter The Abyss</a>
-        </div>
-    </section>
-
-    <!-- ABOUT SECTION (LAST) -->
+    <!-- ABOUT SECTION (THE VERY LAST) -->
     <footer class="about-footer">
-        <div class="about-inner">
-            <div class="nav-logo">ABOUT US</div>
-            <div class="about-small">
-                AbyssLink is a stealth-oriented research project developed by a collective of privacy engineers. We provide the tools for non-attributable communication in an age of total surveillance. We don't exist, and soon, neither will your logs.
+        <div class="about-wrap">
+            <div class="about-col">
+                <h5>The Mission</h5>
+                <p>To provide sanctuary for private thought. We build tools that prioritize the human right to vanish in a world of permanent surveillance.</p>
+            </div>
+            <div class="about-col">
+                <h5>The Craft</h5>
+                <p>A blend of modern cryptography and ancient stealth philosophy. Our code is written to be executed once and never found again.</p>
+            </div>
+            <div class="about-col">
+                <h5>The Code</h5>
+                <p>Open source, zero-knowledge, and entirely stateless. Developed by a global collective of anonymity researchers.</p>
             </div>
         </div>
-        <div class="legal">
-            SHADOW_PROTOCOL // NO_LOGS // NO_LEAKS // 2025
+        <div style="margin-top: 6rem; font-family: var(--font-mono); font-size: 0.6rem; color: #222; text-align: center; letter-spacing: 0.5em;">
+            ABYSSLINK // DIGITAL_BUSHIDO // EST_2025
         </div>
     </footer>
 
     <script>
-        // --- TITLE GLITCH ---
-        const str = "ABYSSLINK";
-        const titleContainer = document.getElementById('title-glitch');
-        str.split('').forEach((c, i) => {
+        // --- TEXT GLITCH (FAST VANISH) ---
+        const titleText = "ABYSSLINK";
+        const titleContainer = document.getElementById('main-title');
+        titleText.split('').forEach((c, i) => {
             const span = document.createElement('span');
             span.innerText = c;
             span.className = 'char';
@@ -333,86 +276,88 @@
 
         // --- THREE.JS STEALTH ENGINE ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.getElementById('stage').appendChild(renderer.domElement);
 
-        // FOG (Samurai Mist)
-        scene.fog = new THREE.FogExp2(0x000000, 0.035);
+        // CLOUDY FOG FLOOR (SAMURAI MOUNTAIN VIBE)
+        scene.fog = new THREE.FogExp2(0x000000, 0.03);
 
-        // CLOUD PARTICLES
-        const partCount = 4000;
-        const partGeo = new THREE.BufferGeometry();
-        const partPos = new Float32Array(partCount * 3);
-        for(let i=0; i < partCount * 3; i++) {
-            partPos[i] = (Math.random() - 0.5) * 120;
-        }
-        partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
-        const partMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.03, transparent: true, opacity: 0.1 });
-        const cloud = new THREE.Points(partGeo, partMat);
-        scene.add(cloud);
+        const cloudGeo = new THREE.PlaneGeometry(200, 200, 50, 50);
+        const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.05 });
+        const fogFloor = new THREE.Mesh(cloudGeo, cloudMat);
+        fogFloor.rotation.x = -Math.PI / 2;
+        fogFloor.position.y = -10;
+        scene.add(fogFloor);
 
-        // ASSET 1: THE CORE (Katana Cross Geometry)
-        const coreGroup = new THREE.Group();
+        // STEALTH ASSETS (WIREFRAMES)
         const wireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        
-        const coreBody = new THREE.Mesh(new THREE.IcosahedronGeometry(8, 2), wireMat.clone());
-        coreBody.material.opacity = 0.2;
-        coreGroup.add(coreBody);
-        
-        const coreRing = new THREE.Mesh(new THREE.TorusGeometry(12, 0.1, 16, 100), wireMat.clone());
-        coreRing.material.opacity = 0.1;
-        coreRing.rotation.x = Math.PI / 2;
-        coreGroup.add(coreRing);
-        
-        scene.add(coreGroup);
 
-        // ASSET 2: THE SHADOW GRID (Detective Cityscape/Grid)
-        const gridGroup = new THREE.Group();
-        const gridGeo = new THREE.BoxGeometry(2, 15, 2);
-        for(let i=0; i<50; i++) {
-            const mesh = new THREE.Mesh(gridGeo, wireMat.clone());
-            mesh.position.set((Math.random()-0.5)*100, -10, (Math.random()-0.5)*100);
-            gridGroup.add(mesh);
+        // Asset 1: The Katana Blade (Vertical Core)
+        const bladeGeo = new THREE.BoxGeometry(0.2, 30, 0.2);
+        const blade = new THREE.Mesh(bladeGeo, wireMat.clone());
+        blade.material.opacity = 0.2;
+        scene.add(blade);
+
+        // Asset 2: Shuriken Array
+        const shurikenGroup = new THREE.Group();
+        const sGeo = new THREE.TorusGeometry(5, 0.1, 8, 4);
+        for(let i=0; i<5; i++) {
+            const s = new THREE.Mesh(sGeo, wireMat.clone());
+            s.position.z = -20;
+            s.rotation.z = i * Math.PI / 2.5;
+            shurikenGroup.add(s);
         }
-        scene.add(gridGroup);
+        scene.add(shurikenGroup);
 
-        // ASSET 3: THE NEXUS (Ninja Star/Orbital)
-        const nexusGeo = new THREE.TorusKnotGeometry(10, 0.5, 128, 16, 2, 3);
-        const nexus = new THREE.Mesh(nexusGeo, wireMat.clone());
-        scene.add(nexus);
+        // Asset 3: The Scroll (Cylinder)
+        const scrollGeo = new THREE.CylinderGeometry(8, 8, 20, 12, 4, true);
+        const scroll = new THREE.Mesh(scrollGeo, wireMat.clone());
+        scroll.rotation.z = Math.PI / 2;
+        scene.add(scroll);
 
-        camera.position.z = 35;
+        // Asset 4: The Detective's Web (Icosahedron)
+        const webGeo = new THREE.IcosahedronGeometry(12, 2);
+        const web = new THREE.Mesh(webGeo, wireMat.clone());
+        scene.add(web);
 
-        // --- GSAP SCROLL MAGIC ---
+        camera.position.z = 40;
+
+        // --- GSAP CINEMATIC SCROLL ---
         gsap.registerPlugin(ScrollTrigger);
 
-        // Content reveal
-        document.querySelectorAll('.content-block').forEach(el => {
-            gsap.to(el, {
+        // Smooth Ink Bar
+        gsap.to("#inkBar", {
+            scaleY: 1,
+            scrollTrigger: { scrub: 0.3 }
+        });
+
+        // Content Fade
+        document.querySelectorAll('.content-box').forEach(box => {
+            gsap.to(box, {
                 scrollTrigger: {
-                    trigger: el,
-                    start: "top 85%",
+                    trigger: box,
+                    start: "top 80%",
                     toggleActions: "play none none reverse"
                 },
                 opacity: 1,
-                y: 0,
+                x: 0,
                 duration: 1.5,
-                ease: "power3.out"
+                ease: "power4.out"
             });
         });
 
-        const bgs = [
-            document.getElementById('bg-0'),
+        // BACKGROUNDS & CAMERA SPLINE
+        const bgLayers = [
             document.getElementById('bg-1'),
             document.getElementById('bg-2'),
-            document.getElementById('bg-3')
+            document.getElementById('bg-3'),
+            document.getElementById('bg-4')
         ];
 
-        // SCROLL TIMELINE
-        const tl = gsap.timeline({
+        const scrollTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
@@ -421,59 +366,84 @@
             }
         });
 
-        tl.to(camera.position, { x: 30, y: 15, z: 50, duration: 2 })
-          .to(camera.rotation, { y: 0.5, duration: 2 }, 0)
-          .to(coreGroup.position, { y: 50, duration: 2 }, 0)
-          .to(gridGroup.children.map(c => c.material), { opacity: 0.1, stagger: 0.01, duration: 1 }, 0.5)
-          .to(bgs[0], { opacity: 0, duration: 1 }, 0.5)
-          .to(bgs[1], { opacity: 1, duration: 1 }, 0.5)
-          
-          .to(camera.position, { x: -40, y: -20, z: 60, duration: 2 })
-          .to(camera.rotation, { x: 0.3, y: -0.5, duration: 2 }, 2)
-          .to(gridGroup.children.map(c => c.material), { opacity: 0, duration: 1 }, 2)
-          .to(nexus.material, { opacity: 0.2, duration: 1 }, 2.5)
-          .to(bgs[1], { opacity: 0, duration: 1 }, 2)
-          .to(bgs[2], { opacity: 1, duration: 1 }, 2)
+        scrollTimeline
+            // To Section 2 (Shuriken)
+            .to(camera.position, { x: 30, y: 15, z: 50, duration: 2 })
+            .to(camera.rotation, { y: 0.4, duration: 2 }, 0)
+            .to(blade.material, { opacity: 0, duration: 1 }, 0)
+            .to(shurikenGroup.children.map(s => s.material), { opacity: 0.2, stagger: 0.1 }, 0.5)
+            .to(bgLayers[0], { opacity: 0, duration: 1 }, 0.5)
+            .to(bgLayers[1], { opacity: 1, duration: 1 }, 0.5)
 
-          .to(camera.position, { x: 0, y: 0, z: 30, duration: 2 })
-          .to(camera.rotation, { x: 0, y: 0, duration: 2 }, 4)
-          .to(nexus.scale, { x: 2, y: 2, z: 2, duration: 2 }, 4)
-          .to(bgs[2], { opacity: 0, duration: 1 }, 4)
-          .to(bgs[3], { opacity: 1, duration: 1 }, 4);
+            // To Section 3 (Scroll)
+            .to(camera.position, { x: -30, y: -10, z: 45, duration: 2 })
+            .to(camera.rotation, { y: -0.6, x: 0.2, duration: 2 }, 2)
+            .to(shurikenGroup.children.map(s => s.material), { opacity: 0 }, 2)
+            .to(scroll.material, { opacity: 0.15, duration: 1 }, 2.5)
+            .to(bgLayers[1], { opacity: 0, duration: 1 }, 2)
+            .to(bgLayers[2], { opacity: 1, duration: 1 }, 2)
 
-        // --- ANIMATION LOOP ---
+            // To Section 4 (Web)
+            .to(camera.position, { x: 0, y: 0, z: 30, duration: 2 })
+            .to(camera.rotation, { x: 0, y: 0, duration: 2 }, 4)
+            .to(scroll.material, { opacity: 0, duration: 1 }, 4)
+            .to(web.material, { opacity: 0.25, duration: 1 }, 4.5)
+            .to(bgLayers[2], { opacity: 0, duration: 1 }, 4)
+            .to(bgLayers[3], { opacity: 1, duration: 1 }, 4);
+
+        // --- RENDER ANIMATION ---
         function animate() {
             requestAnimationFrame(animate);
-            const time = Date.now() * 0.001;
+            const t = Date.now() * 0.001;
 
-            coreGroup.rotation.y += 0.002;
-            coreGroup.rotation.z += 0.001;
+            // Wireframe subtle drifts
+            blade.rotation.y += 0.005;
             
-            gridGroup.children.forEach((c, i) => {
-                c.position.y = -10 + Math.sin(time + i) * 2;
-                c.rotation.y += 0.01;
+            shurikenGroup.children.forEach((s, i) => {
+                s.rotation.z += 0.02;
+                s.position.y = Math.sin(t + i) * 2;
             });
 
-            nexus.rotation.y += 0.005;
-            nexus.rotation.x += 0.002;
+            scroll.rotation.y += 0.005;
+            scroll.position.x = Math.sin(t * 0.5) * 2;
 
-            cloud.rotation.y += 0.0001;
-            const pos = cloud.geometry.attributes.position.array;
-            for(let i=0; i<partCount; i++) {
-                pos[i*3 + 1] += Math.sin(time + i) * 0.002;
+            web.rotation.y -= 0.002;
+            web.rotation.x += 0.001;
+
+            // Fog floor displacement
+            const pos = fogFloor.geometry.attributes.position.array;
+            for(let i=0; i<pos.length; i+=3) {
+                pos[i+2] = Math.sin(t + pos[i]*0.1) * 2;
             }
-            cloud.geometry.attributes.position.needsUpdate = true;
+            fogFloor.geometry.attributes.position.needsUpdate = true;
 
             renderer.render(scene, camera);
         }
+
         animate();
 
-        // RESIZE
+        // Handle Window Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        // Smooth Link Navigation
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if(target) {
+                    gsap.to(window, {
+                        duration: 2,
+                        scrollTo: target.offsetTop,
+                        ease: "power4.inOut"
+                    });
+                }
+            });
+        });
+
     </script>
 </body>
 </html>
