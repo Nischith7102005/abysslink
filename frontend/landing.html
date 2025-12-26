@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Anonymous Ephemeral Chat</title>
-
+    <title>AbyssLink — Anonymous Ephemeral Chat</title>
+    
     <!-- IMPORTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-
-    <!-- FONTS -->
+    
+    <!-- FONTS: Manrope (Clean/Modern) & Space Mono (Technical) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg: #000000;
+            --bg: #050505;
+            --surface: #0a0a0a;
             --text-main: #ffffff;
             --text-dim: #888888;
-            --accent: #00d4ff;
-            --border: #1a1a1a;
+            --border: #222222;
+            --grid-line: rgba(255, 255, 255, 0.03);
             --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
         }
 
@@ -51,7 +52,7 @@
             pointer-events: none;
         }
 
-        /* VIGNETTE */
+        /* UI OVERLAY */
         .vignette {
             position: fixed;
             top: 0;
@@ -73,6 +74,7 @@
             justify-content: space-between;
             align-items: center;
             z-index: 100;
+            mix-blend-mode: difference;
         }
 
         .brand {
@@ -80,106 +82,21 @@
             font-weight: 700;
             letter-spacing: -0.05em;
             text-transform: uppercase;
-            font-size: 1.2rem;
         }
 
         .nav-items a {
             font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-main);
             text-decoration: none;
             margin-left: 2rem;
             text-transform: uppercase;
-            opacity: 0.7;
+            letter-spacing: 0.1em;
+            opacity: 0.6;
             transition: opacity 0.3s;
         }
 
-        .nav-items a:hover {
-            opacity: 1;
-        }
-
-        /* HERO SECTION */
-        #hero {
-            position: relative;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-
-        .hero-content {
-            text-align: center;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        h1 {
-            font-size: clamp(4rem, 10vw, 8rem);
-            font-weight: 900;
-            background: linear-gradient(45deg, #00d4ff, #ff00ff, #00d4ff);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 3s ease infinite;
-            letter-spacing: -0.03em;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        .tagline {
-            font-size: clamp(1rem, 3vw, 1.5rem);
-            color: var(--text-dim);
-            margin-bottom: 3rem;
-            animation: fadeInUp 1s ease 0.3s backwards;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            animation: fadeInUp 1s ease 0.6s backwards;
-        }
-
-        .btn {
-            padding: 1.2rem 3rem;
-            font-size: 1.1rem;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-            color: #fff;
-            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0, 212, 255, 0.5);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: #00d4ff;
-            border: 2px solid #00d4ff;
-        }
-
-        .btn-secondary:hover {
-            background: #00d4ff;
-            color: #000;
-        }
+        .nav-items a:hover { opacity: 1; }
 
         /* SECTIONS */
         section {
@@ -196,84 +113,135 @@
             max-width: 800px;
             opacity: 0;
             transform: translateY(20px);
-            text-align: center;
         }
 
-        /* FEATURES SECTION */
-        #features {
-            background: #0a0a0a;
-            padding: 5rem 2rem;
+        /* TYPOGRAPHY */
+        h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 200;
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
         }
 
-        .section-title {
-            text-align: center;
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
-            margin-bottom: 4rem;
-            background: linear-gradient(135deg, #00d4ff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        h2 {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 200;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
         }
 
+        p.lead {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        /* DECIPHER GLITCH TEXT */
+        .decipher-text {
+            display: inline-block;
+        }
+
+        /* BUTTONS - ADAPTED FROM SOURCE 1 TO MATCH SOURCE 2 STYLE */
+        .btn-group {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1.2rem 2.5rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-out);
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 0;
+        }
+
+        .btn-primary {
+            background: var(--text-main);
+            color: var(--bg);
+            border: 1px solid var(--text-main);
+        }
+
+        .btn-primary:hover {
+            transform: translateX(10px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-main);
+        }
+
+        /* FEATURES GRID - ADAPTED CONTENT */
         .features-grid {
-            max-width: 1200px;
-            margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
+            margin-top: 4rem;
+            width: 100%;
         }
 
         .feature-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 20px;
-            padding: 2.5rem;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+            transition: border-color 0.3s ease;
+            background: transparent;
         }
 
         .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: rgba(0, 212, 255, 0.6);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.3);
+            border-color: var(--text-main);
         }
 
         .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
+            font-size: 1.5rem; /* Smaller to fit theme */
+            margin-bottom: 1rem;
             display: block;
+            filter: grayscale(100%);
+            opacity: 0.7;
         }
 
         .feature-card h3 {
-            font-size: 1.5rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            text-transform: uppercase;
             margin-bottom: 1rem;
-            color: #00d4ff;
+            color: var(--text-main);
+            letter-spacing: 0.1em;
         }
 
         .feature-card p {
-            color: #aaa;
-            line-height: 1.6;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            line-height: 1.5;
         }
 
-        /* HOW IT WORKS SECTION */
-        #how-it-works {
-            background: linear-gradient(180deg, #0a0a0a 0%, #1a0a2e 100%);
-            padding: 8rem 2rem;
-        }
-
-        .steps {
-            max-width: 900px;
-            margin: 0 auto;
+        /* HOW IT WORKS - STEPS */
+        .steps-container {
+            width: 100%;
+            max-width: 1000px;
         }
 
         .step {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 3rem;
             margin-bottom: 4rem;
             opacity: 0;
-            transform: translateX(-50px);
+            transform: translateX(-20px);
             transition: all 0.6s ease;
         }
 
@@ -283,79 +251,113 @@
         }
 
         .step:nth-child(even) {
-            flex-direction: row-reverse;
-            transform: translateX(50px);
-        }
-
-        .step:nth-child(even).visible {
-            transform: translateX(0);
+            transform: translateX(20px);
         }
 
         .step-number {
-            font-size: 4rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, #00d4ff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-family: 'Space Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-main);
             min-width: 100px;
-            text-align: center;
+            opacity: 0.3;
+            line-height: 1;
         }
 
         .step-content h3 {
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-            color: #00d4ff;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+            font-weight: 400;
         }
 
         .step-content p {
-            color: #aaa;
-            font-size: 1.1rem;
-            line-height: 1.8;
+            color: var(--text-dim);
+            font-size: 1rem;
+            line-height: 1.6;
         }
 
         /* PRIVACY SECTION */
-        #privacy {
-            background: #000;
-            padding: 8rem 2rem;
-            text-align: center;
-        }
-
-        .privacy-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
         .privacy-promise {
-            background: rgba(255, 0, 255, 0.1);
-            border: 2px solid rgba(255, 0, 255, 0.3);
-            border-radius: 20px;
+            border: 1px solid var(--border);
             padding: 3rem;
             margin-top: 3rem;
         }
 
         .privacy-promise ul {
             list-style: none;
-            font-size: 1.2rem;
-            line-height: 2.5;
+            font-size: 1.1rem;
+            line-height: 2;
+            text-align: left;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .privacy-promise li {
+            color: var(--text-dim);
+        }
+
+        .privacy-promise li::before {
+            content: "// ";
+            color: var(--text-main);
+            opacity: 0.5;
+        }
+
+        /* ABOUT SECTION (SMALL, LAST) */
+        .about-section {
+            min-height: 60vh;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            padding: 4rem 8rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 4rem;
+            z-index: 20;
+            position: relative;
             text-align: left;
         }
 
-        .privacy-promise li:before {
-            content: "✓ ";
-            color: #00d4ff;
-            font-weight: bold;
-            margin-right: 10px;
+        .footer-brand h3 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
         }
 
-        /* FINAL CTA SECTION */
-        #final-cta {
-            background: linear-gradient(135deg, #1a0a2e 0%, #0a0a0a 100%);
-            padding: 8rem 2rem;
-            text-align: center;
+        .footer-brand p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            max-width: 300px;
+            line-height: 1.5;
         }
 
-        /* MODALS */
+        .footer-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .link-col h4 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .link-col a {
+            display: block;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s;
+        }
+
+        .link-col a:hover { color: var(--text-main); }
+
+        /* MODALS - STEALTH STYLE */
         .modal {
             display: none;
             position: fixed;
@@ -363,11 +365,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(5, 5, 5, 0.95);
+            backdrop-filter: blur(10px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.2s ease;
         }
 
         @keyframes fadeIn {
@@ -376,18 +379,17 @@
         }
 
         .modal-content {
-            background: linear-gradient(135deg, #1a0a2e, #0a0a0a);
+            background: var(--surface);
             padding: 3rem;
-            border-radius: 20px;
+            border: 1px solid var(--border);
             max-width: 500px;
             width: 90%;
-            border: 2px solid #00d4ff;
             animation: slideUp 0.4s ease;
         }
 
         @keyframes slideUp {
             from {
-                transform: translateY(50px);
+                transform: translateY(30px);
                 opacity: 0;
             }
             to {
@@ -397,9 +399,12 @@
         }
 
         .modal-content h2 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.5rem;
             margin-bottom: 2rem;
-            color: #00d4ff;
-            font-size: 2rem;
+            color: var(--text-main);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
         }
 
         .form-group {
@@ -409,25 +414,28 @@
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            color: #aaa;
-            font-size: 0.9rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         .form-group input {
             width: 100%;
             padding: 1rem;
-            border-radius: 10px;
-            border: 1px solid #333;
-            background: #111;
-            color: #fff;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Manrope', sans-serif;
             font-size: 1rem;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s;
+            border-radius: 0;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #00d4ff;
-            background: #1a1a1a;
+            border-color: var(--text-main);
         }
 
         .modal-actions {
@@ -437,82 +445,61 @@
         }
 
         .info-box {
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.05);
             padding: 1.5rem;
-            border-radius: 10px;
+            border: 1px solid var(--border);
             margin-bottom: 1.5rem;
-            border: 1px solid rgba(0, 212, 255, 0.3);
         }
 
         .info-box p {
-            color: #aaa;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
             margin-bottom: 0.5rem;
-            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         .info-box .value {
-            color: #00d4ff;
+            color: var(--text-main);
             word-break: break-all;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
             cursor: pointer;
+            padding: 0.75rem 0;
+            display: block;
+        }
+
+        .info-box .value:hover {
+            color: #fff;
         }
 
         .warning {
-            color: #ff6b6b;
+            color: #666;
             margin-bottom: 2rem;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             padding: 1rem;
-            background: rgba(255, 0, 0, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 0, 0, 0.3);
-        }
-
-        .scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: bounce 2s infinite;
-            font-size: 2rem;
-            color: #00d4ff;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translate(-50%, 0); }
-            50% { transform: translate(-50%, 20px); }
+            border: 1px solid #333;
+            font-family: 'Space Mono', monospace;
         }
 
         /* RESPONSIVE */
         @media (max-width: 1024px) {
             section { padding: 0 4rem; }
-            .about-section { padding: 3rem 2rem; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .about-section { padding: 4rem; grid-template-columns: 1fr; }
         }
 
         @media (max-width: 768px) {
-            h1 { font-size: 3rem; }
-            .cta-buttons {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            .step {
-                flex-direction: column !important;
-                text-align: center;
-            }
-            .step-number {
-                margin: 0 auto;
-            }
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-            .modal-actions {
-                flex-direction: column;
-            }
+            .features-grid { grid-template-columns: 1fr; }
+            .btn-group { flex-direction: column; }
+            .step { flex-direction: column !important; gap: 1rem; text-align: left; }
+            .about-section { padding: 2rem 1.5rem; }
+            .footer-links { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+
     <!-- 3D BACKGROUND -->
     <div id="webgl-stage"></div>
     <div class="vignette"></div>
@@ -520,29 +507,31 @@
     <nav>
         <div class="brand">AbyssLink</div>
         <div class="nav-items">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
+            <a href="#features">System</a>
+            <a href="#how-it-works">Protocol</a>
             <a href="#privacy">Privacy</a>
         </div>
     </nav>
 
-    <!-- HERO SECTION -->
+    <!-- HERO SECTION: STEALTH STYLE WITH SOURCE 1 FUNCTIONALITY -->
     <section id="hero">
-        <div class="hero-content">
-            <h1>ABYSSLINK</h1>
-            <p class="tagline">Anonymous. Ephemeral. Untraceable.</p>
-            <div class="cta-buttons">
+        <div class="content-wrapper">
+            <h1 class="decipher-text" data-value="INVISIBLE_BY_DEFAULT">Invisible by Default.</h1>
+            <p class="lead">
+                Anonymous. Ephemeral. Untraceable.
+            </p>
+            <div class="btn-group">
                 <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
                 <a href="rooms.html" class="btn btn-secondary">Active Rooms</a>
             </div>
         </div>
-        <div class="scroll-indicator">↓</div>
     </section>
 
-    <!-- FEATURES SECTION -->
+    <!-- FEATURES SECTION: SOURCE 1 CONTENT, STEALTH STYLE -->
     <section id="features">
-        <div class="content-wrapper">
-            <h2 class="section-title">Why AbyssLink?</h2>
+        <div class="content-wrapper" style="max-width: 1000px;">
+            <h2 class="decipher-text" data-value="WHY_ABYSSLINK">Why AbyssLink?</h2>
+            
             <div class="features-grid">
                 <div class="feature-card">
                     <span class="feature-icon">🎭</span>
@@ -557,12 +546,12 @@
                 <div class="feature-card">
                     <span class="feature-icon">🔐</span>
                     <h3>Invite-Only Access</h3>
-                    <p>Password-protected rooms. Share the link privately. Control who enters.</p>
+                    <p>Password-protected rooms. Share link privately. Control who enters.</p>
                 </div>
                 <div class="feature-card">
                     <span class="feature-icon">💬</span>
                     <h3>Real-Time Chat</h3>
-                    <p>Instant messaging with file sharing. Everything disappears when the room does.</p>
+                    <p>Instant messaging with file sharing. Everything disappears when room does.</p>
                 </div>
                 <div class="feature-card">
                     <span class="feature-icon">🔥</span>
@@ -578,12 +567,11 @@
         </div>
     </section>
 
-    <!-- HOW IT WORKS SECTION -->
+    <!-- HOW IT WORKS: SOURCE 1 CONTENT, STEALTH STYLE -->
     <section id="how-it-works">
-        <div class="content-wrapper">
-            <h2 class="section-title">How It Works</h2>
-        </div>
-        <div class="steps">
+        <div class="content-wrapper steps-container">
+            <h2 class="decipher-text" data-value="HOW_IT_WORKS">How It Works</h2>
+            
             <div class="step">
                 <div class="step-number">01</div>
                 <div class="step-content">
@@ -596,7 +584,7 @@
                 <div class="step-number">02</div>
                 <div class="step-content">
                     <h3>Invite Participants</h3>
-                    <p>Send the link privately. Share the password through a different channel. Both are required to enter.</p>
+                    <p>Send link privately. Share password through a different channel. Both are required to enter.</p>
                 </div>
             </div>
 
@@ -619,11 +607,11 @@
     </section>
 
     <!-- PRIVACY SECTION -->
-    <section id="privacy">
-        <div class="privacy-content">
-            <h2 class="section-title">Privacy by Design</h2>
-            <p style="font-size: 1.2rem; color: #aaa; line-height: 1.8; margin-bottom: 2rem;">
-                AbyssLink is built on the principle that true privacy means we can't access your data—because it doesn't exist.
+    <section id="privacy" style="text-align: center; align-items: center;">
+        <div class="content-wrapper" style="max-width: 900px;">
+            <h2 class="decipher-text" data-value="PRIVACY_BY_DESIGN">Privacy by Design</h2>
+            <p class="lead">
+                AbyssLink is built on principle that true privacy means we can't access your data—because it doesn't exist.
             </p>
             <div class="privacy-promise">
                 <ul>
@@ -638,20 +626,57 @@
         </div>
     </section>
 
-    <!-- FINAL CTA SECTION -->
-    <section id="final-cta">
+    <!-- FINAL CTA -->
+    <section id="final-cta" style="text-align: center; align-items: center;">
         <div class="content-wrapper">
-            <h2 class="section-title">Ready to Disappear?</h2>
-            <p style="font-size: 1.3rem; color: #888; margin-bottom: 3rem;">
-                Create a room. Have your conversation. Let it vanish.
-            </p>
-            <button class="btn btn-primary" onclick="openCreateModal()" style="font-size: 1.3rem; padding: 1.5rem 4rem;">
+            <h2 class="decipher-text" data-value="READY_TO_DISAPPEAR">Ready to Disappear?</h2>
+            <p class="lead">Create a room. Have your conversation. Let it vanish.</p>
+            <button class="btn btn-primary" style="font-size: 1.1rem; padding: 1.5rem 3.5rem;" onclick="openCreateModal()">
                 Start Your First Room
             </button>
         </div>
     </section>
 
-    <!-- Create Room Modal -->
+    <!-- ABOUT SECTION (PROFESSIONAL, SMALL, LAST) -->
+    <footer class="about-section">
+        <div class="footer-brand">
+            <h3 class="decipher-text" data-value="ABYSSLINK_CORP" style="font-size: 1.5rem; letter-spacing: -0.02em;">AbyssLink</h3>
+            <p>
+                Founded on principle that digital communication should mirror transience of physical conversation. We build for the shadows.
+            </p>
+        </div>
+        <div class="footer-links">
+            <div class="link-col">
+                <h4>Protocol</h4>
+                <a href="#">E2E Encryption</a>
+                <a href="#">Volatile Nodes</a>
+                <a href="#">Entropy Injection</a>
+            </div>
+            <div class="link-col">
+                <h4>Company</h4>
+                <a href="#">Manifesto</a>
+                <a href="#">Careers</a>
+                <a href="#">Press Kit</a>
+            </div>
+            <div class="link-col">
+                <h4>Legal</h4>
+                <a href="#">Terms of Void</a>
+                <a href="#">No-Log Policy</a>
+                <a href="#">Transparency</a>
+            </div>
+            <div class="link-col">
+                <h4>Connect</h4>
+                <a href="#">support@abyss.link</a>
+                <a href="#">PGP Key: 0x4B...</a>
+                <a href="#">Tor Node: .onion</a>
+            </div>
+        </div>
+        <div style="width: 100%; margin-top: 3rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
+            &copy; 2025 AbyssLink Systems. All rights reserved. No data stored.
+        </div>
+    </footer>
+
+    <!-- MODALS -->
     <div id="createModal" class="modal">
         <div class="modal-content">
             <h2>Create New Room</h2>
@@ -672,23 +697,22 @@
         </div>
     </div>
 
-    <!-- Room Created Success Modal -->
     <div id="successModal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
-            <h2>✓ Room Created!</h2>
-
+            <h2 style="color: var(--text-main);">✓ Room Created</h2>
+            
             <div class="info-box">
                 <p>Room ID (share this):</p>
                 <div class="value" id="roomIdDisplay" onclick="copyToClipboard('roomIdDisplay')"></div>
             </div>
 
             <div class="info-box">
-                <p>Creator Key (save this - only you have it!):</p>
-                <div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')" style="color: #ff00ff;"></div>
+                <p>Creator Key (save this):</p>
+                <div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')"></div>
             </div>
 
             <div class="warning">
-                ⚠️ <strong>Important:</strong> Share the Room ID and password separately. Both are required to join. Save your creator key to destroy the room later.
+                // IMPORTANT: Share Room ID and password separately. Save your creator key.
             </div>
 
             <button class="btn btn-primary" onclick="enterCreatedRoom()" style="width: 100%;">
@@ -698,12 +722,9 @@
     </div>
 
     <script>
-        // Configuration - Backend URL
-        const API_URL = 'https://abysslink.onrender.com';
-
-        // --- DECIPHER EFFECT FOR TITLES ---
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-
+        // --- PROFESSIONAL DECIPHER GLITCH EFFECT ---
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+        
         document.querySelectorAll('.decipher-text').forEach(element => {
             const originalText = element.getAttribute('data-value');
             let iterations = 0;
@@ -714,30 +735,191 @@
                         if(index < iterations) {
                             return originalText[index];
                         }
-                        return chars[Math.floor(Math.random() * chars.length)];
+                        return letters[Math.floor(Math.random() * letters.length)];
                     })
                     .join("");
-
-                if(iterations >= originalText.length) {
+                
+                if(iterations >= originalText.length) { 
                     clearInterval(interval);
                 }
-
+                
                 iterations += 1/3;
             }, 30);
         });
 
-        // Intersection Observer for scroll animations
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
+        // --- THREE.JS SETUP ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.02);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x050505);
+        document.getElementById('webgl-stage').appendChild(renderer.domElement);
+
+        // --- ASSET GROUPS ---
+        const heroGroup = new THREE.Group();
+        const infraGroup = new THREE.Group();
+        const voidGroup = new THREE.Group();
+        
+        scene.add(heroGroup);
+        scene.add(infraGroup);
+        scene.add(voidGroup);
+
+        // --- HERO: TERRAIN ---
+        const terrainGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
+        const terrainMat = new THREE.MeshBasicMaterial({ color: 0x222222, wireframe: true, transparent: true, opacity: 0.15 });
+        const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+        terrain.rotation.x = -Math.PI / 2;
+        terrain.position.y = -15;
+        
+        const pos = terrainGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const z = pos.getZ(i);
+            const x = pos.getX(i);
+            const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 5 + Math.random() * 2;
+            pos.setZ(i, z + noise);
+        }
+        terrainGeo.computeVertexNormals();
+        heroGroup.add(terrain);
+
+        const dustGeo = new THREE.BufferGeometry();
+        const dustCount = 3000;
+        const dustPos = new Float32Array(dustCount * 3);
+        for(let i=0; i<dustCount*3; i++) {
+            dustPos[i] = (Math.random() - 0.5) * 200;
+        }
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        const dustMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+        const dust = new THREE.Points(dustGeo, dustMat);
+        heroGroup.add(dust);
+
+        // --- INFRA: MONOLITHS ---
+        const monoGeo = new THREE.TetrahedronGeometry(2, 0);
+        const monoMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
+        const monoliths = [];
+        
+        for(let i=0; i<20; i++) {
+            const m = new THREE.Mesh(monoGeo, monoMat.clone());
+            m.position.set((Math.random()-0.5)*80, (Math.random()-0.5)*40, (Math.random()-0.5)*60);
+            infraGroup.add(m);
+            monoliths.push(m);
+        }
+
+        // --- VOID: CYLINDER ---
+        const voidGeo = new THREE.CylinderGeometry(20, 20, 80, 32, 1, true);
+        const voidMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
+        const voidCylinder = new THREE.Mesh(voidGeo, voidMat);
+        voidGroup.add(voidCylinder);
+
+        camera.position.z = 30;
+        camera.position.y = 5;
+
+        // --- SCROLL ANIMATIONS ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        document.querySelectorAll('.content-wrapper').forEach(content => {
+            gsap.to(content, {
+                scrollTrigger: {
+                    trigger: content,
+                    start: "top 85%",
+                    toggleActions: "play none none reverse"
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1.2,
+                ease: "power3.out"
             });
-        }, { threshold: 0.3 });
+        });
 
-        document.querySelectorAll('.step').forEach(step => observer.observe(step));
+        // Steps Animation
+        document.querySelectorAll('.step').forEach(step => {
+            gsap.to(step, {
+                scrollTrigger: {
+                    trigger: step,
+                    start: "top 85%",
+                    toggleActions: "play none none reverse"
+                },
+                opacity: 1,
+                x: 0,
+                duration: 1.2,
+                ease: "power3.out"
+            });
+        });
 
-        // Modal functions
+        const timeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1.5
+            }
+        });
+
+        // Adjusted for longer page (Source 1 content)
+        timeline
+            // HERO -> FEATURES
+            .to(camera.position, { z: 40, y: 15, duration: 3 }, 0)
+            .to(terrainMat, { opacity: 0, duration: 2 }, 0)
+            .to(dustMat, { opacity: 0.1, duration: 2 }, 0)
+            .to(monoMat, { opacity: 0.15, duration: 2 }, 1)
+
+            // FEATURES -> HOW IT WORKS
+            .to(monoliths, { 
+                x: (i) => monoliths[i].position.x * 2, 
+                duration: 3 
+            }, 3)
+            .to(monoMat, { opacity: 0, duration: 2 }, 3)
+            .to(voidMat, { opacity: 0.1, duration: 2 }, 4)
+            .to(voidCylinder.rotation, { z: Math.PI * 0.2, duration: 3 }, 3)
+
+            // HOW IT WORKS -> PRIVACY
+            .to(camera.position, { z: 50, y: -10, duration: 3 }, 6)
+            .to(voidCylinder.rotation, { z: Math.PI * 0.5, duration: 3 }, 6)
+
+            // PRIVACY -> FOOTER
+            .to(camera.position, { z: 20, y: 0, duration: 3 }, 9)
+            .to(voidMat, { opacity: 0, duration: 2 }, 10);
+
+        // --- RENDER LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            terrain.position.z = (time * 5) % 10;
+            
+            const positions = dustGeo.attributes.position.array;
+            for(let i=0; i<dustCount; i++) {
+                positions[i*3 + 1] += Math.sin(time * 2 + i) * 0.01;
+            }
+            dustGeo.attributes.position.needsUpdate = true;
+
+            monoliths.forEach((m, i) => {
+                m.rotation.x += 0.005;
+                m.rotation.y += 0.005;
+                m.position.y += Math.sin(time + i) * 0.02;
+            });
+
+            voidCylinder.rotation.y -= 0.001;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- SOURCE 1 LOGIC (MODALS & API) ---
+        const API_URL = 'https://abysslink.onrender.com';
+        let currentRoom = null;
+
         function openCreateModal() {
             document.getElementById('createModal').style.display = 'flex';
             document.getElementById('topicInput').focus();
@@ -752,13 +934,8 @@
             document.getElementById('successModal').style.display = 'none';
         }
 
-        // Store current room data
-        let currentRoom = null;
-
-        // Handle room creation
         async function handleCreateRoom(event) {
             event.preventDefault();
-
             const topic = document.getElementById('topicInput').value.trim();
             const password = document.getElementById('passwordInput').value;
 
@@ -769,14 +946,11 @@
                     body: JSON.stringify({ topic, password })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to create room');
-                }
+                if (!response.ok) throw new Error('Failed to create room');
 
                 const data = await response.json();
-
-                // Store in localStorage
                 const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
+                
                 currentRoom = {
                     roomId: data.roomId,
                     topic: topic,
@@ -788,152 +962,39 @@
                 rooms.push(currentRoom);
                 localStorage.setItem('abysslink_rooms', JSON.stringify(rooms));
 
-                // Show success modal
                 document.getElementById('roomIdDisplay').textContent = data.roomId;
                 document.getElementById('creatorKeyDisplay').textContent = data.creatorKey;
-
+                
                 closeCreateModal();
                 document.getElementById('successModal').style.display = 'flex';
 
             } catch (error) {
-                alert('Error creating room. Make sure the backend is running.');
+                alert('Error creating room. Make sure backend is running.');
                 console.error(error);
             }
         }
 
-        // Copy to clipboard
         function copyToClipboard(elementId) {
             const text = document.getElementById(elementId).textContent;
             navigator.clipboard.writeText(text).then(() => {
                 const el = document.getElementById(elementId);
                 const original = el.textContent;
-                el.textContent = 'Copied!';
-                setTimeout(() => {
-                    el.textContent = original;
-                }, 1000);
+                el.textContent = '[COPIED]';
+                setTimeout(() => el.textContent = original, 1000);
             });
         }
 
-        // Enter created room
         function enterCreatedRoom() {
             if (currentRoom) {
                 window.location.href = `chat.html?room=${currentRoom.roomId}`;
             }
         }
 
-        // Close modals on escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeCreateModal();
                 closeSuccessModal();
             }
-        });
-
-        // --- THREE.JS SETUP ---
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.015);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x000000);
-        document.getElementById('webgl-stage').appendChild(renderer.domElement);
-
-        // --- ASSET 1: THE GRID (Infrastructure) ---
-        const heroGroup = new THREE.Group();
-
-        // Wireframe Terrain
-        const terrainGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
-        const terrainMat = new THREE.MeshBasicMaterial({
-            color: 0x222222,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.15
-        });
-        const terrain = new THREE.Mesh(terrainGeo, terrainMat);
-        terrain.rotation.x = -Math.PI / 2;
-        terrain.position.y = -15;
-
-        // Deform terrain
-        const pos = terrainGeo.attributes.position;
-        for (let i = 0; i < pos.count; i++) {
-            const z = pos.getZ(i);
-            const x = pos.getX(i);
-            const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 5 + Math.random() * 2;
-            pos.setZ(i, z + noise);
-        }
-        terrainGeo.computeVertexNormals();
-        heroGroup.add(terrain);
-
-        // Floating Dust Particles
-        const dustGeo = new THREE.BufferGeometry();
-        const dustCount = 4000;
-        const dustPos = new Float32Array(dustCount * 3);
-        const dustSizes = new Float32Array(dustCount);
-
-        for(let i=0; i<dustCount*3; i++) {
-            dustPos[i] = (Math.random() - 0.5) * 200;
-        }
-        for(let i=0; i<dustCount; i++) {
-            dustSizes[i] = Math.random();
-        }
-
-        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-        const dustMat = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 0.1,
-            transparent: true,
-            opacity: 0.4,
-            blending: THREE.AdditiveBlending
-        });
-        const dust = new THREE.Points(dustGeo, dustMat);
-        heroGroup.add(dust);
-
-        scene.add(heroGroup);
-
-        // Content Fade In
-        document.querySelectorAll('.content-wrapper, .hero-content').forEach(content => {
-            gsap.to(content, {
-                scrollTrigger: {
-                    trigger: content,
-                    start: "top 85%",
-                    toggleActions: "play none none reverse"
-                },
-                opacity: 1,
-                y: 0,
-                duration: 1.2,
-                ease: "power3.out"
-            });
-        });
-
-        camera.position.z = 30;
-
-        // Animation Loop
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = Date.now() * 0.0005;
-
-            // Terrain Movement
-            terrain.position.z = (time * 5) % 10;
-
-            // Dust movement
-            const positions = dustGeo.attributes.position.array;
-            for(let i=0; i<dustCount; i++) {
-                positions[i*3 + 1] += Math.sin(time * 2 + i) * 0.01;
-            }
-            dustGeo.attributes.position.needsUpdate = true;
-
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        // Handle Resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>
