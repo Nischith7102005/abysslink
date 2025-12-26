@@ -3,60 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Stealth Ephemeral Infrastructure</title>
+    <title>AbyssLink | Strategic Stealth Infrastructure</title>
     
     <!-- LIBRARIES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:ital,wght@0,700;1,400&family=JetBrains+Mono:wght@200&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --white: #ffffff;
-            --black: #000000;
-            --gray-90: #111111;
-            --gray-80: #222222;
-            --font-serif: 'Cormorant Garamond', serif;
-            --font-accent: 'Cinzel', serif;
+            --pure-black: #000000;
+            --near-black: #050505;
+            --deep-gray: #111111;
+            --soft-white: #e5e5e5;
+            --muted-gray: #666666;
+            --font-main: 'Inter', sans-serif;
+            --font-serif: 'Playfair Display', serif;
             --font-mono: 'JetBrains Mono', monospace;
-            --transition-speed: 1.2s;
         }
 
         * { 
             margin: 0; 
             padding: 0; 
             box-sizing: border-box; 
-            cursor: crosshair;
         }
 
         body {
-            background-color: var(--black);
-            color: var(--white);
-            font-family: var(--font-serif);
+            background-color: var(--pure-black);
+            color: var(--soft-white);
+            font-family: var(--font-main);
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* TYPOGRAPHY OPTIMIZED FOR COMFORT */
-        h1, h2, h3 {
-            font-family: var(--font-accent);
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-        }
-
-        p {
-            font-size: clamp(1.15rem, 1.8vw, 1.4rem);
-            line-height: 1.8;
-            max-width: 650px;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 1.5rem;
-        }
-
-        /* THREE JS STAGE */
-        #stage {
+        /* SECTION DESIGN */
+        #viewport {
             position: fixed;
             top: 0;
             left: 0;
@@ -66,8 +49,7 @@
             pointer-events: none;
         }
 
-        /* SECTION BACKGROUNDS (STEALTH TRANSITIONS) */
-        .bg-layer {
+        .section-bg {
             position: fixed;
             top: 0;
             left: 0;
@@ -75,375 +57,389 @@
             height: 100%;
             z-index: -1;
             opacity: 0;
-            transition: opacity var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .active-bg { opacity: 1; }
+        .bg-active { opacity: 1; }
+        .bg-0 { background: radial-gradient(circle at center, #0a0a0a, #000); }
+        .bg-1 { background: linear-gradient(180deg, #000 0%, #080808 100%); }
+        .bg-2 { background: radial-gradient(circle at 70% 30%, #0d0d0d, #000); }
+        .bg-3 { background: #020202; }
 
-        .bg-1 { background: linear-gradient(to bottom, #000, #0a0a0a); }
-        .bg-2 { background: radial-gradient(circle at 70% 30%, #151515, #000); }
-        .bg-3 { background: linear-gradient(135deg, #000 0%, #080808 100%); }
-        .bg-4 { background: radial-gradient(circle at center, #111 0%, #000 100%); }
-
-        /* CONTENT WRAPPING */
-        .section {
+        .content-layer {
             position: relative;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding: 10vh 12vw;
             z-index: 10;
         }
 
-        .content-box {
-            opacity: 0;
-            transform: translateX(-40px);
-            border-left: 1px solid rgba(255,255,255,0.1);
-            padding-left: 3rem;
+        .section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 10vw;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
         }
 
-        /* NINJA SHARP GLITCH */
-        .glitch-word {
+        .inner {
+            max-width: 700px; /* Reading level optimization */
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        /* TYPOGRAPHY */
+        h1, h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: var(--muted-gray);
+            margin-bottom: 1.5rem;
+        }
+
+        .mono-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+            color: var(--muted-gray);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        /* FAST GLITCH */
+        .glitch-char {
             display: inline-block;
             position: relative;
+            animation: stealthVanish 1.8s infinite;
+            animation-delay: var(--delay);
         }
 
-        @keyframes vanishFlicker {
-            0%, 65%, 75%, 100% { opacity: 1; transform: scaleY(1); }
-            67% { opacity: 0; transform: scaleY(0); }
-            68% { opacity: 0.8; transform: skewX(20deg); }
-            70% { opacity: 0; }
-            72% { opacity: 1; transform: skewX(-20deg); }
+        @keyframes stealthVanish {
+            0%, 85%, 100% { opacity: 1; transform: scaleY(1); filter: blur(0); }
+            87% { opacity: 0; transform: scaleY(0.1); filter: blur(2px); }
+            90% { opacity: 0.4; transform: skewX(-20deg); }
+            92% { opacity: 0; transform: skewX(20deg); }
         }
 
-        .char {
+        /* BUTTONS */
+        .cta-btn {
             display: inline-block;
-            animation: vanishFlicker 2.5s infinite;
-            animation-delay: var(--d);
-        }
-
-        /* BUTTONS (SAMURAI MINIMALISM) */
-        .btn-stealth {
-            display: inline-block;
-            margin-top: 2.5rem;
-            padding: 1rem 4rem;
-            background: transparent;
-            color: var(--white);
-            border: 1px solid var(--white);
+            padding: 1.2rem 3rem;
+            border: 1px solid var(--soft-white);
+            color: var(--soft-white);
             text-decoration: none;
             font-family: var(--font-mono);
             font-size: 0.8rem;
-            letter-spacing: 0.4em;
-            transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-            position: relative;
-            overflow: hidden;
+            letter-spacing: 0.3em;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: transparent;
+            margin-top: 1rem;
         }
 
-        .btn-stealth:hover {
-            background: var(--white);
-            color: var(--black);
-            transform: translateX(10px);
+        .cta-btn:hover {
+            background: var(--soft-white);
+            color: var(--pure-black);
+            padding: 1.2rem 3.5rem;
         }
 
-        /* ABOUT SECTION (POST-INFRASTRUCTURE) */
-        .about-footer {
-            padding: 5rem 12vw;
-            background: var(--black);
-            z-index: 20;
-            position: relative;
+        /* ABOUT SECTION - THE LAST */
+        .about-section {
+            padding: 5rem 10vw;
+            background: #000;
             border-top: 1px solid #111;
         }
 
-        .about-wrap {
-            max-width: 1000px;
+        .about-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 4rem;
         }
 
-        .about-col h5 {
-            font-family: var(--font-accent);
+        .about-item h4 {
+            font-family: var(--font-mono);
             font-size: 0.65rem;
-            letter-spacing: 0.4em;
-            color: #444;
+            color: var(--muted-gray);
             margin-bottom: 1.5rem;
+            letter-spacing: 0.3em;
         }
 
-        .about-col p {
+        .about-item p {
             font-size: 0.9rem;
             line-height: 1.6;
-            color: #666;
-            font-style: italic;
+            margin-bottom: 0;
         }
 
-        /* SCROLL INDICATOR */
-        .ink-bar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 2px;
-            height: 100%;
-            background: linear-gradient(to bottom, #fff, transparent);
-            transform-origin: top;
-            z-index: 100;
+        .copyright {
+            margin-top: 6rem;
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: #222;
+            text-align: center;
+            letter-spacing: 0.5em;
         }
 
+        /* SCROLLBAR */
         body::-webkit-scrollbar { display: none; }
 
+        @media (max-width: 768px) {
+            .section { padding: 0 5vw; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="stage"></div>
-    <div class="ink-bar" id="inkBar"></div>
+    <div id="viewport"></div>
 
-    <div class="bg-layer bg-1 active-bg" id="bg-1"></div>
-    <div class="bg-layer bg-2" id="bg-2"></div>
-    <div class="bg-layer bg-3" id="bg-3"></div>
-    <div class="bg-layer bg-4" id="bg-4"></div>
+    <div class="section-bg bg-0 bg-active"></div>
+    <div class="section-bg bg-1"></div>
+    <div class="section-bg bg-2"></div>
+    <div class="section-bg bg-3"></div>
 
-    <!-- HERO SECTION -->
-    <section class="section" id="hero">
-        <div class="content-box">
-            <h1 style="font-size: clamp(3rem, 8vw, 6rem); margin-bottom: 1rem;" id="main-title"></h1>
-            <p>Silence is the highest form of security. An ephemeral communication layer designed for those who must leave no trace.</p>
-            <a href="#logic" class="btn-stealth">INITIALIZE_SHADOW</a>
-        </div>
-    </section>
-
-    <!-- LOGIC SECTION -->
-    <section class="section" id="logic">
-        <div class="content-box">
-            <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">The Ninja Protocol</h2>
-            <p>Every packet is a ghost. We utilize non-persistent memory stacks that dissolve upon transmission, ensuring data existence is measured in milliseconds.</p>
-            <p>No identifiers. No logs. Just the void.</p>
-        </div>
-    </section>
-
-    <!-- CRAFT SECTION -->
-    <section class="section" id="craft">
-        <div class="content-box">
-            <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">Samurai Precision</h2>
-            <p>Encryption is our blade. Using asymmetric cryptographic handshakes, we establish tunnels that are mathematically impossible to attribute to any singular entity.</p>
-            <div style="display: flex; gap: 2rem; margin-top: 2rem; font-family: var(--font-mono); font-size: 0.7rem; color: #444;">
-                <div>[01] ZERO_PERSISTENCE</div>
-                <div>[02] ENTROPIC_ROUTING</div>
+    <div class="content-layer">
+        <!-- HERO -->
+        <section class="section" id="hero">
+            <div class="inner">
+                <span class="mono-label">Project: AbyssLink</span>
+                <h1 id="title-glitch"></h1>
+                <p>Architecting the void. A high-fidelity communication infrastructure designed for total digital non-attribution.</p>
+                <a href="#philosophy" class="cta-btn">ACCESS_CORE</a>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- VOID SECTION -->
-    <section class="section" id="void">
-        <div class="content-box">
-            <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">Detective Intelligence</h2>
-            <p>Identify threats before they materialize. Our infrastructure masks traffic patterns to prevent heuristic analysis. You are not just hidden; you are invisible.</p>
-            <button class="btn-stealth">ACTIVATE_VOID</button>
-        </div>
-    </section>
+        <!-- PHILOSOPHY -->
+        <section class="section" id="philosophy">
+            <div class="inner">
+                <span class="mono-label">01 // Strategic Philosophy</span>
+                <h2>The Art of Invisibility.</h2>
+                <p>Anonymity is not a feature; it is the foundation. We believe that secure communication requires more than just encryption—it requires the total absence of a footprint.</p>
+                <p>Every node in our mesh is transient. Every packet is ephemeral. No history, no residue, no compromise.</p>
+            </div>
+        </section>
 
-    <!-- ABOUT SECTION (THE VERY LAST) -->
-    <footer class="about-footer">
-        <div class="about-wrap">
-            <div class="about-col">
-                <h5>The Mission</h5>
-                <p>To provide sanctuary for private thought. We build tools that prioritize the human right to vanish in a world of permanent surveillance.</p>
+        <!-- PROTOCOL -->
+        <section class="section" id="protocol">
+            <div class="inner">
+                <span class="mono-label">02 // Operational Protocol</span>
+                <h2>Shadow Routing.</h2>
+                <p>Our infrastructure utilizes non-persistent memory stacks (NPMS). Data flows through a dynamic wireframe of entropic nodes that exist only as long as the transmission is active.</p>
+                <p>This creates a "vanishing tunnel" effect, making pattern analysis mathematically impossible for third-party observers.</p>
             </div>
-            <div class="about-col">
-                <h5>The Craft</h5>
-                <p>A blend of modern cryptography and ancient stealth philosophy. Our code is written to be executed once and never found again.</p>
+        </section>
+
+        <!-- INFRASTRUCTURE -->
+        <section class="section" id="infrastructure">
+            <div class="inner">
+                <span class="mono-label">03 // Cryptographic Nexus</span>
+                <h2>Terminal Oblivion.</h2>
+                <p>Upon session termination, the cryptographic keys and routing metadata undergo a multi-pass bit-level shredding process. In the Abyss, what is said is forgotten by the machine itself.</p>
+                <a href="#purged" class="cta-btn">INITIALIZE_VOID</a>
             </div>
-            <div class="about-col">
-                <h5>The Code</h5>
-                <p>Open source, zero-knowledge, and entirely stateless. Developed by a global collective of anonymity researchers.</p>
+        </section>
+
+        <!-- ABOUT (LAST) -->
+        <footer class="about-section">
+            <div class="about-grid">
+                <div class="about-item">
+                    <h4>The Collective</h4>
+                    <p>A decentralized group of privacy researchers and security engineers dedicated to preserving the right to digital stealth.</p>
+                </div>
+                <div class="about-item">
+                    <h4>The Stack</h4>
+                    <p>Open-source, zero-knowledge, and entirely stateless. Built using modern cryptographic primitives and distributed Mesh-Net logic.</p>
+                </div>
+                <div class="about-item">
+                    <h4>Contact</h4>
+                    <p>AbyssLink exists within the dark fiber mesh. No permanent address. No social presence. Just code.</p>
+                </div>
             </div>
-        </div>
-        <div style="margin-top: 6rem; font-family: var(--font-mono); font-size: 0.6rem; color: #222; text-align: center; letter-spacing: 0.5em;">
-            ABYSSLINK // DIGITAL_BUSHIDO // EST_2025
-        </div>
-    </footer>
+            <div class="copyright">
+                ABYSSLINK // VOID_PROTOCOL // EST_2025
+            </div>
+        </footer>
+    </div>
 
     <script>
-        // --- TEXT GLITCH (FAST VANISH) ---
-        const titleText = "ABYSSLINK";
-        const titleContainer = document.getElementById('main-title');
-        titleText.split('').forEach((c, i) => {
+        // --- TITLE GLITCH ---
+        const titleStr = "ABYSSLINK";
+        const titleContainer = document.getElementById('title-glitch');
+        titleStr.split('').forEach((c, i) => {
             const span = document.createElement('span');
             span.innerText = c;
-            span.className = 'char';
-            span.style.setProperty('--d', `${Math.random() * 3}s`);
+            span.className = 'glitch-char';
+            span.style.setProperty('--delay', `${Math.random() * 2}s`);
             titleContainer.appendChild(span);
         });
 
         // --- THREE.JS STEALTH ENGINE ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        document.getElementById('stage').appendChild(renderer.domElement);
+        document.getElementById('viewport').appendChild(renderer.domElement);
 
-        // CLOUDY FOG FLOOR (SAMURAI MOUNTAIN VIBE)
-        scene.fog = new THREE.FogExp2(0x000000, 0.03);
+        // ATMOSPHERE (CLOUDY STEALTH)
+        scene.fog = new THREE.FogExp2(0x000000, 0.025);
 
-        const cloudGeo = new THREE.PlaneGeometry(200, 200, 50, 50);
-        const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.05 });
-        const fogFloor = new THREE.Mesh(cloudGeo, cloudMat);
-        fogFloor.rotation.x = -Math.PI / 2;
-        fogFloor.position.y = -10;
-        scene.add(fogFloor);
+        // CLOUD PLANE (Subtle noise-based ground)
+        const cloudGeo = new THREE.PlaneGeometry(300, 300, 60, 60);
+        const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.03 });
+        const ground = new THREE.Mesh(cloudGeo, cloudMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -15;
+        scene.add(ground);
 
-        // STEALTH ASSETS (WIREFRAMES)
+        // MEANINGFUL WIREFRAMES
         const wireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
 
-        // Asset 1: The Katana Blade (Vertical Core)
-        const bladeGeo = new THREE.BoxGeometry(0.2, 30, 0.2);
-        const blade = new THREE.Mesh(bladeGeo, wireMat.clone());
-        blade.material.opacity = 0.2;
-        scene.add(blade);
+        // 1. The Core Nexus (Hub)
+        const hubGeo = new THREE.IcosahedronGeometry(12, 1);
+        const hub = new THREE.Mesh(hubGeo, wireMat.clone());
+        hub.material.opacity = 0.15;
+        scene.add(hub);
 
-        // Asset 2: Shuriken Array
-        const shurikenGroup = new THREE.Group();
-        const sGeo = new THREE.TorusGeometry(5, 0.1, 8, 4);
-        for(let i=0; i<5; i++) {
-            const s = new THREE.Mesh(sGeo, wireMat.clone());
-            s.position.z = -20;
-            s.rotation.z = i * Math.PI / 2.5;
-            shurikenGroup.add(s);
+        // 2. Data Packets (Tunnel Flow)
+        const tunnelGroup = new THREE.Group();
+        const packetGeo = new THREE.BoxGeometry(2, 2, 2);
+        for(let i=0; i<10; i++) {
+            const p = new THREE.Mesh(packetGeo, wireMat.clone());
+            p.position.set(Math.random()*20-10, Math.random()*20-10, -i*20);
+            tunnelGroup.add(p);
         }
-        scene.add(shurikenGroup);
+        scene.add(tunnelGroup);
 
-        // Asset 3: The Scroll (Cylinder)
-        const scrollGeo = new THREE.CylinderGeometry(8, 8, 20, 12, 4, true);
-        const scroll = new THREE.Mesh(scrollGeo, wireMat.clone());
-        scroll.rotation.z = Math.PI / 2;
-        scene.add(scroll);
+        // 3. Secure Vault (Encryption Nexus)
+        const vaultGroup = new THREE.Group();
+        const vaultInner = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), wireMat.clone());
+        const vaultOuter = new THREE.Mesh(new THREE.BoxGeometry(15, 15, 15), wireMat.clone());
+        vaultGroup.add(vaultInner, vaultOuter);
+        scene.add(vaultGroup);
 
-        // Asset 4: The Detective's Web (Icosahedron)
-        const webGeo = new THREE.IcosahedronGeometry(12, 2);
-        const web = new THREE.Mesh(webGeo, wireMat.clone());
-        scene.add(web);
+        // 4. The Void (Destruction Point)
+        const voidGeo = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+        const voidMesh = new THREE.Mesh(voidGeo, wireMat.clone());
+        scene.add(voidMesh);
 
         camera.position.z = 40;
 
-        // --- GSAP CINEMATIC SCROLL ---
+        // --- GSAP ORCHESTRATION ---
         gsap.registerPlugin(ScrollTrigger);
 
-        // Smooth Ink Bar
-        gsap.to("#inkBar", {
-            scaleY: 1,
-            scrollTrigger: { scrub: 0.3 }
-        });
-
-        // Content Fade
-        document.querySelectorAll('.content-box').forEach(box => {
-            gsap.to(box, {
+        // Section animations
+        document.querySelectorAll('.inner').forEach(inner => {
+            gsap.to(inner, {
                 scrollTrigger: {
-                    trigger: box,
-                    start: "top 80%",
+                    trigger: inner,
+                    start: "top 85%",
                     toggleActions: "play none none reverse"
                 },
                 opacity: 1,
-                x: 0,
-                duration: 1.5,
-                ease: "power4.out"
+                y: 0,
+                duration: 1.2,
+                ease: "expo.out"
             });
         });
 
-        // BACKGROUNDS & CAMERA SPLINE
-        const bgLayers = [
-            document.getElementById('bg-1'),
-            document.getElementById('bg-2'),
-            document.getElementById('bg-3'),
-            document.getElementById('bg-4')
-        ];
-
+        // Background / Asset Swapping
+        const bgs = document.querySelectorAll('.section-bg');
+        
         const scrollTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
                 end: "bottom bottom",
-                scrub: 1.5
+                scrub: 1.2
             }
         });
 
         scrollTimeline
-            // To Section 2 (Shuriken)
-            .to(camera.position, { x: 30, y: 15, z: 50, duration: 2 })
-            .to(camera.rotation, { y: 0.4, duration: 2 }, 0)
-            .to(blade.material, { opacity: 0, duration: 1 }, 0)
-            .to(shurikenGroup.children.map(s => s.material), { opacity: 0.2, stagger: 0.1 }, 0.5)
-            .to(bgLayers[0], { opacity: 0, duration: 1 }, 0.5)
-            .to(bgLayers[1], { opacity: 1, duration: 1 }, 0.5)
+            // From Hero to Philosophy
+            .to(camera.position, { x: 20, y: 15, z: 50, duration: 2 })
+            .to(camera.rotation, { y: 0.5, duration: 2 }, 0)
+            .to(hub.material, { opacity: 0, duration: 1 }, 0)
+            .to(tunnelGroup.children.map(p => p.material), { opacity: 0.2, stagger: 0.1, duration: 1 }, 0.5)
+            .to(bgs[0], { opacity: 0, duration: 1 }, 0.5)
+            .to(bgs[1], { opacity: 1, duration: 1 }, 0.5)
 
-            // To Section 3 (Scroll)
-            .to(camera.position, { x: -30, y: -10, z: 45, duration: 2 })
+            // To Protocol
+            .to(camera.position, { x: -30, y: -10, z: 60, duration: 2 })
             .to(camera.rotation, { y: -0.6, x: 0.2, duration: 2 }, 2)
-            .to(shurikenGroup.children.map(s => s.material), { opacity: 0 }, 2)
-            .to(scroll.material, { opacity: 0.15, duration: 1 }, 2.5)
-            .to(bgLayers[1], { opacity: 0, duration: 1 }, 2)
-            .to(bgLayers[2], { opacity: 1, duration: 1 }, 2)
+            .to(tunnelGroup.children.map(p => p.material), { opacity: 0, duration: 1 }, 2)
+            .to(vaultInner.material, { opacity: 0.4, duration: 1 }, 2.5)
+            .to(vaultOuter.material, { opacity: 0.1, duration: 1 }, 2.5)
+            .to(bgs[1], { opacity: 0, duration: 1 }, 2)
+            .to(bgs[2], { opacity: 1, duration: 1 }, 2)
 
-            // To Section 4 (Web)
-            .to(camera.position, { x: 0, y: 0, z: 30, duration: 2 })
+            // To Infrastructure
+            .to(camera.position, { x: 0, y: 0, z: 25, duration: 2 })
             .to(camera.rotation, { x: 0, y: 0, duration: 2 }, 4)
-            .to(scroll.material, { opacity: 0, duration: 1 }, 4)
-            .to(web.material, { opacity: 0.25, duration: 1 }, 4.5)
-            .to(bgLayers[2], { opacity: 0, duration: 1 }, 4)
-            .to(bgLayers[3], { opacity: 1, duration: 1 }, 4);
+            .to(vaultInner.material, { opacity: 0, duration: 1 }, 4)
+            .to(vaultOuter.material, { opacity: 0, duration: 1 }, 4)
+            .to(voidMesh.material, { opacity: 0.2, duration: 1 }, 4.5)
+            .to(bgs[2], { opacity: 0, duration: 1 }, 4)
+            .to(bgs[3], { opacity: 1, duration: 1 }, 4);
 
-        // --- RENDER ANIMATION ---
+        // --- ANIMATION LOOP ---
         function animate() {
             requestAnimationFrame(animate);
-            const t = Date.now() * 0.001;
+            const time = Date.now() * 0.001;
 
-            // Wireframe subtle drifts
-            blade.rotation.y += 0.005;
-            
-            shurikenGroup.children.forEach((s, i) => {
-                s.rotation.z += 0.02;
-                s.position.y = Math.sin(t + i) * 2;
+            // MEANINGFUL MOTIONS
+            hub.rotation.y += 0.004;
+            hub.rotation.x += 0.002;
+
+            tunnelGroup.children.forEach((p, i) => {
+                p.position.z += 0.1;
+                if(p.position.z > 20) p.position.z = -180;
+                p.rotation.x += 0.01;
             });
 
-            scroll.rotation.y += 0.005;
-            scroll.position.x = Math.sin(t * 0.5) * 2;
+            vaultInner.rotation.y -= 0.01;
+            vaultOuter.rotation.y += 0.005;
+            vaultGroup.position.y = Math.sin(time) * 1;
 
-            web.rotation.y -= 0.002;
-            web.rotation.x += 0.001;
+            voidMesh.rotation.z += 0.01;
+            voidMesh.scale.setScalar(1 + Math.sin(time*2)*0.05);
 
-            // Fog floor displacement
-            const pos = fogFloor.geometry.attributes.position.array;
+            // CLOUD MOTION
+            const pos = ground.geometry.attributes.position.array;
             for(let i=0; i<pos.length; i+=3) {
-                pos[i+2] = Math.sin(t + pos[i]*0.1) * 2;
+                pos[i+2] = Math.sin(time + pos[i]*0.1) * 2;
             }
-            fogFloor.geometry.attributes.position.needsUpdate = true;
+            ground.geometry.attributes.position.needsUpdate = true;
 
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // Handle Window Resize
+        // Handle Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Smooth Link Navigation
+        // Smooth Scroll Links
         document.querySelectorAll('a[href^="#"]').forEach(a => {
             a.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if(target) {
                     gsap.to(window, {
-                        duration: 2,
+                        duration: 1.5,
                         scrollTo: target.offsetTop,
-                        ease: "power4.inOut"
+                        ease: "expo.inOut"
                     });
                 }
             });
         });
-
     </script>
 </body>
 </html>
