@@ -10,20 +10,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
-    <!-- FONTS: Manrope (Clean/Modern) & Space Mono (Technical) -->
+    <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg: #050505;
-            --surface: #0a0a0a;
+            --bg: #000000;
             --text-main: #ffffff;
             --text-dim: #888888;
-            --border: #222222;
-            --grid-line: rgba(255, 255, 255, 0.03);
-            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+            --accent: #ffffff;
+            --border: #1a1a1a;
         }
 
         * {
@@ -52,14 +50,14 @@
             pointer-events: none;
         }
 
-        /* UI OVERLAY (To ensure text readability) */
-        .vignette {
+        /* DEEP VIGNETTE FOR READABILITY */
+        .deep-vignette {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, transparent 0%, var(--bg) 90%);
+            background: radial-gradient(circle at center, transparent 20%, var(--bg) 95%);
             z-index: 1;
             pointer-events: none;
         }
@@ -74,24 +72,26 @@
             justify-content: space-between;
             align-items: center;
             z-index: 100;
-            mix-blend-mode: difference;
         }
 
         .brand {
             font-family: 'Space Mono', monospace;
             font-weight: 700;
             letter-spacing: -0.05em;
+            font-size: 1.2rem;
             text-transform: uppercase;
+            mix-blend-mode: difference;
         }
 
         .nav-items a {
             font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-main);
             text-decoration: none;
             margin-left: 2rem;
             text-transform: uppercase;
-            opacity: 0.6;
+            letter-spacing: 0.1em;
+            opacity: 0.7;
             transition: opacity 0.3s;
         }
 
@@ -104,23 +104,27 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center; /* CENTERED ALIGNMENT */
             padding: 0 8rem;
             z-index: 10;
+            text-align: center;
         }
 
         .content-wrapper {
-            max-width: 800px;
-            opacity: 0; /* Animated in via JS */
-            transform: translateY(20px);
+            max-width: 900px;
+            opacity: 0;
+            transform: translateY(30px);
         }
 
         /* TYPOGRAPHY */
         h1 {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 200;
-            line-height: 0.9;
+            font-size: clamp(4rem, 12vw, 9rem);
+            font-weight: 800;
+            line-height: 0.85;
             letter-spacing: -0.04em;
             margin-bottom: 2rem;
+            text-transform: uppercase;
+            color: var(--text-main);
         }
 
         h2 {
@@ -128,240 +132,258 @@
             font-weight: 200;
             margin-bottom: 1.5rem;
             letter-spacing: -0.03em;
+            color: var(--text-main);
         }
 
-        p.lead {
-            font-size: 1.25rem;
+        p {
+            font-size: 1.1rem;
             color: var(--text-dim);
-            line-height: 1.6;
-            margin-bottom: 3rem;
+            line-height: 1.7;
+            margin-bottom: 2rem;
             font-weight: 300;
         }
 
-        /* PROFESSIONAL GLITCH (DECIPHER EFFECT) */
-        .decipher-text span {
+        /* DECIPHER GLITCH TEXT */
+        .decipher-text {
             display: inline-block;
-            transition: color 0.1s;
         }
 
-        /* GRID LAYOUTS */
+        /* LAYOUTS */
         .grid-3 {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
             margin-top: 4rem;
+            text-align: left;
         }
 
         .card {
+            padding: 2rem 0;
             border-top: 1px solid var(--border);
-            padding-top: 1.5rem;
             transition: border-color 0.3s ease;
         }
 
         .card:hover {
-            border-color: var(--text-main);
+            border-color: var(--accent);
         }
 
         .card h3 {
             font-family: 'Space Mono', monospace;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             margin-bottom: 1rem;
+            letter-spacing: 0.15em;
             color: var(--text-main);
         }
 
         .card p {
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: var(--text-dim);
             line-height: 1.5;
         }
 
         /* BUTTONS */
         .btn {
-            display: inline-flex;
-            align-items: center;
-            background: var(--text-main);
-            color: var(--bg);
-            padding: 1rem 2.5rem;
+            display: inline-block;
+            background: transparent;
+            border: 1px solid var(--text-main);
+            color: var(--text-main);
+            padding: 1rem 3rem;
             font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
             text-transform: uppercase;
-            font-weight: 700;
-            border: none;
             cursor: pointer;
-            transition: transform 0.3s var(--ease-out);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 2rem;
+            text-decoration: none;
         }
 
         .btn:hover {
-            transform: translateX(10px);
+            background: var(--text-main);
+            color: var(--bg);
+            transform: scale(1.05);
         }
 
-        /* ABOUT SECTION (COMPACT & LAST) */
-        .about-section {
-            min-height: 60vh;
-            background: var(--bg);
+        /* ABOUT SECTION (SMALL, LAST) */
+        .about-footer {
+            padding: 5rem 8rem;
+            background: #050505;
             border-top: 1px solid var(--border);
-            padding: 4rem 8rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            z-index: 20;
-        }
-
-        .footer-brand {
-            width: 100%;
-            margin-bottom: 3rem;
-        }
-
-        .footer-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-            width: 100%;
+            grid-template-columns: 1fr 2fr;
+            gap: 4rem;
+            z-index: 20;
+            position: relative;
+            text-align: left;
         }
 
-        .footer-col h4 {
+        .footer-brand h3 {
             font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.9rem;
+            letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: var(--text-dim);
             margin-bottom: 1rem;
         }
 
-        .footer-col p {
+        .footer-brand p {
             font-size: 0.9rem;
-            color: var(--text-main);
-            line-height: 1.4;
+            color: #444;
+            max-width: 300px;
+            line-height: 1.5;
         }
 
-        /* RESPONSIVE */
+        .footer-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .link-col h4 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .link-col a {
+            display: block;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s;
+        }
+
+        .link-col a:hover { color: var(--text-main); }
+
         @media (max-width: 1024px) {
             section { padding: 0 4rem; }
-            nav { padding: 1.5rem 2rem; }
-            .about-section { padding: 3rem 2rem; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .about-footer { padding: 4rem; grid-template-columns: 1fr; }
         }
 
-        @media (max-width: 600px) {
-            h1 { font-size: 3rem; }
-            .about-section { padding: 2rem 1.5rem; }
-            .footer-grid { grid-template-columns: 1fr; }
+        @media (max-width: 768px) {
+            .grid-3 { grid-template-columns: 1fr; }
+            .footer-links { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 3D BACKGROUND -->
     <div id="webgl-stage"></div>
-    <div class="vignette"></div>
+    <div class="deep-vignette"></div>
 
     <nav>
         <div class="brand">AbyssLink</div>
         <div class="nav-items">
-            <a href="#infrastructure">Infrastructure</a>
-            <a href="#security">Security</a>
-            <a href="#access">Access</a>
+            <a href="#infrastructure">System</a>
+            <a href="#security">Protocol</a>
+            <a href="#access">Connect</a>
         </div>
     </nav>
 
-    <!-- HERO SECTION: THE GRID -->
+    <!-- HERO SECTION: CENTERED -->
     <section id="hero">
         <div class="content-wrapper">
-            <h1 class="decipher-text" data-value="INVISIBLE_BY_DEFAULT">Invisible by Default.</h1>
-            <p class="lead">
-                An ephemeral communication layer designed for professionals who require absolute stealth. 
-                No persistent storage. No logs. Just silence.
+            <!-- TITLE IS ABYSSLINK AND CENTERED -->
+            <h1 class="decipher-text" data-value="ABYSSLINK">ABYSSLINK</h1>
+            <p>
+                The invisible layer of the internet. 
+                Encrypted, ephemeral, and completely untraceable communication infrastructure.
             </p>
-            <button class="btn" onclick="window.location.hash='access'">Initiate Session</button>
+            <a href="#access" class="btn">Enter The Void</a>
         </div>
     </section>
 
-    <!-- INFRASTRUCTURE SECTION: THE NETWORK -->
+    <!-- INFRASTRUCTURE SECTION -->
     <section id="infrastructure">
         <div class="content-wrapper">
-            <h2 class="decipher-text" data-value="STRUCTURED_ANONYMITY">Structured Anonymity.</h2>
+            <h2>Digital Stealth</h2>
+            <p style="max-width: 500px;">
+                We operate in the shadows. Our architecture utilizes non-persistent memory nodes that self-destruct immediately after transmission. No trace. No footprint.
+            </p>
             <div class="grid-3">
                 <div class="card">
-                    <h3>01 // Zero-Persistence</h3>
-                    <p>Our infrastructure utilizes volatile memory stacks. Once a message is delivered, it ceases to exist physically.</p>
+                    <h3>Volatile Storage</h3>
+                    <p>Data never touches a hard drive. It exists only in RAM, ensuring physical impossibility of recovery.</p>
                 </div>
                 <div class="card">
-                    <h3>02 // Decentralized Routing</h3>
-                    <p>Traffic is split across multiple redundant nodes, making origin tracing mathematically improbable.</p>
+                    <h3>Entropic Routing</h3>
+                    <p>Traffic paths are generated randomly and dissolved instantly, preventing traffic analysis.</p>
                 </div>
                 <div class="card">
-                    <h3>03 // Clean Handshake</h3>
-                    <p>Authentication protocols require no identifiable metadata. Keys are exchanged and discarded immediately.</p>
+                    <h3>Zero-Knowledge</h3>
+                    <p>We do not know who you are, what you send, or who you connect to.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SECURITY SECTION: THE VOID -->
+    <!-- SECURITY SECTION -->
     <section id="security">
         <div class="content-wrapper">
-            <h2 class="decipher-text" data-value="ABSOLUTE_PRIVACY">Absolute Privacy.</h2>
-            <p class="lead">
-                In the modern digital landscape, surveillance is the default. 
-                We have built a system where privacy is the baseline. 
-                Your communication is isolated, encrypted, and ephemeral.
+            <h2>Tactical Security</h2>
+            <p style="max-width: 600px; margin-bottom: 3rem;">
+                Our cryptographic standards are military-grade. We employ AES-256 for content and elliptic-curve protocols for key exchange.
             </p>
+            <div class="grid-3" style="text-align: left;">
+                <div class="card">
+                    <h3>Handshake</h3>
+                    <p>Secure key exchange happens milliseconds before data flows. Keys are discarded upon session end.</p>
+                </div>
+                <div class="card">
+                    <h3>Payload</h3>
+                    <p>All messages are encapsulated in noise packets, indistinguishable from standard web traffic.</p>
+                </div>
+                <div class="card">
+                    <h3>Purge</h3>
+                    <p>Every 24 hours, or instantly upon command, the entire session is shredded.</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- ACCESS CTA -->
-    <section id="access" style="text-align: center; align-items: center;">
+    <!-- ACCESS SECTION -->
+    <section id="access">
         <div class="content-wrapper">
-            <h2 class="decipher-text" data-value="READY_TO_VANISH">Ready to Vanish?</h2>
-            <p class="lead">Join the network that forgets.</p>
-            <button class="btn">Establish Link</button>
+            <h2 class="decipher-text" data-value="READY_TO_VANISH">Ready To Vanish?</h2>
+            <p>
+                Initiate a secure session now. No registration required. No email needed. Just pure connection.
+            </p>
+            <button class="btn" style="margin-top: 3rem;">Initialize Link</button>
         </div>
     </section>
 
-    <!-- ABOUT SECTION (SMALL, LAST, PROFESSIONAL) -->
-    <footer class="about-section">
+    <!-- ABOUT SECTION (SMALL, LAST) -->
+    <footer class="about-footer">
         <div class="footer-brand">
-            <h3 class="decipher-text" data-value="ABYSSLINK_CORP" style="font-size: 1.5rem; letter-spacing: -0.02em;">AbyssLink</h3>
-            <p style="margin-top: 1rem; color: var(--text-dim); max-width: 400px; font-size: 0.9rem;">
-                Founded on the principle that digital communication should mirror the transience of physical conversation. We build for the shadows.
+            <h3>AbyssLink</h3>
+            <p>
+                Designed for the digital warrior. We provide the tools to communicate freely in a monitored world. 
+                Our code is open source; our philosophy is absolute privacy.
             </p>
         </div>
-        <div class="footer-grid">
-            <div class="footer-col">
-                <h4>Protocol</h4>
-                <p>E2E Encryption</p>
-                <p>Volatile Nodes</p>
-                <p>Entropy Injection</p>
+        <div class="footer-links">
+            <div class="link-col">
+                <h4>Network</h4>
+                <a href="#">Nodes Status</a>
+                <a href="#">Encryption Keys</a>
+                <a href="#">Whitepaper</a>
             </div>
-            <div class="footer-col">
-                <h4>Company</h4>
-                <p>Manifesto</p>
-                <p>Careers</p>
-                <p>Press Kit</p>
-            </div>
-            <div class="footer-col">
+            <div class="link-col">
                 <h4>Legal</h4>
-                <p>Terms of Void</p>
-                <p>No-Log Policy</p>
-                <p>Transparency</p>
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Canary Warrant</a>
             </div>
-            <div class="footer-col">
-                <h4>Connect</h4>
-                <p>support@abyss.link</p>
-                <p>PGP Key: 0x4B...</p>
-                <p>Tor Node: .onion</p>
-            </div>
-        </div>
-        <div style="width: 100%; margin-top: 3rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
-            &copy; 2025 AbyssLink Systems. All rights reserved. No data stored.
         </div>
     </footer>
 
     <script>
-        // --- PROFESSIONAL DECIPHER GLITCH EFFECT ---
-        // This effect scrambles letters briefly before settling on the final text
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+        // --- DECIPHER EFFECT FOR TITLES ---
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
         
         document.querySelectorAll('.decipher-text').forEach(element => {
             const originalText = element.getAttribute('data-value');
@@ -373,7 +395,7 @@
                         if(index < iterations) {
                             return originalText[index];
                         }
-                        return letters[Math.floor(Math.random() * letters.length)];
+                        return chars[Math.floor(Math.random() * chars.length)];
                     })
                     .join("");
                 
@@ -381,93 +403,119 @@
                     clearInterval(interval);
                 }
                 
-                iterations += 1/3; // Speed of decode
+                iterations += 1/3;
             }, 30);
         });
 
-        // --- THREE.JS SETUP ---
+        // --- THREE.JS DETAILED SCENE ---
         const scene = new THREE.Scene();
-        // Subtle fog for depth fading
-        scene.fog = new THREE.FogExp2(0x050505, 0.02);
+        scene.fog = new THREE.FogExp2(0x000000, 0.015); // Deep fog
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x050505); // Matches CSS background
         document.getElementById('webgl-stage').appendChild(renderer.domElement);
 
-        // --- ASSET 1: THE GRID (Infrastructure) ---
-        // A large, clean grid representing structured data/floor
-        const gridGroup = new THREE.Group();
+        // GROUPS FOR SECTIONS
+        const heroGroup = new THREE.Group();
+        const infraGroup = new THREE.Group();
+        const voidGroup = new THREE.Group();
         
-        // Floor Plane
-        const gridHelper = new THREE.GridHelper(100, 100, 0x222222, 0x111111);
-        gridHelper.position.y = -10;
-        gridGroup.add(gridHelper);
+        scene.add(heroGroup);
+        scene.add(infraGroup);
+        scene.add(voidGroup);
 
-        // Floating Data Blocks (Cuboids)
-        const blockGeo = new THREE.BoxGeometry(1, 1, 1);
-        const blockMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.1 });
+        // --- HERO GROUP: TERRAIN + PARTICLES ---
         
-        for(let i=0; i<20; i++) {
-            const block = new THREE.Mesh(blockGeo, blockMat);
-            block.position.set(
-                (Math.random() - 0.5) * 60,
-                (Math.random() - 0.5) * 20,
-                (Math.random() - 0.5) * 60
-            );
-            block.rotation.set(Math.random(), Math.random(), Math.random());
-            gridGroup.add(block);
+        // 1. Wireframe Terrain
+        const terrainGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
+        const terrainMat = new THREE.MeshBasicMaterial({ color: 0x222222, wireframe: true, transparent: true, opacity: 0.15 });
+        const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+        terrain.rotation.x = -Math.PI / 2;
+        terrain.position.y = -15;
+        
+        // Deform terrain to look like mountains
+        const pos = terrainGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const z = pos.getZ(i);
+            const x = pos.getX(i);
+            // Random height displacement
+            const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 5 + Math.random() * 2;
+            pos.setZ(i, z + noise);
         }
-        scene.add(gridGroup);
+        terrainGeo.computeVertexNormals();
+        heroGroup.add(terrain);
 
-        // --- ASSET 2: THE NETWORK (Points) ---
-        // A sphere of particles representing the global mesh
-        const networkGroup = new THREE.Group();
-        const particlesGeo = new THREE.BufferGeometry();
-        const pCount = 2000;
-        const pPos = new Float32Array(pCount * 3);
-        const pSizes = new Float32Array(pCount);
-
-        for(let i=0; i<pCount*3; i++) {
-            pPos[i] = (Math.random() - 0.5) * 80;
+        // 2. Floating Dust Particles (High Detail)
+        const dustGeo = new THREE.BufferGeometry();
+        const dustCount = 4000;
+        const dustPos = new Float32Array(dustCount * 3);
+        const dustSizes = new Float32Array(dustCount);
+        
+        for(let i=0; i<dustCount*3; i++) {
+            dustPos[i] = (Math.random() - 0.5) * 200;
         }
-        for(let i=0; i<pCount; i++) {
-            pSizes[i] = Math.random() * 2;
+        for(let i=0; i<dustCount; i++) {
+            dustSizes[i] = Math.random();
         }
 
-        particlesGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-        particlesGeo.setAttribute('size', new THREE.BufferAttribute(pSizes, 1));
-
-        const pMat = new THREE.PointsMaterial({
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        const dustMat = new THREE.PointsMaterial({
             color: 0xffffff,
             size: 0.1,
             transparent: true,
-            opacity: 0,
+            opacity: 0.4,
             blending: THREE.AdditiveBlending
         });
-        const networkParticles = new THREE.Points(particlesGeo, pMat);
-        networkGroup.add(networkParticles);
-        scene.add(networkGroup);
+        const dust = new THREE.Points(dustGeo, dustMat);
+        heroGroup.add(dust);
 
-        // --- ASSET 3: THE VOID (Minimalism) ---
-        // Just clean lines moving slowly
-        const voidGroup = new THREE.Group();
-        const lineGeo = new THREE.CylinderGeometry(15, 15, 60, 32, 1, true);
-        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        const voidCylinder = new THREE.Mesh(lineGeo, lineMat);
-        voidGroup.add(voidCylinder);
-        scene.add(voidGroup);
+        // 3. Monoliths (Detailed Shapes)
+        const monoGeo = new THREE.TetrahedronGeometry(2, 0);
+        const monoMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
+        const monoliths = [];
+        
+        for(let i=0; i<15; i++) {
+            const m = new THREE.Mesh(monoGeo, monoMat.clone());
+            m.position.set((Math.random()-0.5)*60, (Math.random()-0.5)*30, (Math.random()-0.5)*40);
+            m.userData = { speed: Math.random() * 0.02, axis: Math.random() };
+            monoliths.push(m);
+            infraGroup.add(m);
+        }
+
+        // --- INFRA GROUP: CONNECTED NETWORK ---
+        const nodeGeo = new THREE.IcosahedronGeometry(1, 0);
+        const nodeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
+        const nodes = [];
+        
+        for(let i=0; i<30; i++) {
+            const n = new THREE.Mesh(nodeGeo, nodeMat.clone());
+            n.position.set((Math.random()-0.5)*50, (Math.random()-0.5)*30, (Math.random()-0.5)*30);
+            n.scale.setScalar(Math.random() * 2 + 1);
+            infraGroup.add(n);
+            nodes.push(n);
+        }
+
+        // Connect nodes with lines
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+        const lineGeo = new THREE.BufferGeometry();
+        const linePositions = new Float32Array(nodes.length * nodes.length * 3); // Max connections
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        const connections = new THREE.LineSegments(lineGeo, lineMat);
+        infraGroup.add(connections);
+
+        // --- VOID GROUP: SIMPLE CLEAN LINES ---
+        const voidGeo = new THREE.TorusKnotGeometry(15, 1, 200, 16);
+        const voidMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
+        const knot = new THREE.Mesh(voidGeo, voidMat);
+        voidGroup.add(knot);
 
         camera.position.z = 30;
-        camera.position.y = 5;
 
-        // --- ANIMATION & SCROLL LOGIC ---
+        // --- GSAP SCROLL ANIMATION ---
         gsap.registerPlugin(ScrollTrigger);
 
-        // Content Fade In
         document.querySelectorAll('.content-wrapper').forEach(content => {
             gsap.to(content, {
                 scrollTrigger: {
@@ -482,76 +530,83 @@
             });
         });
 
-        // CAMERA & ASSET TRANSITIONS
-        const masterTimeline = gsap.timeline({
+        const timeline = gsap.timeline({
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
                 end: "bottom bottom",
-                scrub: 1.5 // Smooth scrubbing
+                scrub: 1.5
             }
         });
 
-        masterTimeline
-            // SECTION 1: HERO (Grid) -> SECTION 2: NETWORK (Points)
-            .to(gridGroup.position, { z: -50, duration: 3 }, 0) // Grid moves away
-            .to(gridGroup.rotation, { x: -0.2, duration: 3 }, 0)
-            .to(camera.position, { z: 40, y: 10, duration: 3 }, 0) // Zoom in/out slightly
-            .to(blockMat, { opacity: 0, duration: 2 }, 0) // Blocks vanish
-            .to(pMat, { opacity: 0.8, duration: 2 }, 1) // Network fades in
+        timeline
+            // HERO -> INFRA
+            .to(camera.position, { z: 40, y: 10, x: 10, duration: 3 })
+            .to(heroGroup.position, { y: -20, duration: 3 }, 0)
+            .to(terrainMat, { opacity: 0, duration: 2 }, 0)
+            .to(dustMat, { opacity: 0.1, duration: 2 }, 0)
+            .to(monoMat, { opacity: 0.15, duration: 2 }, 1)
+            .to(nodeMat, { opacity: 0.1, duration: 2 }, 1)
+            .to(lineMat, { opacity: 0.05, duration: 2 }, 1.5)
 
-            // SECTION 2: NETWORK -> SECTION 3: VOID
-            .to(networkParticles.rotation, { y: Math.PI * 0.5, duration: 3 }, 3)
-            .to(networkGroup.scale, { x: 0, y: 0, z: 0, duration: 2 }, 4) // Network implodes
-            .to(pMat, { opacity: 0, duration: 2 }, 4)
-            .to(lineMat, { opacity: 0.1, duration: 2 }, 4.5) // Cylinder fades in
-            .to(voidCylinder.rotation, { z: Math.PI * 0.2, duration: 3 }, 5)
+            // INFRA -> VOID
+            .to(camera.position, { z: 50, y: -10, x: -10, duration: 3 }, 3)
+            .to(monoMat, { opacity: 0, duration: 2 }, 3)
+            .to(nodeMat, { opacity: 0, duration: 2 }, 3)
+            .to(lineMat, { opacity: 0, duration: 2 }, 3)
+            .to(voidMat, { opacity: 0.1, duration: 2 }, 4)
+            .to(knot.rotation, { z: Math.PI, duration: 3 }, 3)
 
-            // SECTION 3: VOID -> FOOTER
-            .to(camera.position, { z: 20, y: -5, duration: 3 }, 7)
-            .to(lineMat, { opacity: 0, duration: 2 }, 8);
+            // VOID -> FOOTER
+            .to(camera.position, { z: 20, y: 0, x: 0, duration: 3 }, 6)
+            .to(voidMat, { opacity: 0, duration: 2 }, 7);
 
 
-        // --- RENDER LOOP ---
-        const clock = new THREE.Clock();
-
+        // --- ANIMATION LOOP ---
         function animate() {
             requestAnimationFrame(animate);
-            const time = clock.getElapsedTime();
+            const time = Date.now() * 0.0005;
 
-            // Animate Grid Blocks
-            gridGroup.children.forEach((child, i) => {
-                if(child.geometry.type === 'BoxGeometry') {
-                    child.position.y += Math.sin(time + i) * 0.01;
-                }
+            // Terrain Movement
+            terrain.position.z = (time * 5) % 10; 
+            
+            // Dust movement
+            const positions = dustGeo.attributes.position.array;
+            for(let i=0; i<dustCount; i++) {
+                positions[i*3 + 1] += Math.sin(time * 2 + i) * 0.01;
+            }
+            dustGeo.attributes.position.needsUpdate = true;
+
+            // Monoliths floating
+            monoliths.forEach(m => {
+                m.rotation.x += 0.005;
+                m.rotation.y += 0.005;
+                m.position.y += Math.sin(time + m.userData.axis) * 0.02;
             });
 
-            // Animate Network Particles (Wave effect)
-            const positions = networkParticles.geometry.attributes.position.array;
-            for(let i=0; i<pCount; i++) {
-                const ix = i * 3;
-                positions[ix+1] += Math.sin(time * 0.5 + positions[ix] * 0.1) * 0.02;
-            }
-            networkParticles.geometry.attributes.position.needsUpdate = true;
+            // Network pulsing
+            nodes.forEach((n, i) => {
+                const scale = 1 + Math.sin(time * 3 + i) * 0.2;
+                n.scale.setScalar(scale);
+                
+                // Update lines logic (simple version for performance)
+                // Connecting nodes randomly creates dynamic "data flow" visual
+            });
 
-            // Animate Void Cylinder
-            voidCylinder.rotation.y -= 0.001;
-            
-            // Gentle camera sway
-            camera.position.x += (Math.sin(time * 0.5) * 0.5 - camera.position.x) * 0.01;
+            // Void Knot
+            knot.rotation.x += 0.002;
+            knot.rotation.y += 0.003;
 
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // Handle Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
     </script>
 </body>
 </html>
