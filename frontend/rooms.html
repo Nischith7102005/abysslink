@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Active Sessions — AbyssLink</title>
-
-    <!-- IMPORTS -->
+    <title>AbyssLink | Active Sessions</title>
+    
+    <!-- CORE LIBRARIES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 
-    <!-- FONTS -->
+    <!-- TYPHOGRAPHY -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -22,9 +22,9 @@
             --text-main: #ffffff;
             --text-dim: #888888;
             --border: #222222;
-            --grid-line: rgba(255, 255, 255, 0.03);
-            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-            --accent: #00d4ff;
+            --glow: #00d4ff;
+            --highlight: #ff00ff;
+            --danger: #ff6b6b;
         }
 
         * {
@@ -39,10 +39,9 @@
             font-family: 'Manrope', sans-serif;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-            cursor: default;
         }
 
-        /* STAGE */
+        /* 3D CANVAS */
         #webgl-stage {
             position: fixed;
             top: 0;
@@ -53,7 +52,7 @@
             pointer-events: none;
         }
 
-        /* VIGNETTE */
+        /* VISUAL LAYER */
         .vignette {
             position: fixed;
             top: 0;
@@ -65,7 +64,7 @@
             pointer-events: none;
         }
 
-        /* NAVIGATION */
+        /* NAVIGATION BAR */
         nav {
             position: fixed;
             top: 0;
@@ -83,6 +82,9 @@
             letter-spacing: -0.05em;
             text-transform: uppercase;
             font-size: 1.2rem;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .nav-items a {
@@ -99,7 +101,7 @@
 
         .nav-items a:hover { opacity: 1; }
 
-        /* MAIN CONTENT */
+        /* MAIN INTERFACE */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -108,7 +110,7 @@
             z-index: 10;
         }
 
-        /* HEADER */
+        /* TITLE SECTION */
         header {
             text-align: center;
             margin-bottom: 3rem;
@@ -128,10 +130,9 @@
 
         h1 {
             font-size: clamp(2.5rem, 5vw, 4rem);
-            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            background: linear-gradient(45deg, var(--glow), var(--highlight));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
             margin-bottom: 0.5rem;
             font-weight: 200;
             letter-spacing: -0.03em;
@@ -144,7 +145,7 @@
             text-transform: uppercase;
         }
 
-        /* ACTION BAR */
+        /* ACTION CONTROLS */
         .action-bar {
             display: flex;
             gap: 1rem;
@@ -161,11 +162,10 @@
             font-weight: 700;
             border: none;
             cursor: pointer;
-            transition: transform 0.3s var(--ease-out);
+            transition: transform 0.3s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 0;
             text-decoration: none;
         }
 
@@ -190,10 +190,10 @@
             transform: translateX(0) scale(1.05);
         }
 
-        /* ROOMS GRID */
+        /* ROOMS LAYOUT */
         .rooms-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
             animation: fadeIn 0.6s ease;
         }
@@ -250,7 +250,7 @@
         .room-topic {
             font-size: 1.3rem;
             font-weight: 700;
-            color: var(--accent);
+            color: var(--glow);
             margin-bottom: 0.5rem;
             font-family: 'Space Mono', monospace;
         }
@@ -283,7 +283,7 @@
             padding: 0.5rem 1rem;
             border: 1px solid rgba(255, 107, 107, 0.2);
             font-weight: 500;
-            color: #ff6b6b;
+            color: var(--danger);
             font-size: 0.9rem;
             font-family: 'Space Mono', monospace;
             border-radius: 0;
@@ -316,7 +316,7 @@
 
         .btn-vanish {
             background: rgba(255, 0, 0, 0.1);
-            color: #ff6b6b;
+            color: var(--danger);
             padding: 0.8rem 1.5rem;
             font-family: 'Space Mono', monospace;
             font-size: 0.7rem;
@@ -359,16 +359,7 @@
             letter-spacing: 0.05em;
         }
 
-        .empty-state p {
-            color: var(--text-dim);
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* MODAL */
+        /* MODAL COMPONENT */
         .modal {
             display: none;
             position: fixed;
@@ -382,6 +373,11 @@
             z-index: 1000;
             animation: fadeIn 0.3s ease;
             backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .modal-content {
@@ -452,7 +448,7 @@
             margin-top: 2rem;
         }
 
-        /* RESPONSIVE */
+        /* RESPONSIVE ADJUSTMENTS */
         @media (max-width: 1024px) {
             .container { padding: 4rem 2rem; }
             .rooms-grid { grid-template-columns: 1fr 1fr; }
@@ -467,7 +463,7 @@
     </style>
 </head>
 <body>
-    <!-- 3D BACKGROUND -->
+    <!-- 3D CANVAS -->
     <div id="webgl-stage"></div>
     <div class="vignette"></div>
 
@@ -493,7 +489,7 @@
         <div id="roomsContainer"></div>
     </div>
 
-    <!-- Join Room Modal -->
+    <!-- JOIN MODAL -->
     <div id="joinModal" class="modal">
         <div class="modal-content">
             <h2>Join Session</h2>
@@ -514,123 +510,113 @@
         </div>
     </div>
 
-    <!-- THREE.JS SETUP -->
+    <!-- 3D EFFECTS & ANIMATIONS -->
     <script>
-        // Configuration - Backend URL
+        // Core Configuration
         const API_URL = 'https://abysslink.onrender.com';
 
-        // --- THREE.JS SETUP ---
+        // THREE.JS INITIALIZATION
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.015);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-
+        
+        // Scene Configuration
+        scene.fog = new THREE.FogExp2(0x050505, 0.015);
+        camera.position.z = 30;
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setClearColor(0x050505);
         document.getElementById('webgl-stage').appendChild(renderer.domElement);
 
-        // --- ASSET: FLOATING PARTICLES ---
+        // DYNAMIC PARTICLES SYSTEM
         const particlesGroup = new THREE.Group();
-        const particlesGeo = new THREE.BufferGeometry();
-        const pCount = 1500;
-        const pPos = new Float32Array(pCount * 3);
-        const pSizes = new Float32Array(pCount);
+        const particleCount = 1500;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
 
-        for(let i=0; i<pCount*3; i++) {
-            pPos[i] = (Math.random() - 0.5) * 200;
+        for (let i = 0; i < particleCount * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 200;
         }
-        for(let i=0; i<pCount; i++) {
-            pSizes[i] = Math.random() * 1.5;
+        
+        for (let i = 0; i < particleCount; i++) {
+            sizes[i] = Math.random() * 1.5;
         }
 
-        particlesGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-        particlesGeo.setAttribute('size', new THREE.BufferAttribute(pSizes, 1));
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-        const pMat = new THREE.PointsMaterial({
+        const material = new THREE.PointsMaterial({
             color: 0xffffff,
             size: 0.1,
             transparent: true,
             opacity: 0.3,
             blending: THREE.AdditiveBlending
         });
-        const particles = new THREE.Points(particlesGeo, pMat);
+
+        const particles = new THREE.Points(geometry, material);
         particlesGroup.add(particles);
         scene.add(particlesGroup);
 
-        camera.position.z = 30;
-
-        // Animation Loop
+        // ANIMATION LOOP
         function animate() {
             requestAnimationFrame(animate);
             const time = Date.now() * 0.0005;
-
-            // Animate particles
+            
+            // Particle Animation
             const positions = particles.geometry.attributes.position.array;
-            for(let i=0; i<pCount; i++) {
-                positions[i*3 + 1] += Math.sin(time * 0.3 + i) * 0.01;
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3 + 1] = Math.sin(time * 0.3 + i) * 0.01;
             }
             particles.geometry.attributes.position.needsUpdate = true;
-
-            // Gentle camera sway
+            
+            // Camera Movement
             camera.position.x += (Math.sin(time * 0.3) * 0.3 - camera.position.x) * 0.01;
-
+            
             renderer.render(scene, camera);
         }
-
         animate();
 
-        // Handle Resize
+        // WINDOW RESIZING
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // --- DECIPHER EFFECT FOR TITLES ---
+        // TITLE ANIMATION
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 
         document.querySelectorAll('.decipher-text').forEach(element => {
             const originalText = element.getAttribute('data-value');
-            let iterations = 0;
-
-            const interval = setInterval(() => {
-                element.innerText = originalText.split("")
-                    .map((letter, index) => {
-                        if(index < iterations) {
-                            return originalText[index];
-                        }
-                        return letters[Math.floor(Math.random() * letters.length)];
-                    })
-                    .join("");
-
-                if(iterations >= originalText.length) {
-                    clearInterval(interval);
-                }
-
-                iterations += 1/3;
+            let iteration = 0;
+            
+            setInterval(() => {
+                element.innerText = originalText.split("").map((letter, index) => {
+                    if (index < iteration) return originalText[index];
+                    return letters[Math.floor(Math.random() * letters.length)];
+                }).join("");
+                
+                iteration = Math.floor(iteration + originalText.length / 3);
             }, 30);
         });
     </script>
 
-    <!-- ROOMS FUNCTIONALITY -->
+    <!-- SESSION MANAGEMENT LOGIC -->
     <script>
-        // Load and display rooms
+        // Room Management Functions
         function loadRooms() {
             const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-            const container = document.getElementById('roomsContainer');
             const now = Date.now();
-
-            // Filter expired rooms
+            const container = document.getElementById('roomsContainer');
             const activeRooms = rooms.filter(room => room.expiresAt > now);
-
-            // Update localStorage
-            if (activeRooms.length !== rooms.length) {
+            
+            // Update storage
+            if (rooms.length !== activeRooms.length) {
                 localStorage.setItem('abysslink_rooms', JSON.stringify(activeRooms));
             }
 
-            // Show empty state if no rooms
+            // Empty State
             if (activeRooms.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -643,7 +629,7 @@
                 return;
             }
 
-            // Create rooms grid
+            // Rooms Grid
             container.innerHTML = '<div class="rooms-grid"></div>';
             const grid = container.querySelector('.rooms-grid');
 
@@ -652,11 +638,10 @@
                 grid.appendChild(card);
             });
 
-            // Update timers every second
             updateTimers();
         }
 
-        // Create room card element
+        // Card Creation
         function createRoomCard(room, now) {
             const timeRemaining = room.expiresAt - now;
             const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
@@ -677,13 +662,9 @@
                     </div>
                 </div>
                 <div class="room-actions">
-                    <button class="btn-enter" onclick="enterRoom('${room.roomId}')">
-                        Enter Session →
-                    </button>
+                    <button class="btn-enter" onclick="enterRoom('${room.roomId}')">Enter Session →</button>
                     ${room.isCreator && room.creatorKey ? `
-                        <button class="btn-vanish" onclick="confirmVanish('${room.roomId}', '${room.creatorKey}')">
-                            🔥 Vanish
-                        </button>
+                        <button class="btn-vanish" onclick="confirmVanish('${room.roomId}', '${room.creatorKey}')">🔥 Vanish</button>
                     ` : ''}
                 </div>
             `;
@@ -691,7 +672,7 @@
             return card;
         }
 
-        // Update all timers
+        // Timer Updates
         function updateTimers() {
             const timers = document.querySelectorAll('.timer');
             const now = Date.now();
@@ -722,47 +703,36 @@
                 }
             });
 
-            if (hasExpired) {
-                loadRooms();
-            }
+            if (hasExpired) loadRooms();
         }
 
-        // Enter room
+        // Room Actions
         function enterRoom(roomId) {
             window.location.href = `chat.html?room=${roomId}`;
         }
 
-        // Confirm and vanish room
         function confirmVanish(roomId, creatorKey) {
-            if (!confirm('⚠️ This will permanently destroy this session and all its contents for everyone.\n\nAre you absolutely sure?')) {
-                return;
-            }
-
+            if (!confirm('⚠️ This will permanently destroy this session and all its contents for everyone.\n\nAre you absolutely sure?')) return;
             vanishRoom(roomId, creatorKey);
         }
 
-        // Vanish room
         async function vanishRoom(roomId, creatorKey) {
             try {
                 const response = await fetch(`${API_URL}/api/rooms/vanish`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId, creatorKey })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({roomId, creatorKey})
                 });
 
                 if (response.ok) {
-                    // Remove from localStorage
                     const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
                     const filtered = rooms.filter(r => r.roomId !== roomId);
                     localStorage.setItem('abysslink_rooms', JSON.stringify(filtered));
-
-                    // Reload rooms
                     loadRooms();
-
                     alert('Session terminated successfully');
                 } else {
-                    const error = await response.json();
-                    alert(error.error || 'Failed to terminate session');
+                    const data = await response.json();
+                    alert(data.error || 'Failed to terminate session');
                 }
             } catch (error) {
                 alert('Error terminating session. Make sure the backend is running.');
@@ -770,45 +740,41 @@
             }
         }
 
-        // Open join modal
+        // Modal Functions
         function openJoinModal() {
             document.getElementById('joinModal').style.display = 'flex';
             document.getElementById('joinRoomId').focus();
         }
 
-        // Close join modal
         function closeJoinModal() {
             document.getElementById('joinModal').style.display = 'none';
             document.getElementById('joinRoomId').value = '';
             document.getElementById('joinPassword').value = '';
         }
 
-        // Handle join room
         async function handleJoinRoom(event) {
             event.preventDefault();
-
+            
             const roomId = document.getElementById('joinRoomId').value.trim();
             const password = document.getElementById('joinPassword').value;
 
             try {
                 const response = await fetch(`${API_URL}/api/rooms/join`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId, password })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({roomId, password})
                 });
 
                 if (!response.ok) {
-                    const error = await response.json();
-                    alert(error.error || 'Failed to join session');
+                    const data = await response.json();
+                    alert(data.error || 'Failed to join session');
                     return;
                 }
 
                 const data = await response.json();
-
-                // Add to localStorage
+                
+                // Add to storage
                 const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-
-                // Check if already exists
                 if (!rooms.find(r => r.roomId === roomId)) {
                     rooms.push({
                         roomId: data.roomId,
@@ -822,31 +788,25 @@
 
                 closeJoinModal();
                 window.location.href = `chat.html?room=${roomId}`;
-
             } catch (error) {
                 alert('Error joining session. Make sure the backend is running.');
                 console.error(error);
             }
         }
 
-        // Utility: Escape HTML
+        // Utility
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Close modal on Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeJoinModal();
-            }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeJoinModal();
         });
 
-        // Load rooms on page load
+        // Initialize
         loadRooms();
-
-        // Update timers every second
         setInterval(updateTimers, 1000);
     </script>
 </body>
