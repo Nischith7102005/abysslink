@@ -13,7 +13,6 @@
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/GlitchPass.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
@@ -53,77 +52,96 @@
             border-radius: 2px; 
         }
 
+        /* VIDEO BACKGROUND */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .video-background video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            filter: brightness(0.3) contrast(1.1) saturate(0.8);
+            transition: filter 1s ease;
+        }
+
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                180deg,
+                rgba(10, 10, 10, 0.7) 0%,
+                rgba(10, 10, 10, 0.4) 50%,
+                rgba(10, 10, 10, 0.8) 100%
+            );
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* THREE.JS CANVAS */
         #canvas-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100vh;
-            z-index: -1;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        /* Dynamic Cloud Background - Multiple Layers */
-        .cloud-layer {
+        /* Film grain */
+        .film-grain {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            opacity: 0.6;
             pointer-events: none;
-            z-index: -1;
-            transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            animation: grain 0.4s steps(6) infinite;
         }
 
-        .cloud-layer-1 {
-            background: 
-                radial-gradient(ellipse at 20% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 50%);
-            animation: cloudFloat1 20s infinite alternate ease-in-out;
+        @keyframes grain {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-3%, -8%); }
+            20% { transform: translate(-10%, 3%); }
+            30% { transform: translate(5%, -15%); }
+            40% { transform: translate(-3%, 15%); }
+            50% { transform: translate(-10%, 8%); }
+            60% { transform: translate(10%, 0%); }
+            70% { transform: translate(0%, 10%); }
+            80% { transform: translate(2%, 20%); }
+            90% { transform: translate(-8%, 8%); }
         }
 
-        .cloud-layer-2 {
-            background: 
-                radial-gradient(ellipse at 40% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
-            animation: cloudFloat2 25s infinite alternate ease-in-out;
-            animation-delay: -5s;
-        }
-
-        .cloud-layer-3 {
-            background: 
-                radial-gradient(ellipse at 60% 40%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at 30% 60%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
-            animation: cloudFloat3 30s infinite alternate ease-in-out;
-            animation-delay: -10s;
-        }
-
-        @keyframes cloudFloat1 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(2%, 1%) scale(1.05); }
-        }
-
-        @keyframes cloudFloat2 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-1%, 2%) scale(1.03); }
-        }
-
-        @keyframes cloudFloat3 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(1%, -1%) scale(1.02); }
-        }
-
-        /* Scroll Progress Indicator */
+        /* Scroll Progress */
         .scroll-progress {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 3px;
+            height: 2px;
             background: linear-gradient(90deg, var(--blue), var(--purple), var(--pink));
             transform: scaleX(0);
             transform-origin: left;
             z-index: 1000;
-            transition: transform 0.1s linear;
         }
 
         /* Navigation */
@@ -140,12 +158,12 @@
             background: linear-gradient(180deg, rgba(10,10,10,0.95) 0%, transparent 100%);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         nav.scrolled {
-            padding: 1.5rem 3rem;
-            background: rgba(10,10,10,0.95);
+            padding: 1.2rem 3rem;
+            background: rgba(10,10,10,0.98);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
@@ -155,24 +173,6 @@
             color: var(--white);
             font-family: 'Orbitron', monospace;
             letter-spacing: 0.15em;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .logo::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: var(--white);
-            transform: translateX(-100%);
-            animation: logoReveal 2s 1s forwards;
-        }
-
-        @keyframes logoReveal {
-            to { transform: translateX(0); }
         }
 
         .nav-links {
@@ -220,13 +220,6 @@
             justify-content: center;
             padding: 0 2rem;
             z-index: 10;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        .content-section.active {
-            opacity: 1;
-            transform: translateY(0);
         }
 
         .section-container {
@@ -236,7 +229,7 @@
             padding: 6rem 0;
         }
 
-        /* ADVANCED INDIVIDUAL LETTER GLITCH */
+        /* GLITCH EFFECT */
         .glitch-wrapper {
             position: relative;
             display: inline-block;
@@ -253,7 +246,6 @@
             display: inline-block;
         }
 
-        /* Each letter container */
         .glitch-letter {
             display: inline-block;
             position: relative;
@@ -268,7 +260,6 @@
             75% { transform: translate(1px, 1px); }
         }
 
-        /* Professional Glitch Effect - Subtle but sophisticated */
         .glitch-letter::before,
         .glitch-letter::after {
             content: attr(data-letter);
@@ -278,79 +269,42 @@
             width: 100%;
             height: 100%;
             opacity: 0;
-            mix-blend-mode: difference;
         }
 
         .glitch-letter::before {
             color: var(--blue);
             clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
-            animation: glitchFragment1 calc(8s + var(--i) * 0.3s) infinite;
+            animation: glitchTop calc(6s + var(--i) * 0.2s) infinite;
             animation-delay: calc(var(--i) * 0.1s);
         }
 
         .glitch-letter::after {
             color: var(--pink);
             clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
-            animation: glitchFragment2 calc(9s + var(--i) * 0.3s) infinite;
+            animation: glitchBottom calc(7s + var(--i) * 0.2s) infinite;
             animation-delay: calc(var(--i) * 0.15s);
         }
 
-        @keyframes glitchFragment1 {
-            0%, 95% { 
-                opacity: 0; 
-                transform: translate(0, 0);
-            }
-            96% { 
-                opacity: 0.7; 
-                transform: translate(-2px, -1px);
-            }
-            97% { 
-                opacity: 0; 
-                transform: translate(1px, 0);
-            }
-            98% { 
-                opacity: 0.4; 
-                transform: translate(-1px, -1px);
-            }
-            99%, 100% { 
-                opacity: 0; 
-                transform: translate(0, 0);
-            }
+        @keyframes glitchTop {
+            0%, 94% { opacity: 0; transform: translate(0, 0); }
+            95% { opacity: 0.8; transform: translate(-3px, -1px); }
+            96% { opacity: 0; }
+            97% { opacity: 0.5; transform: translate(2px, 1px); }
+            98%, 100% { opacity: 0; transform: translate(0, 0); }
         }
 
-        @keyframes glitchFragment2 {
-            0%, 93% { 
-                opacity: 0; 
-                transform: translate(0, 0);
-            }
-            94% { 
-                opacity: 0.7; 
-                transform: translate(2px, 1px);
-            }
-            95% { 
-                opacity: 0; 
-                transform: translate(-1px, 0);
-            }
-            96% { 
-                opacity: 0.4; 
-                transform: translate(1px, 1px);
-            }
-            97%, 100% { 
-                opacity: 0; 
-                transform: translate(0, 0);
-            }
+        @keyframes glitchBottom {
+            0%, 92% { opacity: 0; transform: translate(0, 0); }
+            93% { opacity: 0.8; transform: translate(3px, 1px); }
+            94% { opacity: 0; }
+            95% { opacity: 0.5; transform: translate(-2px, -1px); }
+            96%, 100% { opacity: 0; transform: translate(0, 0); }
         }
 
         /* Hero Section */
         .hero-content {
             text-align: center;
             padding: 0 2rem;
-            transform: translateY(20px);
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .hero-content.in-view {
-            transform: translateY(0);
         }
 
         .hero-subtitle {
@@ -403,8 +357,8 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.6s ease;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.5s ease;
         }
 
         .btn:hover::before {
@@ -420,8 +374,8 @@
         .btn-primary:hover {
             background: transparent;
             color: var(--white);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
         }
 
         .btn-secondary {
@@ -433,8 +387,8 @@
         .btn-secondary:hover {
             background: var(--white);
             color: var(--black);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
         }
 
         /* Section Headers */
@@ -442,13 +396,13 @@
             text-align: center;
             margin-bottom: 5rem;
             opacity: 0;
-            transform: translateY(40px);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(50px);
         }
 
-        .section-header.in-view {
+        .section-header.visible {
             opacity: 1;
             transform: translateY(0);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .section-title {
@@ -468,9 +422,9 @@
             bottom: -10px;
             left: 50%;
             transform: translateX(-50%);
-            width: 80px;
+            width: 60px;
             height: 2px;
-            background: linear-gradient(90deg, transparent, var(--white), transparent);
+            background: var(--white);
         }
 
         .section-description {
@@ -491,26 +445,20 @@
         }
 
         .feature-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 3rem 2rem;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             opacity: 0;
-            transform: translateY(40px);
+            transform: translateY(50px);
             backdrop-filter: blur(10px);
         }
 
-        .feature-card.in-view {
+        .feature-card.visible {
             opacity: 1;
             transform: translateY(0);
         }
-
-        .feature-card:nth-child(2) { transition-delay: 0.1s; }
-        .feature-card:nth-child(3) { transition-delay: 0.2s; }
-        .feature-card:nth-child(4) { transition-delay: 0.3s; }
-        .feature-card:nth-child(5) { transition-delay: 0.4s; }
-        .feature-card:nth-child(6) { transition-delay: 0.5s; }
 
         .feature-card::before {
             content: '';
@@ -520,7 +468,7 @@
             width: 0;
             height: 2px;
             background: var(--white);
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.5s ease;
         }
 
         .feature-card::after {
@@ -531,7 +479,7 @@
             width: 0;
             height: 2px;
             background: var(--white);
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.5s ease;
         }
 
         .feature-card:hover::before,
@@ -540,17 +488,16 @@
         }
 
         .feature-card:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
             border-color: rgba(255, 255, 255, 0.3);
             transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         }
 
         .feature-icon {
             font-size: 2.5rem;
             margin-bottom: 1.5rem;
             display: block;
-            opacity: 0.9;
             transition: transform 0.3s ease;
         }
 
@@ -585,27 +532,23 @@
         .process-step {
             position: relative;
             padding: 2.5rem;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             opacity: 0;
-            transform: translateY(40px);
+            transform: translateX(-50px);
             backdrop-filter: blur(10px);
         }
 
-        .process-step.in-view {
+        .process-step.visible {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(0);
         }
 
-        .process-step:nth-child(2) { transition-delay: 0.1s; }
-        .process-step:nth-child(3) { transition-delay: 0.2s; }
-        .process-step:nth-child(4) { transition-delay: 0.3s; }
-
         .process-step:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
             border-color: rgba(255, 255, 255, 0.3);
-            transform: translateY(-8px) scale(1.02);
+            transform: translateY(-8px);
             box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
         }
 
@@ -642,19 +585,19 @@
 
         /* Privacy List */
         .privacy-box {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 3rem 2.5rem;
             margin-top: 3rem;
             opacity: 0;
-            transform: translateY(40px);
+            transform: scale(0.95);
             backdrop-filter: blur(10px);
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .privacy-box.in-view {
+        .privacy-box.visible {
             opacity: 1;
-            transform: translateY(0);
+            transform: scale(1);
         }
 
         .privacy-list {
@@ -669,22 +612,8 @@
             color: var(--off-white);
             font-weight: 300;
             letter-spacing: 0.03em;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-            transform: translateX(-20px);
+            transition: all 0.3s ease;
         }
-
-        .privacy-list li.in-view {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .privacy-list li:nth-child(1) { transition-delay: 0.1s; }
-        .privacy-list li:nth-child(2) { transition-delay: 0.2s; }
-        .privacy-list li:nth-child(3) { transition-delay: 0.3s; }
-        .privacy-list li:nth-child(4) { transition-delay: 0.4s; }
-        .privacy-list li:nth-child(5) { transition-delay: 0.5s; }
-        .privacy-list li:nth-child(6) { transition-delay: 0.6s; }
 
         .privacy-list li::before {
             content: "—";
@@ -700,35 +629,30 @@
             transform: translateX(8px);
         }
 
-        .privacy-list li:hover::before {
-            left: 5px;
-        }
-
         /* About Us Section */
         .about-section {
-            background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.9) 0%, rgba(20, 20, 20, 0.9) 100%);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 5rem;
         }
 
         .about-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4rem;
-            align-items: center;
+            align-items: start;
             opacity: 0;
-            transform: translateY(40px);
+            transform: translateY(50px);
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .about-content.in-view {
+        .about-content.visible {
             opacity: 1;
             transform: translateY(0);
         }
 
         .about-text h3 {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-family: 'Orbitron', monospace;
             margin-bottom: 1.5rem;
             letter-spacing: 0.08em;
@@ -736,7 +660,7 @@
         }
 
         .about-text p {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: var(--off-white);
             line-height: 1.9;
             margin-bottom: 1.5rem;
@@ -746,13 +670,13 @@
         .about-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            margin-top: 3rem;
+            gap: 1.5rem;
+            margin-top: 2.5rem;
         }
 
         .stat-item {
             text-align: center;
-            padding: 1.5rem;
+            padding: 1.5rem 1rem;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
@@ -765,64 +689,50 @@
         }
 
         .stat-value {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 700;
             color: var(--white);
             font-family: 'Orbitron', monospace;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
         }
 
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--off-white);
             text-transform: uppercase;
             letter-spacing: 0.1em;
         }
 
-        /* Team Section */
         .team-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
         }
 
         .team-member {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-            transform: translateY(40px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .team-member.in-view {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .team-member:nth-child(2) { transition-delay: 0.1s; }
-        .team-member:nth-child(3) { transition-delay: 0.2s; }
-        .team-member:nth-child(4) { transition-delay: 0.3s; }
 
         .team-member:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
             border-color: rgba(255, 255, 255, 0.3);
-            transform: translateY(-8px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(-5px);
         }
 
         .member-avatar {
-            width: 120px;
-            height: 120px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            margin: 0 auto 1.5rem;
+            margin: 0 auto 1rem;
             background: linear-gradient(135deg, var(--blue), var(--purple));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: white;
             transition: transform 0.3s ease;
@@ -833,25 +743,17 @@
         }
 
         .member-name {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             color: var(--white);
         }
 
         .member-role {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: var(--off-white);
-            margin-bottom: 1rem;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-        }
-
-        .member-bio {
-            font-size: 0.9rem;
-            color: var(--off-white);
-            line-height: 1.6;
-            font-weight: 300;
         }
 
         /* Final CTA */
@@ -859,18 +761,6 @@
             text-align: center;
             padding: 8rem 2rem;
             position: relative;
-            overflow: hidden;
-        }
-
-        .cta-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, transparent 70%);
-            pointer-events: none;
         }
 
         .cta-title {
@@ -882,12 +772,12 @@
             text-transform: uppercase;
             opacity: 0;
             transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .cta-title.in-view {
+        .cta-title.visible {
             opacity: 1;
             transform: translateY(0);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .cta-description {
@@ -898,12 +788,12 @@
             letter-spacing: 0.05em;
             opacity: 0;
             transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
         }
 
-        .cta-description.in-view {
+        .cta-description.visible {
             opacity: 1;
             transform: translateY(0);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
         }
 
         /* Modals */
@@ -919,11 +809,10 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.2s ease;
         }
 
         .modal-content {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%);
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.98) 0%, rgba(15, 15, 15, 0.98) 100%);
             border: 2px solid rgba(255, 255, 255, 0.2);
             padding: 3rem;
             max-width: 500px;
@@ -933,14 +822,8 @@
         }
 
         @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-content h2 {
@@ -981,7 +864,6 @@
         .form-group input:focus {
             outline: none;
             border-color: var(--white);
-            background: rgba(0, 0, 0, 0.7);
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
         }
 
@@ -991,59 +873,15 @@
             margin-top: 2rem;
         }
 
-        .info-box {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        @media (max-width: 968px) {
+            .about-content {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
 
-        .info-box p {
-            color: var(--off-white);
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-        }
-
-        .info-box .value {
-            color: var(--white);
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            cursor: pointer;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.05);
-            display: block;
-            margin-top: 0.5rem;
-            transition: all 0.2s ease;
-        }
-
-        .info-box .value:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .warning {
-            color: var(--off-white);
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Scroll Transitions */
-        .section-transition {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 1s ease;
+            .team-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
@@ -1053,17 +891,16 @@
 
             .nav-links {
                 gap: 1.5rem;
+                font-size: 0.8rem;
             }
 
             .features-grid,
-            .process-grid,
-            .team-grid {
+            .process-grid {
                 grid-template-columns: 1fr;
             }
 
-            .about-content {
+            .team-grid {
                 grid-template-columns: 1fr;
-                gap: 2rem;
             }
 
             .about-stats {
@@ -1078,14 +915,21 @@
 </head>
 <body>
 
-    <div id="canvas-container"></div>
-    
-    <!-- Multi-layer Cloud Background -->
-    <div class="cloud-layer cloud-layer-1"></div>
-    <div class="cloud-layer cloud-layer-2"></div>
-    <div class="cloud-layer cloud-layer-3"></div>
+    <!-- VIDEO BACKGROUND -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline id="bgVideo">
+            <source src="https://cdn.pixabay.com/video/2020/05/25/40130-424930941_large.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="video-overlay"></div>
 
-    <!-- Scroll Progress Indicator -->
+    <!-- THREE.JS CANVAS -->
+    <div id="canvas-container"></div>
+
+    <!-- Film Grain -->
+    <div class="film-grain"></div>
+
+    <!-- Scroll Progress -->
     <div class="scroll-progress" id="scrollProgress"></div>
 
     <!-- Navigation -->
@@ -1095,8 +939,7 @@
             <a href="#features" class="nav-link">Features</a>
             <a href="#protocol" class="nav-link">Protocol</a>
             <a href="#privacy" class="nav-link">Privacy</a>
-            <a href="#about" class="nav-link">About</a>
-            <a href="#contact" class="nav-link">Contact</a>
+            <a href="#about" class="nav-link">About Us</a>
         </div>
     </nav>
 
@@ -1112,7 +955,7 @@
                 <p class="hero-subtitle">Anonymous • Ephemeral • Untraceable</p>
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="openCreateModal()">Create Room</button>
-                    <button class="btn btn-secondary" onclick="scrollToSection('features')">Explore Features</button>
+                    <a href="#features" class="btn btn-secondary">Explore</a>
                 </div>
             </div>
         </div>
@@ -1227,13 +1070,10 @@
                 <div class="about-text">
                     <h3>OUR MISSION</h3>
                     <p>
-                        At AbyssLink, we believe privacy is a fundamental human right in the digital age. 
-                        Our mission is to create communication tools that respect user privacy by design.
+                        At AbyssLink, we believe privacy is a fundamental human right. Our mission is to create communication tools that respect user privacy by design—not as an afterthought.
                     </p>
                     <p>
-                        Founded in 2023 by a team of security researchers and privacy advocates, 
-                        we're dedicated to building systems that don't just encrypt data—they prevent 
-                        its collection in the first place.
+                        Founded by security researchers and privacy advocates, we're dedicated to building systems that don't just encrypt data—they prevent its collection in the first place.
                     </p>
                     
                     <div class="about-stats">
@@ -1243,7 +1083,7 @@
                         </div>
                         <div class="stat-item">
                             <div class="stat-value">0</div>
-                            <div class="stat-label">Data Leaks</div>
+                            <div class="stat-label">Data Stored</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-value">24/7</div>
@@ -1254,28 +1094,24 @@
                 
                 <div class="team-grid">
                     <div class="team-member">
-                        <div class="member-avatar">AL</div>
+                        <div class="member-avatar">AC</div>
                         <h4 class="member-name">Alex Chen</h4>
                         <div class="member-role">Founder & CEO</div>
-                        <p class="member-bio">Former security researcher at MIT, specializing in zero-knowledge proofs.</p>
                     </div>
                     <div class="team-member">
                         <div class="member-avatar">MR</div>
                         <h4 class="member-name">Maria Rodriguez</h4>
                         <div class="member-role">CTO</div>
-                        <p class="member-bio">Expert in distributed systems and cryptographic protocols.</p>
                     </div>
                     <div class="team-member">
-                        <div class="member-avatar">TJ</div>
+                        <div class="member-avatar">TT</div>
                         <h4 class="member-name">Takeshi Tanaka</h4>
                         <div class="member-role">Lead Developer</div>
-                        <p class="member-bio">Full-stack developer with 10+ years in secure application development.</p>
                     </div>
                     <div class="team-member">
                         <div class="member-avatar">SP</div>
                         <h4 class="member-name">Sarah Peters</h4>
                         <div class="member-role">Privacy Advocate</div>
-                        <p class="member-bio">Digital rights activist focused on user privacy and data protection laws.</p>
                     </div>
                 </div>
             </div>
@@ -1286,8 +1122,8 @@
     <section class="content-section" id="cta">
         <div class="section-container">
             <div class="cta-section">
-                <h2 class="cta-title">Ready to Communicate Securely?</h2>
-                <p class="cta-description">Join thousands who value their privacy. Create your first secure room today.</p>
+                <h2 class="cta-title">Ready to Vanish?</h2>
+                <p class="cta-description">Create your first secure, ephemeral room today.</p>
                 <button class="btn btn-primary" onclick="openCreateModal()" style="font-size: 1.1rem; padding: 1.3rem 3.5rem;">
                     Start Secure Chat →
                 </button>
@@ -1317,289 +1153,199 @@
     </div>
 
     <script>
-        // === SCROLL PROGRESS ===
+        // === SCROLL PROGRESS & NAV ===
         window.addEventListener('scroll', () => {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = winScroll / height;
             document.getElementById('scrollProgress').style.transform = `scaleX(${scrolled})`;
             
-            // Navbar effect
-            if (winScroll > 100) {
+            if (winScroll > 80) {
                 document.getElementById('mainNav').classList.add('scrolled');
             } else {
                 document.getElementById('mainNav').classList.remove('scrolled');
             }
+
+            // Video brightness changes on scroll
+            const video = document.getElementById('bgVideo');
+            const brightness = Math.max(0.15, 0.3 - (scrolled * 0.3));
+            video.style.filter = `brightness(${brightness}) contrast(1.1) saturate(0.8)`;
         });
 
-        // === THREE.JS CLOUD SCENE ===
+        // === THREE.JS SCENE ===
         const scene = new THREE.Scene();
-        scene.fog = new THREE.Fog(0x0a0a0a, 10, 50);
-
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ 
             antialias: true,
-            alpha: true,
-            powerPreference: "high-performance"
+            alpha: true
         });
         
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x0a0a0a, 1);
+        renderer.setClearColor(0x000000, 0);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Post-processing with subtle glitch
+        // Post-processing
         const composer = new THREE.EffectComposer(renderer);
         const renderPass = new THREE.RenderPass(scene, camera);
         composer.addPass(renderPass);
 
         const bloomPass = new THREE.UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.2,
-            0.4,
-            0.85
+            0.3, 0.5, 0.85
         );
         composer.addPass(bloomPass);
 
-        // Glitch pass - subtle professional glitch
-        const glitchPass = new THREE.GlitchPass();
-        glitchPass.goWild = false;
-        glitchPass.curF = 0;
-        glitchPass.randX = 0;
-        composer.addPass(glitchPass);
+        // FLOATING GEOMETRIC PARTICLES
+        const particlesCount = 800;
+        const particlesGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particlesCount * 3);
+        const velocities = [];
 
-        // CLOUD PARTICLE SYSTEM
-        const cloudGroup = new THREE.Group();
-        scene.add(cloudGroup);
+        for (let i = 0; i < particlesCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 50;
+            positions[i + 1] = (Math.random() - 0.5) * 50;
+            positions[i + 2] = (Math.random() - 0.5) * 50;
 
-        const createCloud = (x, y, z, size, density) => {
-            const cloudGeometry = new THREE.BufferGeometry();
-            const cloudMaterial = new THREE.PointsMaterial({
-                color: 0xffffff,
-                size: size,
-                transparent: true,
-                opacity: 0.1,
-                blending: THREE.AdditiveBlending
+            velocities.push({
+                x: (Math.random() - 0.5) * 0.01,
+                y: (Math.random() - 0.5) * 0.01,
+                z: (Math.random() - 0.5) * 0.01
             });
+        }
 
-            const particles = density * 1000;
-            const positions = new Float32Array(particles * 3);
-            const velocities = [];
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-            for (let i = 0; i < particles * 3; i += 3) {
-                const radius = Math.random() * size;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                
-                positions[i] = x + radius * Math.sin(phi) * Math.cos(theta);
-                positions[i + 1] = y + radius * Math.sin(phi) * Math.sin(theta);
-                positions[i + 2] = z + radius * Math.cos(phi);
-
-                velocities.push({
-                    x: (Math.random() - 0.5) * 0.001,
-                    y: (Math.random() - 0.5) * 0.001,
-                    z: (Math.random() - 0.5) * 0.001
-                });
-            }
-
-            cloudGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const cloud = new THREE.Points(cloudGeometry, cloudMaterial);
-            cloud.userData.velocities = velocities;
-            cloud.userData.originalPositions = positions.slice();
-            cloudGroup.add(cloud);
-            return cloud;
-        };
-
-        // Create multiple clouds
-        const clouds = [
-            createCloud(-10, 2, -5, 4, 1),
-            createCloud(8, -1, -8, 5, 1.2),
-            createCloud(-5, -3, -12, 3, 0.8),
-            createCloud(12, 1, -10, 4.5, 1.1),
-            createCloud(0, 4, -15, 6, 1.5)
-        ];
-
-        // LIGHTING
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight.position.set(10, 10, 5);
-        scene.add(directionalLight);
-
-        // FLOATING GEOMETRIC SHAPES (privacy symbols)
-        const shapesGroup = new THREE.Group();
-        scene.add(shapesGroup);
-
-        // Lock shape
-        const lockGeometry = new THREE.TorusGeometry(1, 0.3, 16, 32);
-        const lockMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x4cc9f0,
-            metalness: 0.7,
-            roughness: 0.3,
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.08,
             transparent: true,
-            opacity: 0.7
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending
         });
-        const lock = new THREE.Mesh(lockGeometry, lockMaterial);
-        lock.position.set(-5, 0, -10);
-        shapesGroup.add(lock);
 
-        // Eye shape
-        const eyeGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-        const eyeMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xf72585,
-            metalness: 0.5,
-            roughness: 0.5,
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particles);
+
+        // FLOATING SHAPES
+        const shapes = [];
+        const shapeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.6
+            opacity: 0.1,
+            wireframe: true
         });
-        const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        eye.position.set(5, 2, -12);
-        shapesGroup.add(eye);
 
-        // Message shape
-        const messageGeometry = new THREE.BoxGeometry(1.2, 0.8, 0.2);
-        const messageMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x4361ee,
-            metalness: 0.6,
-            roughness: 0.4,
-            transparent: true,
-            opacity: 0.8
-        });
-        const message = new THREE.Mesh(messageGeometry, messageMaterial);
-        message.position.set(0, -2, -8);
-        shapesGroup.add(message);
+        for (let i = 0; i < 8; i++) {
+            const geometry = i % 2 === 0 
+                ? new THREE.IcosahedronGeometry(Math.random() * 2 + 1, 0)
+                : new THREE.OctahedronGeometry(Math.random() * 2 + 1, 0);
+            
+            const mesh = new THREE.Mesh(geometry, shapeMaterial.clone());
+            mesh.position.set(
+                (Math.random() - 0.5) * 30,
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 20 - 10
+            );
+            mesh.userData.rotSpeed = {
+                x: (Math.random() - 0.5) * 0.01,
+                y: (Math.random() - 0.5) * 0.01
+            };
+            shapes.push(mesh);
+            scene.add(mesh);
+        }
 
-        camera.position.z = 15;
+        camera.position.z = 20;
 
-        // MOUSE INTERACTION
-        let mouseX = 0;
-        let mouseY = 0;
-
+        // Mouse interaction
+        let mouseX = 0, mouseY = 0;
         window.addEventListener('mousemove', (e) => {
             mouseX = (e.clientX / window.innerWidth) - 0.5;
             mouseY = (e.clientY / window.innerHeight) - 0.5;
         });
 
-        // GSAP SCROLL ANIMATIONS
+        // GSAP Scroll Animations
         gsap.registerPlugin(ScrollTrigger);
 
-        // Section animations
-        gsap.utils.toArray('.content-section').forEach((section) => {
-            gsap.fromTo(section, 
-                { opacity: 0, y: 50 },
-                {
-                    opacity: 1,
-                    y: 0,
-                    duration: 1,
-                    ease: "power3.out",
-                    scrollTrigger: {
-                        trigger: section,
-                        start: "top 80%",
-                        end: "top 50%",
-                        toggleActions: "play none none reverse"
+        // Section headers
+        document.querySelectorAll('.section-header').forEach(header => {
+            gsap.to(header, {
+                scrollTrigger: {
+                    trigger: header,
+                    start: "top 80%",
+                    onEnter: () => header.classList.add('visible')
+                }
+            });
+        });
+
+        // Feature cards with stagger
+        gsap.utils.toArray('.feature-card').forEach((card, i) => {
+            gsap.to(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 85%",
+                    onEnter: () => {
+                        setTimeout(() => card.classList.add('visible'), i * 100);
                     }
                 }
-            );
-        });
-
-        // Hero content animation
-        ScrollTrigger.create({
-            trigger: '#hero',
-            start: "top center",
-            onEnter: () => {
-                document.querySelector('.hero-content').classList.add('in-view');
-            }
-        });
-
-        // Section headers
-        gsap.utils.toArray('.section-header').forEach((header) => {
-            ScrollTrigger.create({
-                trigger: header,
-                start: "top 80%",
-                onEnter: () => header.classList.add('in-view')
             });
         });
 
-        // Feature cards
-        gsap.utils.toArray('.feature-card').forEach((card, i) => {
-            ScrollTrigger.create({
-                trigger: card,
-                start: "top 85%",
-                onEnter: () => card.classList.add('in-view')
-            });
-        });
-
-        // Process steps
+        // Process steps with stagger
         gsap.utils.toArray('.process-step').forEach((step, i) => {
-            ScrollTrigger.create({
-                trigger: step,
-                start: "top 85%",
-                onEnter: () => step.classList.add('in-view')
+            gsap.to(step, {
+                scrollTrigger: {
+                    trigger: step,
+                    start: "top 85%",
+                    onEnter: () => {
+                        setTimeout(() => step.classList.add('visible'), i * 150);
+                    }
+                }
             });
         });
 
         // Privacy box
-        ScrollTrigger.create({
-            trigger: '.privacy-box',
-            start: "top 80%",
-            onEnter: () => document.querySelector('.privacy-box').classList.add('in-view')
-        });
-
-        // Privacy list items
-        gsap.utils.toArray('.privacy-list li').forEach((li, i) => {
-            ScrollTrigger.create({
-                trigger: li,
-                start: "top 90%",
-                onEnter: () => li.classList.add('in-view')
-            });
+        gsap.to('.privacy-box', {
+            scrollTrigger: {
+                trigger: '.privacy-box',
+                start: "top 80%",
+                onEnter: () => document.querySelector('.privacy-box').classList.add('visible')
+            }
         });
 
         // About content
-        ScrollTrigger.create({
-            trigger: '.about-content',
-            start: "top 80%",
-            onEnter: () => document.querySelector('.about-content').classList.add('in-view')
-        });
-
-        // Team members
-        gsap.utils.toArray('.team-member').forEach((member, i) => {
-            ScrollTrigger.create({
-                trigger: member,
-                start: "top 85%",
-                onEnter: () => member.classList.add('in-view')
-            });
-        });
-
-        // CTA animations
-        ScrollTrigger.create({
-            trigger: '.cta-title',
-            start: "top 80%",
-            onEnter: () => {
-                document.querySelector('.cta-title').classList.add('in-view');
-                document.querySelector('.cta-description').classList.add('in-view');
-            }
-        });
-
-        // 3D Scene Scroll Interaction
-        const sceneTimeline = gsap.timeline({
+        gsap.to('.about-content', {
             scrollTrigger: {
-                trigger: "body",
-                start: "top top",
-                end: "bottom bottom",
-                scrub: 1.5
+                trigger: '.about-content',
+                start: "top 80%",
+                onEnter: () => document.querySelector('.about-content').classList.add('visible')
             }
         });
 
-        sceneTimeline
-            .to(camera.position, { z: 25, duration: 1 }, 0)
-            .to(cloudGroup.rotation, { x: 0.5, y: 0.5, duration: 1 }, 0)
-            .to(shapesGroup.position, { y: 3, duration: 1 }, 0)
-            .to(camera.position, { z: 18, x: 3, duration: 1 }, 1)
-            .to(cloudGroup.rotation, { x: -0.3, y: -0.2, duration: 1 }, 1)
-            .to(shapesGroup.rotation, { y: Math.PI, duration: 1 }, 1)
-            .to(camera.position, { z: 15, x: 0, y: 2, duration: 1 }, 2)
-            .to(cloudGroup.rotation, { x: 0, y: 0, duration: 1 }, 2);
+        // CTA
+        gsap.to('.cta-title', {
+            scrollTrigger: {
+                trigger: '.cta-title',
+                start: "top 85%",
+                onEnter: () => {
+                    document.querySelector('.cta-title').classList.add('visible');
+                    document.querySelector('.cta-description').classList.add('visible');
+                }
+            }
+        });
+
+        // Camera scroll animation
+        ScrollTrigger.create({
+            trigger: "body",
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 1.5,
+            onUpdate: (self) => {
+                camera.position.z = 20 + self.progress * 10;
+                camera.rotation.z = self.progress * 0.1;
+                particles.rotation.y = self.progress * Math.PI * 0.5;
+            }
+        });
 
         // ANIMATION LOOP
         const clock = new THREE.Clock();
@@ -1607,46 +1353,31 @@
         function animate() {
             const time = clock.getElapsedTime();
 
-            // Camera follows mouse subtly
-            camera.position.x += (mouseX * 3 - camera.position.x) * 0.01;
-            camera.position.y += (-mouseY * 2 - camera.position.y) * 0.01;
-            camera.lookAt(scene.position);
+            // Camera follows mouse
+            camera.position.x += (mouseX * 5 - camera.position.x) * 0.02;
+            camera.position.y += (-mouseY * 3 - camera.position.y) * 0.02;
 
-            // Animate clouds
-            clouds.forEach((cloud, index) => {
-                const positions = cloud.geometry.attributes.position.array;
-                const velocities = cloud.userData.velocities;
-                const originalPositions = cloud.userData.originalPositions;
+            // Animate particles
+            const positions = particles.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                const vel = velocities[i / 3];
+                positions[i] += vel.x;
+                positions[i + 1] += vel.y;
+                positions[i + 2] += vel.z;
 
-                for (let i = 0; i < positions.length; i += 3) {
-                    const velIndex = i / 3;
-                    positions[i] += velocities[velIndex].x + Math.sin(time * 0.5 + index) * 0.002;
-                    positions[i + 1] += velocities[velIndex].y + Math.cos(time * 0.7 + index) * 0.002;
-                    positions[i + 2] += velocities[velIndex].z;
-
-                    // Return to original position gradually
-                    positions[i] += (originalPositions[i] - positions[i]) * 0.0005;
-                    positions[i + 1] += (originalPositions[i + 1] - positions[i + 1]) * 0.0005;
-                    positions[i + 2] += (originalPositions[i + 2] - positions[i + 2]) * 0.0005;
-                }
-
-                cloud.geometry.attributes.position.needsUpdate = true;
-            });
+                // Boundary wrap
+                if (Math.abs(positions[i]) > 25) positions[i] *= -0.9;
+                if (Math.abs(positions[i + 1]) > 25) positions[i + 1] *= -0.9;
+                if (Math.abs(positions[i + 2]) > 25) positions[i + 2] *= -0.9;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
 
             // Animate shapes
-            lock.rotation.y = time * 0.3;
-            lock.position.y = Math.sin(time * 0.5) * 0.5;
-
-            eye.rotation.x = time * 0.2;
-            eye.scale.x = eye.scale.y = eye.scale.z = 1 + Math.sin(time * 0.8) * 0.1;
-
-            message.rotation.z = Math.sin(time * 0.4) * 0.2;
-            message.position.x = Math.cos(time * 0.6) * 0.5;
-
-            // Update glitch intensity based on scroll
-            const scrollPercent = window.pageYOffset / (document.documentElement.scrollHeight - window.innerHeight);
-            glitchPass.curF = Math.min(scrollPercent * 5, 0.3);
-            glitchPass.randX = Math.min(scrollPercent * 10, 0.5);
+            shapes.forEach((shape, i) => {
+                shape.rotation.x += shape.userData.rotSpeed.x;
+                shape.rotation.y += shape.userData.rotSpeed.y;
+                shape.position.y += Math.sin(time * 0.5 + i) * 0.01;
+            });
 
             composer.render();
             requestAnimationFrame(animate);
@@ -1654,24 +1385,13 @@
 
         animate();
 
-        // RESIZE HANDLER
+        // RESIZE
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             composer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        // SMOOTH SCROLL
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                window.scrollTo({
-                    top: section.offsetTop - 100,
-                    behavior: 'smooth'
-                });
-            }
-        }
 
         // MODAL FUNCTIONS
         function openCreateModal() {
@@ -1687,27 +1407,24 @@
         function handleCreateRoom(event) {
             event.preventDefault();
             const topic = document.getElementById('topicInput').value;
-            const password = document.getElementById('passwordInput').value;
-            
-            // In a real app, you would make an API call here
-            alert(`Room "${topic}" created successfully!\n\nPassword: ${password}\n\n(Note: This is a demo. In production, this would call your backend API.)`);
+            alert(`Room "${topic}" created! (Demo mode - connect to your backend API)`);
             closeCreateModal();
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add intersection observer for all animated elements
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                    }
-                });
-            }, { threshold: 0.1 });
-
-            document.querySelectorAll('.content-section').forEach(section => {
-                observer.observe(section);
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
+        });
+
+        // Escape key closes modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeCreateModal();
         });
     </script>
 </body>
