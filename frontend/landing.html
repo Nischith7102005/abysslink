@@ -40,9 +40,10 @@
             font-family: 'Manrope', sans-serif;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            will-change: scroll-position;
         }
 
-        /* Background - Starts BLURRED, becomes NORMAL on scroll */
+        /* Background - Fixed throughout */
         .background-wrapper {
             position: fixed;
             top: 0;
@@ -59,19 +60,20 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* Updated URL */
             background: url('https://i.ibb.co/TMkPJDsN/1.jpg') center/cover no-repeat;
-            /* Start state: Blurred */
             filter: blur(12px) brightness(0.6); 
             transform: scale(1.1);
             z-index: -2;
             will-change: filter, transform;
+            transform: translate3d(0, 0, 0) scale(1.1);
+            backface-visibility: hidden;
+            perspective: 1000px;
         }
 
         /* Warrior Container */
         #warrior-container {
             position: fixed;
-            top: 0;
+            bottom: -15vh;
             left: 0;
             width: 100%;
             height: 100vh;
@@ -82,12 +84,13 @@
             pointer-events: none;
             overflow: hidden;
             background: transparent;
+            will-change: transform, opacity;
         }
 
         /* WARRIOR IMAGE */
         #warrior-img {
             position: relative;
-            height: 85vh; 
+            height: 100vh;
             width: auto;
             max-width: 100%;
             object-fit: contain;
@@ -103,11 +106,65 @@
 
             filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); 
             
-            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            mask-image: linear-gradient(to bottom, 
+                black 0%, 
+                black 85%, 
+                transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, 
+                black 0%, 
+                black 85%, 
+                transparent 100%);
             
             will-change: opacity, transform;
             transform-origin: bottom center;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        /* BERSERK SWORD CONTAINER - LOWER, MORE LEFT, CLOSER TO BOTTOM */
+        #sword-container {
+            position: fixed;
+            bottom: -18vh; /* PUSHED MORE DOWN - closer to bottom */
+            left: -8%; /* Push MORE to the LEFT */
+            width: 100%;
+            height: 115vh; /* Even taller container */
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-start;
+            padding-left: 0;
+            z-index: 5;
+            pointer-events: none;
+            overflow: hidden;
+            will-change: transform, opacity;
+        }
+
+        /* BERSERK SWORD IMAGE - REDUCED GLOW BY 50% */
+        #sword-img {
+            position: relative;
+            height: 100vh; /* Larger sword */
+            width: auto;
+            max-height: none;
+            object-fit: contain;
+            object-position: bottom left;
+            display: block;
+            opacity: 0;
+            filter: drop-shadow(0 0 25px rgba(255,255,255,0.3)); /* REDUCED from 0.6 to 0.3 = 50% less glow */
+            will-change: opacity, transform;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+            mix-blend-mode: normal;
+            
+            /* Very subtle gradient fade at top - barely noticeable */
+            mask-image: linear-gradient(to bottom, 
+                transparent 0%, 
+                black 5%, 
+                black 100%);
+            -webkit-mask-image: linear-gradient(to bottom, 
+                transparent 0%, 
+                black 5%, 
+                black 100%);
         }
 
         /* Vignette */
@@ -117,7 +174,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, transparent 30%, var(--bg) 100%);
+            background: radial-gradient(circle at center, transparent 30%, rgba(5,5,5,0.7) 100%);
             z-index: 2;
             pointer-events: none;
         }
@@ -226,16 +283,12 @@
             justify-content: center;
             padding: 0 8rem;
             z-index: 10;
+            background: transparent;
+            will-change: transform, opacity;
         }
 
         #hero {
             background: transparent;
-        }
-
-        section:not(#hero) {
-            background: rgba(5, 5, 5, 0.92);
-            backdrop-filter: blur(5px);
-            box-shadow: 0 -150px 100px rgba(5,5,5,1);
         }
 
         #hero .content-wrapper {
@@ -250,6 +303,10 @@
             opacity: 0;
             transform: translateY(20px);
             margin: 0 auto;
+            position: relative;
+            z-index: 15;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
         }
 
         /* Typography */
@@ -268,6 +325,7 @@
         h2 {
             font-size: clamp(2rem, 4vw, 3.5rem);
             margin-bottom: 2rem;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.8);
         }
         p.lead {
             font-size: 1.25rem;
@@ -285,6 +343,7 @@
         .glitch-char {
             display: inline-block;
             position: relative;
+            will-change: opacity, transform;
         }
 
         /* Button group */
@@ -305,19 +364,21 @@
         }
 
         .glass-pane {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             padding: 2.5rem;
             border-radius: 4px;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             position: relative;
+            will-change: transform, background, border-color;
+            backface-visibility: hidden;
         }
 
         .glass-pane:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.75);
+            border-color: rgba(255, 255, 255, 0.25);
             transform: translateY(-5px);
         }
 
@@ -346,10 +407,17 @@
         .card {
             border-top: 1px solid var(--border);
             padding-top: 1.5rem;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1.5rem;
+            backdrop-filter: blur(5px);
+            will-change: transform, background, border-color;
+            backface-visibility: hidden;
         }
         .card:hover {
             border-color: var(--text-main);
+            background: rgba(0, 0, 0, 0.7);
+            transform: translateY(-3px);
         }
         .card h3 {
             font-size: 0.9rem;
@@ -377,6 +445,7 @@
             transition: transform 0.3s var(--ease-out);
             z-index: 30;
             text-decoration: none;
+            will-change: transform;
         }
         .btn:hover {
             transform: translateX(10px);
@@ -395,7 +464,7 @@
         /* Footer */
         .about-section {
             min-height: 60vh;
-            background: var(--bg);
+            background: rgba(5, 5, 5, 0.9);
             border-top: 1px solid var(--border);
             padding: 4rem 8rem;
             display: flex;
@@ -403,6 +472,7 @@
             align-items: flex-start;
             flex-wrap: wrap;
             z-index: 20;
+            backdrop-filter: blur(10px);
         }
         .footer-brand {
             width: 100%;
@@ -539,7 +609,15 @@
             section { padding: 0 4rem; }
             .about-section { padding: 3rem 2rem; }
             .footer-grid { grid-template-columns: 1fr 1fr; }
-            #warrior-img { height: 80vh; max-width: 85%; }
+            #warrior-container { bottom: -12vh; }
+            #warrior-img { height: 95vh; }
+            #sword-container { 
+                bottom: -15vh;
+                left: -5%;
+            }
+            #sword-img { 
+                height: 95vh;
+            }
             .menu-toggle { left: 2rem; }
             .sticky-nav { right: 2rem; }
             .glass-grid { grid-template-columns: repeat(2, 1fr); }
@@ -547,7 +625,15 @@
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
             h2 { font-size: 2rem; }
-            #warrior-img { height: 70vh; max-width: 90%; min-height: 500px; }
+            #warrior-container { bottom: -8vh; }
+            #warrior-img { height: 90vh; }
+            #sword-container { 
+                bottom: -12vh;
+                left: -3%;
+            }
+            #sword-img { 
+                height: 85vh;
+            }
             .button-group { gap: 1rem; }
             .sticky-nav { display: none; }
             .glass-grid { grid-template-columns: 1fr; }
@@ -558,7 +644,13 @@
             .about-section { padding: 2rem 1.5rem; }
             .footer-grid { grid-template-columns: 1fr; }
             .modal-actions { flex-direction: column; }
-            #warrior-img { height: 65vh; max-width: 95%; min-height: 400px; }
+            #warrior-container { bottom: -5vh; }
+            #warrior-img { height: 85vh; }
+            #sword-container { 
+                bottom: -8vh;
+                left: 0;
+            }
+            #sword-img { height: 75vh; }
             .menu-toggle { left: 1rem; top: 1rem; }
         }
     </style>
@@ -582,8 +674,12 @@
     
     <!-- Warrior -->
     <div id="warrior-container">
-        <!-- Updated URL -->
         <img id="warrior-img" src="https://i.ibb.co/fzj7K3BN/warrior.png" alt="Warrior">
+    </div>
+
+    <!-- Berserk Sword -->
+    <div id="sword-container">
+        <img id="sword-img" src="https://i.ibb.co/Z6Fq164h/berserk.png" alt="Berserk Sword">
     </div>
 
     <div class="vignette"></div>
@@ -659,7 +755,7 @@
     <!-- SECURITY -->
     <section id="security">
         <div class="content-wrapper">
-            <h2>ABSOLUTE PRIVACY.</h2>
+            <h2 id="absolute-privacy-trigger">ABSOLUTE PRIVACY.</h2>
             <p class="lead">
                 In the modern digital landscape, surveillance is the default. We have built a system where privacy is the baseline.
             </p>
@@ -842,7 +938,7 @@
     </div>
 
     <script>
-        // Configuration - Backend URL (PRESERVED FROM ORIGINAL)
+        // Configuration
         const API_URL = 'https://abysslink.onrender.com';
 
         // Store current room data
@@ -851,70 +947,173 @@
         // GSAP Init
         gsap.registerPlugin(ScrollTrigger);
 
+        // OPTIMIZED SCROLL TRIGGER CONFIGURATION
+        ScrollTrigger.config({
+            autoRefreshEvents: "visibilitychange,DOMContentLoaded,load",
+            syncInterval: 8,
+            anticipatePin: 1
+        });
+
+        // Force scroll to top and initialize
         window.addEventListener("load", () => {
             window.scrollTo(0, 0);
+            
             setTimeout(() => {
                 ScrollTrigger.refresh();
-            }, 100);
+                initializeAnimations();
+            }, 200);
         });
 
-        // Warrior Initial Entrance
-        gsap.fromTo("#warrior-img",
-            { opacity: 0, y: 100, scale: 0.95 },
-            { 
-                opacity: 1, 
-                y: 0, 
-                scale: 1,
-                duration: 2, 
-                ease: "power2.out",
-                delay: 0.5
-            }
-        );
-
-        // Warrior fade on scroll
-        gsap.to("#warrior-img", {
-            scrollTrigger: {
-                trigger: "#hero",
-                start: "top top", 
-                end: "bottom center",
-                scrub: 2,
-                invalidateOnRefresh: true,
-            },
-            opacity: 0,
-            y: -80, 
-            scale: 1.1,
-            ease: "none" 
-        });
-
-        // Background blur transition
-        gsap.to("#bg-image", {
-            scrollTrigger: {
-                trigger: "#hero", 
-                start: "top top",
-                end: "bottom top", 
-                scrub: 2
-            },
-            filter: "blur(0px) brightness(0.8)",
-            ease: "none"
-        });
-
-        // Content fade-in animations
-        document.querySelectorAll('.content-wrapper').forEach((content, index) => {
-            gsap.to(content, {
-                scrollTrigger: {
-                    trigger: content,
-                    start: "top 85%",
-                    toggleActions: "play none none reverse"
+        // ANIMATION INITIALIZATION
+        function initializeAnimations() {
+            
+            // === WARRIOR ANIMATIONS === //
+            
+            // Initial Warrior Entrance
+            gsap.fromTo("#warrior-img",
+                { 
+                    opacity: 0, 
+                    y: 250, 
+                    scale: 0.85 
                 },
-                opacity: 1,
-                y: 0,
-                duration: 1.2,
-                ease: "power3.out",
-                delay: index * 0.1
-            });
-        });
+                { 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1,
+                    duration: 2,
+                    ease: "power3.out",
+                    delay: 0.3,
+                    force3D: true
+                }
+            );
 
-        // PULSING WAVE GLITCH
+            // Warrior Fade Out on Scroll
+            gsap.to("#warrior-img", {
+                scrollTrigger: {
+                    trigger: "#hero",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: 1.5,
+                    invalidateOnRefresh: true,
+                    fastScrollEnd: true
+                },
+                opacity: 0,
+                y: -100,
+                scale: 1.15,
+                ease: "none",
+                force3D: true
+            });
+
+            // === BERSERK SWORD ANIMATIONS - FADE TIED TO "ABSOLUTE PRIVACY" === //
+            
+            // Sword VERY Subtle Fade IN - during infrastructure section
+            gsap.fromTo("#sword-img",
+                {
+                    opacity: 0,
+                    y: 80
+                },
+                {
+                    scrollTrigger: {
+                        trigger: "#infrastructure",
+                        start: "top 80%",
+                        end: "top 20%",
+                        scrub: 2.5,
+                        invalidateOnRefresh: true,
+                        fastScrollEnd: true
+                    },
+                    opacity: 0.95,
+                    y: 0,
+                    ease: "power1.inOut",
+                    force3D: true
+                }
+            );
+
+            // Sword Fade OUT - TRIGGERS WHEN "ABSOLUTE PRIVACY" HEADING APPEARS
+            gsap.to("#sword-img", {
+                scrollTrigger: {
+                    trigger: "#absolute-privacy-trigger", // The h2 heading
+                    start: "top center", // When heading reaches center of viewport
+                    end: "top top",      // Fast fade as it reaches top
+                    scrub: 1.5,          // Smooth but responsive
+                    invalidateOnRefresh: true,
+                    fastScrollEnd: true,
+                    markers: false // Set to true for debugging
+                },
+                opacity: 0,
+                y: -60,
+                ease: "power2.in",
+                force3D: true
+            });
+
+            // === BACKGROUND BLUR TRANSITION === //
+            gsap.to("#bg-image", {
+                scrollTrigger: {
+                    trigger: "#hero", 
+                    start: "top top",
+                    end: "bottom top", 
+                    scrub: 1.5,
+                    fastScrollEnd: true
+                },
+                filter: "blur(0px) brightness(0.8)",
+                ease: "none",
+                force3D: true
+            });
+
+            // === CONTENT FADE-IN ANIMATIONS === //
+            document.querySelectorAll('.content-wrapper').forEach((content, index) => {
+                gsap.to(content, {
+                    scrollTrigger: {
+                        trigger: content,
+                        start: "top 85%",
+                        toggleActions: "play none none reverse",
+                        fastScrollEnd: true
+                    },
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: "power3.out",
+                    delay: index * 0.05,
+                    force3D: true
+                });
+            });
+
+            // === GLASS PANES & CARDS STAGGER === //
+            gsap.utils.toArray('.glass-pane').forEach((pane, i) => {
+                gsap.from(pane, {
+                    scrollTrigger: {
+                        trigger: pane,
+                        start: "top 90%",
+                        toggleActions: "play none none reverse",
+                        fastScrollEnd: true
+                    },
+                    opacity: 0,
+                    y: 30,
+                    duration: 0.8,
+                    delay: i * 0.1,
+                    ease: "power2.out",
+                    force3D: true
+                });
+            });
+
+            gsap.utils.toArray('.card').forEach((card, i) => {
+                gsap.from(card, {
+                    scrollTrigger: {
+                        trigger: card,
+                        start: "top 90%",
+                        toggleActions: "play none none reverse",
+                        fastScrollEnd: true
+                    },
+                    opacity: 0,
+                    y: 30,
+                    duration: 0.8,
+                    delay: i * 0.08,
+                    ease: "power2.out",
+                    force3D: true
+                });
+            });
+        }
+
+        // OPTIMIZED GLITCH EFFECT
         function pulsingWaveGlitch(element) {
             const text = element.dataset.text || element.textContent;
             const chars = '█▓▒░/\\|_-<>[]{}';
@@ -930,31 +1129,42 @@
             });
 
             let waveIndex = 0;
-            setInterval(() => {
-                spans.forEach((span, i) => {
-                    const distance = Math.abs(i - waveIndex);
-                    const isInWave = distance < 4;
+            let lastTime = 0;
+            const interval = 120;
+            
+            function animate(currentTime) {
+                if (currentTime - lastTime >= interval) {
+                    spans.forEach((span, i) => {
+                        const distance = Math.abs(i - waveIndex);
+                        const isInWave = distance < 4;
+                        
+                        if (isInWave && Math.random() > 0.3) {
+                            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+                            span.style.opacity = 0.6 + Math.random() * 0.4;
+                        } else if (!isInWave) {
+                            span.textContent = span.dataset.original;
+                            span.style.opacity = '1';
+                        }
+                    });
                     
-                    if (isInWave && Math.random() > 0.3) {
-                        span.textContent = chars[Math.floor(Math.random() * chars.length)];
-                        span.style.opacity = 0.6 + Math.random() * 0.4;
-                    } else if (!isInWave) {
-                        span.textContent = span.dataset.original;
-                        span.style.opacity = '1';
-                    }
-                });
+                    waveIndex = (waveIndex + 1) % (spans.length + 5);
+                    lastTime = currentTime;
+                }
                 
-                waveIndex = (waveIndex + 1) % (spans.length + 5);
-            }, 120);
+                requestAnimationFrame(animate);
+            }
+            
+            requestAnimationFrame(animate);
         }
 
         document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
 
-        // Sticky right nav scroll tracking
+        // THROTTLED SCROLL TRACKING FOR STICKY NAV
+        let scrollTimeout;
         const navItems = document.querySelectorAll('.sticky-nav .nav-item');
         const sections = document.querySelectorAll('section[id]');
 
-        window.addEventListener('scroll', () => {
+        function updateActiveNav() {
             let current = '';
             
             sections.forEach(section => {
@@ -970,7 +1180,14 @@
                     item.classList.add('active');
                 }
             });
-        });
+        }
+
+        window.addEventListener('scroll', () => {
+            if (scrollTimeout) {
+                window.cancelAnimationFrame(scrollTimeout);
+            }
+            scrollTimeout = window.requestAnimationFrame(updateActiveNav);
+        }, { passive: true });
 
         // Menu toggle
         const menuToggle = document.getElementById('menuToggle');
@@ -1011,13 +1228,12 @@
             document.getElementById('successModal').style.display = 'none';
         }
 
-        // Room handling - PRESERVED ORIGINAL BACKEND LOGIC
+        // Room handling
         async function handleJoinRoom(event) {
             event.preventDefault();
             const roomId = document.getElementById('joinRoomId').value.trim();
             const password = document.getElementById('joinPassword').value;
             
-            // Store credentials in localStorage for chat page
             const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
             rooms.push({
                 roomId: roomId,
@@ -1110,6 +1326,15 @@
                 }
             });
         });
+
+        // Debounced window resize handler
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                ScrollTrigger.refresh();
+            }, 250);
+        }, { passive: true });
     </script>
 </body>
 </html>
