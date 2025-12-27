@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Secure Transmission Layer</title>
+    <title>Chat Room — AbyssLink</title>
     
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    
-    <!-- FONTS: Manrope (Clean/Modern) & Space Mono (Technical) -->
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -22,6 +21,7 @@
             --text-dim: #888888;
             --border: #222222;
             --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+            --danger: #ff6b6b;
         }
 
         * {
@@ -30,20 +30,21 @@
             box-sizing: border-box;
         }
 
-        html {
-            scroll-behavior: smooth;
+        html, body {
+            height: 100%;
         }
 
         body {
             background-color: var(--bg);
             color: var(--text-main);
             font-family: 'Manrope', sans-serif;
-            overflow-x: hidden;
+            overflow: hidden;
             -webkit-font-smoothing: antialiased;
-            cursor: default;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* BACKGROUND WRAPPER - Replaces Three.js */
+        /* Background - Same as landing page */
         .background-wrapper {
             position: fixed;
             top: 0;
@@ -61,1090 +62,1043 @@
             width: 100%;
             height: 100%;
             background: url('C:/Users/Nischith R/abysslink/1.jpeg') center/cover no-repeat;
-            filter: blur(12px) brightness(0.6); 
+            filter: blur(20px) brightness(0.3);
             transform: scale(1.1);
             z-index: -2;
-            will-change: filter, transform;
         }
 
-        /* WARRIOR CONTAINER */
-        #warrior-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            z-index: 1; 
-            pointer-events: none;
-            overflow: hidden;
-            background: transparent;
-        }
-
-        /* WARRIOR IMAGE */
-        #warrior-img {
-            position: relative;
-            height: 85vh; 
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-            object-position: bottom center;
-            display: block;
-            background: transparent;
-            mix-blend-mode: screen; 
-            border: none !important;
-            outline: none !important;
-            box-shadow: none !important;
-            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); 
-            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            will-change: opacity, transform;
-            transform-origin: bottom center;
-        }
-
-        /* VIGNETTE */
+        /* Vignette - Same as landing page */
         .vignette {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, transparent 30%, var(--bg) 100%);
-            z-index: 2;
+            background: radial-gradient(circle at center, transparent 20%, var(--bg) 80%);
+            z-index: -1;
             pointer-events: none;
         }
 
-        /* HAMBURGER MENU */
-        .menu-toggle {
-            position: fixed;
-            top: 2rem;
-            left: 4rem;
-            width: 32px;
-            height: 24px;
+        /* Header */
+        .chat-header {
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 1.5rem 4rem;
+            border-bottom: 1px solid var(--border);
             display: flex;
-            flex-direction: column;
             justify-content: space-between;
-            cursor: pointer;
-            z-index: 1001;
-        }
-        .menu-toggle span {
-            width: 100%;
-            height: 2px;
-            background: var(--text-main);
-            transition: all 0.3s ease;
-        }
-        .menu-toggle.active span:nth-child(1) {
-            transform: translateY(11px) rotate(45deg);
-        }
-        .menu-toggle.active span:nth-child(2) {
-            opacity: 0;
-        }
-        .menu-toggle.active span:nth-child(3) {
-            transform: translateY(-11px) rotate(-45deg);
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            z-index: 100;
         }
 
-        /* MENU OVERLAY */
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 5, 5, 0.98);
-            backdrop-filter: blur(20px);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 3rem;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-        }
-        .menu-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .menu-overlay a {
-            color: var(--text-main);
-            text-decoration: none;
+        .room-info h2 {
             font-family: 'Space Mono', monospace;
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-weight: 200;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+        }
+
+        .room-meta {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-pill {
+            padding: 0.5rem 1.2rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 400;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-        }
-        .menu-overlay a:hover {
-            opacity: 1;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
         }
 
-        /* STICKY RIGHT NAV */
-        .sticky-nav {
-            position: fixed;
-            top: 2rem;
-            right: 4rem;
-            z-index: 500;
+        .timer-display {
+            color: var(--danger);
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+
+        .participants-display {
+            color: var(--text-main);
+        }
+
+        .back-btn {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-dim);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        /* Main Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .messages-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Messages Area */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 4rem;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+        }
+
+        .message {
+            max-width: 65%;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .message.animated {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.4s var(--ease-out);
+        }
+
+        .message.own {
+            align-self: flex-end;
+        }
+
+        .message.other {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 1.2rem 1.5rem;
+            position: relative;
+        }
+
+        .message.own .message-bubble {
+            background: var(--text-main);
+            color: var(--bg);
+        }
+
+        .message.other .message-bubble {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .message-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+            word-wrap: break-word;
+        }
+
+        .message-time {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.5;
+        }
+
+        .system-message {
+            align-self: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.5rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            max-width: 100%;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .system-message.animated {
+            opacity: 1;
+            transform: scale(1);
+            transition: all 0.3s var(--ease-out);
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 1.5rem 4rem;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-main);
+            font-family: 'Manrope', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-area input[type="text"]:focus {
+            border-color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .input-area input[type="text"]::placeholder {
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 2rem;
             font-family: 'Space Mono', monospace;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-        }
-        .sticky-nav a {
-            color: var(--text-dim);
-            text-decoration: none;
-            opacity: 0.5;
-            transition: all 0.3s ease;
-            padding-right: 1rem;
-            border-right: 2px solid transparent;
-        }
-        .sticky-nav a.active {
-            color: var(--text-main);
-            opacity: 1;
-            border-right-color: var(--text-main);
-        }
-
-        /* SECTIONS */
-        section {
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 8rem;
-            z-index: 10;
-        }
-
-        #hero {
-            background: transparent;
-        }
-
-        #hero .content-wrapper {
-            text-align: center;
-            margin: 0 auto;
-            z-index: 20;
-            margin-top: 5vh;
-        }
-
-        section:not(#hero) {
-            background: rgba(5, 5, 5, 0.92);
-            backdrop-filter: blur(5px);
-            box-shadow: 0 -150px 100px rgba(5,5,5,1);
-        }
-
-        .content-wrapper {
-            max-width: 900px;
-            opacity: 0;
-            transform: translateY(20px);
-            margin: 0 auto;
-        }
-
-        /* TYPOGRAPHY */
-        h1, h2, h3 {
-            font-family: 'Space Mono', monospace;
-            font-weight: 200;
-            letter-spacing: -0.04em;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            font-size: clamp(3.5rem, 10vw, 7rem);
-            line-height: 0.9;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 0 30px rgba(0,0,0,1);
-        }
-
-        h2 {
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            margin-bottom: 2rem;
-        }
-
-        p.lead {
-            font-size: 1.25rem;
-            color: #ddd;
-            line-height: 1.6;
-            margin-bottom: 3rem;
-            font-weight: 300;
-            text-shadow: 0 2px 10px rgba(0,0,0,1);
-        }
-
-        /* GLITCH TEXT */
-        .glitch-text {
-            position: relative;
-        }
-        .glitch-char {
-            display: inline-block;
-            position: relative;
-        }
-
-        /* BUTTON GROUP */
-        .button-group {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 2rem;
-        }
-
-        /* 2x2 GLASS PANE GRID */
-        .glass-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .glass-pane {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 2.5rem;
-            border-radius: 4px;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative;
-        }
-
-        .glass-pane:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-5px);
-        }
-
-        .glass-pane h3 {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            color: var(--text-main);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 0.5rem;
-            display: inline-block;
-        }
-
-        .glass-pane p {
-            font-size: 0.95rem;
-            color: var(--text-dim);
-            line-height: 1.6;
-        }
-
-        /* GRID LAYOUTS */
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 4rem;
-        }
-
-        .card {
-            border-top: 1px solid var(--border);
-            padding-top: 1.5rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: var(--text-main);
-        }
-
-        .card h3 {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-            color: var(--text-main);
-        }
-
-        .card p {
-            font-size: 1rem;
-            color: var(--text-dim);
-            line-height: 1.5;
-        }
-
-        /* BUTTONS */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            background: var(--text-main);
-            color: var(--bg);
-            padding: 1rem 2.5rem;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
-            text-transform: uppercase;
             font-weight: 700;
             border: none;
             cursor: pointer;
-            transition: transform 0.3s var(--ease-out);
-            text-decoration: none;
+            transition: all 0.3s var(--ease-out);
+            white-space: nowrap;
         }
 
-        .btn:hover {
-            transform: translateX(10px);
+        .btn-primary {
+            background: var(--text-main);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            transform: translateX(5px);
         }
 
         .btn-secondary {
-            background: rgba(0,0,0,0.6);
-            color: var(--text-main);
+            background: transparent;
+            color: var(--text-dim);
             border: 1px solid var(--border);
         }
 
         .btn-secondary:hover {
-            background: var(--text-main);
+            color: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
             color: var(--bg);
-            transform: translateX(0) scale(1.05);
+            border-color: var(--danger);
         }
 
-        /* ABOUT SECTION */
-        .about-section {
-            min-height: 60vh;
-            background: var(--bg);
-            border-top: 1px solid var(--border);
-            padding: 4rem 8rem;
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: rgba(5, 5, 5, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border);
+            padding: 2rem;
+            overflow-y: auto;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            z-index: 20;
+            flex-direction: column;
+            gap: 2.5rem;
         }
 
-        .footer-brand {
-            width: 100%;
-            margin-bottom: 3rem;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-            width: 100%;
-        }
-
-        .footer-col h4 {
+        .sidebar-section h3 {
             font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 400;
             text-transform: uppercase;
+            letter-spacing: 0.15em;
             color: var(--text-dim);
             margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
         }
 
-        .footer-col p, .footer-col a {
-            font-size: 0.9rem;
+        .info-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            padding: 1.2rem;
+        }
+
+        .info-card p {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-card .value {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 200;
             color: var(--text-main);
-            line-height: 1.8;
+        }
+
+        .files-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
             text-decoration: none;
+            color: inherit;
             display: block;
         }
 
-        .footer-col a:hover {
-            color: var(--text-dim);
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-main);
+            transform: translateX(5px);
         }
 
-        /* MODAL STYLES */
-        .modal {
-            display: none;
+        .file-name {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+            word-break: break-all;
+        }
+
+        .file-meta {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .empty-state {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-align: center;
+            padding: 2rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.5;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: auto;
+        }
+
+        /* Scrollbar - Same as landing page */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+
+        /* Loading Screen */
+        .loading {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-content {
-            background: var(--surface);
-            padding: 3rem;
-            border-radius: 0;
-            max-width: 500px;
-            width: 90%;
-            border: 1px solid var(--border);
-            animation: slideUp 0.4s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-content h2 {
-            margin-bottom: 2rem;
-            color: var(--text-main);
-            font-size: 2rem;
-            font-weight: 200;
-            font-family: 'Space Mono', monospace;
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            font-family: 'Space Mono', monospace;
-            text-transform: uppercase;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 1rem;
-            border-radius: 0;
-            border: 1px solid var(--border);
             background: var(--bg);
-            color: var(--text-main);
-            font-size: 1rem;
-            font-family: 'Manrope', sans-serif;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--text-main);
-            background: var(--surface);
-        }
-
-        .modal-actions {
             display: flex;
-            gap: 1rem;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-text {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-dim);
             margin-top: 2rem;
         }
 
-        .info-box {
-            background: var(--bg);
-            padding: 1.5rem;
-            border-radius: 0;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border);
+        .loading-bar {
+            width: 200px;
+            height: 1px;
+            background: var(--border);
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
         }
 
-        .info-box p {
-            color: var(--text-dim);
-            margin-bottom: 0.5rem;
-            font-size: 0.8rem;
+        .loading-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50%;
+            width: 50%;
+            height: 100%;
+            background: var(--text-main);
+            animation: loading 1s ease-in-out infinite;
+        }
+
+        @keyframes loading {
+            0% { left: -50%; }
+            100% { left: 100%; }
+        }
+
+        .glitch-text {
             font-family: 'Space Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 200;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
         }
 
-        .info-box .value {
-            color: var(--text-main);
-            word-break: break-all;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: color 0.2s;
+        /* Chat App Hidden Initially */
+        #chatApp {
+            display: none;
+            height: 100%;
+            flex-direction: column;
         }
 
-        .info-box .value:hover {
-            color: var(--text-dim);
+        #chatApp.visible {
+            display: flex;
         }
 
-        .warning {
-            color: #ff6b6b;
-            margin-bottom: 2rem;
-            font-size: 0.85rem;
-            padding: 1rem;
-            background: rgba(255, 0, 0, 0.05);
-            border-radius: 0;
-            border: 1px solid rgba(255, 0, 0, 0.2);
-            font-family: 'Space Mono', monospace;
-        }
-
-        /* RESPONSIVE */
+        /* Responsive */
         @media (max-width: 1024px) {
-            section { padding: 0 4rem; }
-            .about-section { padding: 3rem 2rem; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
-            #warrior-img { height: 80vh; max-width: 85%; }
-            .menu-toggle { left: 2rem; }
-            .sticky-nav { right: 2rem; }
-            .glass-grid { grid-template-columns: repeat(2, 1fr); }
+            .chat-header {
+                padding: 1rem 2rem;
+            }
+            .messages {
+                padding: 1.5rem 2rem;
+            }
+            .input-area {
+                padding: 1rem 2rem;
+            }
+            .sidebar {
+                width: 280px;
+            }
         }
 
         @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
-            h2 { font-size: 2rem; }
-            #warrior-img { height: 70vh; max-width: 90%; min-height: 500px; }
-            .button-group { gap: 1rem; }
-            .sticky-nav { display: none; }
-            .glass-grid { grid-template-columns: 1fr; }
-            section { padding: 0 2rem; }
+            .sidebar {
+                display: none;
+            }
+            .message {
+                max-width: 85%;
+            }
+            .chat-header {
+                padding: 1rem;
+            }
+            .messages {
+                padding: 1rem;
+            }
+            .input-area {
+                padding: 1rem;
+                flex-wrap: wrap;
+            }
+            .input-area input[type="text"] {
+                flex: 1 1 100%;
+                order: 1;
+            }
+            .btn {
+                padding: 0.8rem 1.2rem;
+                font-size: 0.7rem;
+            }
         }
 
         @media (max-width: 600px) {
-            h1 { font-size: 2rem; }
-            section { padding: 0 2rem; }
-            .menu-toggle { left: 1rem; top: 1rem; }
-            .about-section { padding: 2rem 1.5rem; }
-            .footer-grid { grid-template-columns: 1fr; }
-            .modal-actions { flex-direction: column; }
-            #warrior-img { height: 65vh; max-width: 95%; min-height: 400px; }
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .input-area {
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Force scroll to top on load -->
-    <script>
-        if (history.scrollRestoration) {
-            history.scrollRestoration = 'manual';
-        }
-        window.addEventListener('beforeunload', () => {
-            window.scrollTo(0, 0);
-        });
-    </script>
-
-    <!-- BACKGROUND - Replaces Three.js -->
+    <!-- Background - Same as landing page -->
     <div class="background-wrapper">
         <div id="bg-image"></div>
     </div>
-    
-    <!-- WARRIOR -->
-    <div id="warrior-container">
-        <img id="warrior-img" src="C:/Users/Nischith R/abysslink/warrior.png" alt="Warrior">
-    </div>
-
     <div class="vignette"></div>
 
-    <!-- HAMBURGER MENU -->
-    <div class="menu-toggle" id="menuToggle">
-        <span></span>
-        <span></span>
-        <span></span>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading">
+        <div class="glitch-text" id="loadingTitle">ABYSSLINK</div>
+        <div class="loading-text">Establishing secure connection</div>
+        <div class="loading-bar"></div>
     </div>
 
-    <!-- STICKY RIGHT NAVIGATION -->
-    <div class="sticky-nav">
-        <a href="#hero" class="nav-item active" data-section="hero">Overview</a>
-        <a href="#infrastructure" class="nav-item" data-section="infrastructure">Infrastructure</a>
-        <a href="#security" class="nav-item" data-section="security">Security</a>
-        <a href="#implementation" class="nav-item" data-section="implementation">Implementation</a>
-        <a href="#access" class="nav-item" data-section="access">Contact</a>
-    </div>
-
-    <!-- MENU OVERLAY -->
-    <div class="menu-overlay" id="menuOverlay">
-        <a href="#" onclick="closeMenu(); openJoinModal();">Join Room</a>
-        <a href="#" onclick="closeMenu(); openCreateModal();">Create Room</a>
-        <a href="rooms.html" onclick="closeMenu();">Active Rooms</a>
-        <a href="#infrastructure" onclick="closeMenu();">Features</a>
-    </div>
-
-    <!-- HERO SECTION -->
-    <section id="hero">
-        <div class="content-wrapper">
-            <h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
-            <p class="lead">
-                An ephemeral communication layer designed for professionals who require absolute stealth. 
-                No persistent storage. No logs. Just silence.
-            </p>
-            <div class="button-group">
-                <button class="btn" onclick="openCreateModal()">Initiate Session</button>
-                <button class="btn btn-secondary" onclick="openJoinModal()">Join Room</button>
+    <!-- Chat Application -->
+    <div id="chatApp">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="room-info">
+                <h2 id="roomTopic">Loading...</h2>
+                <div class="room-meta">
+                    Room: <span id="roomId">—</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-pill participants-display">
+                    <span id="participantCount">0</span> Online
+                </div>
+                <div class="status-pill timer-display">
+                    <span id="timeRemaining">24:00:00</span>
+                </div>
+                <button class="back-btn" onclick="leaveRoom()">← Exit</button>
             </div>
         </div>
-    </section>
 
-    <!-- INFRASTRUCTURE SECTION -->
-    <section id="infrastructure">
-        <div class="content-wrapper">
-            <h2>STRUCTURED ANONYMITY.</h2>
-            <p style="color: var(--text-dim); margin-bottom: 2rem;">
-                Our architecture prioritizes complete anonymity through distributed protocols and zero-knowledge proof systems.
-            </p>
-            
-            <div class="glass-grid">
-                <div class="glass-pane">
-                    <h3>01 // Zero-Persistence</h3>
-                    <p>Volatile memory stacks ensure messages cease to exist once delivered. 24-hour automatic expiration with instant destruction capability.</p>
+        <!-- Main Chat Area -->
+        <div class="chat-container">
+            <div class="messages-panel">
+                <div class="messages" id="messages">
+                    <!-- Messages will be inserted here -->
                 </div>
-                <div class="glass-pane">
-                    <h3>02 // Complete Anonymity</h3>
-                    <p>No accounts, no usernames, no identity tracking. All participants appear as encrypted nodes in the network.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>03 // Invite-Only Architecture</h3>
-                    <p>Password-protected rooms with isolated access. Share credentials through separate channels for maximum security.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>04 // Real-Time Encryption</h3>
-                    <p>End-to-end encrypted messaging with file sharing. All data is encrypted in transit and at rest.</p>
+                
+                <div class="input-area">
+                    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect()">
+                    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                        Attach
+                    </button>
+                    <input type="text" id="messageInput" placeholder="Type message..." onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()">Send →</button>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- SECURITY SECTION -->
-    <section id="security">
-        <div class="content-wrapper">
-            <h2>ABSOLUTE PRIVACY.</h2>
-            <p class="lead">
-                In the modern digital landscape, surveillance is the default. 
-                We have built a system where privacy is the baseline. 
-                Your communication is isolated, encrypted, and ephemeral.
-            </p>
-            <div class="grid-3" style="margin-top: 3rem;">
-                <div class="card">
-                    <h3>Military-Grade Encryption</h3>
-                    <p>AES-256 encryption standard with perfect forward secrecy. Every session generates new keys.</p>
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Session Info</h3>
+                    <div class="info-card">
+                        <p>Participants</p>
+                        <div class="value"><span id="sidebarParticipants">0</span></div>
+                    </div>
                 </div>
-                <div class="card">
-                    <h3>No User Accounts</h3>
-                    <p>Registration is surveillance. We operate on a zero-knowledge principle.</p>
-                </div>
-                <div class="card">
-                    <h3>No Message Storage</h3>
-                    <p>Messages exist only in volatile memory during active sessions.</p>
-                </div>
-                <div class="card">
-                    <h3>No Analytics</h3>
-                    <p>We don't track usage patterns, behaviors, or metadata.</p>
-                </div>
-                <div class="card">
-                    <h3>No Backdoors</h3>
-                    <p>Open-source codebase. Peer-reviewed security. No hidden vulnerabilities.</p>
-                </div>
-                <div class="card">
-                    <h3>Distributed Infrastructure</h3>
-                    <p>No central servers to infiltrate. No single point of failure.</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- IMPLEMENTATION SECTION -->
-    <section id="implementation">
-        <div class="content-wrapper">
-            <h2>HOW IT WORKS.</h2>
-            <p class="lead">
-                AbyssLink operates on a simple principle: communication should be ephemeral.
-            </p>
-            
-            <div class="glass-grid">
-                <div class="glass-pane">
-                    <h3>Step 1: Create Room</h3>
-                    <p>Generate a secure room with a single passphrase. No registration. No email. No phone number.</p>
+                <div class="sidebar-section">
+                    <h3>Time Remaining</h3>
+                    <div class="info-card">
+                        <p>Auto-Destruct In</p>
+                        <div class="value" id="sidebarTimer">24:00:00</div>
+                    </div>
                 </div>
-                <div class="glass-pane">
-                    <h3>Step 2: Share Credentials</h3>
-                    <p>Distribute the Room ID and passphrase through separate channels for compartmentalization.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>Step 3: Communicate</h3>
-                    <p>Connect to the room. All messages are encrypted end-to-end. No one can see your communications.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>Step 4: Vanish</h3>
-                    <p>When the conversation ends, leave the room. Everything dissolves. No trace.</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- ACCESS CTA -->
-    <section id="access" style="text-align: center; align-items: center;">
-        <div class="content-wrapper" style="max-width: 100%; text-align: center;">
-            <h2>READY TO VANISH?</h2>
-            <p class="lead">Join the network that forgets.</p>
-            <div class="button-group" style="justify-content: center;">
-                <button class="btn" onclick="openCreateModal()">Create Room</button>
-                <a href="rooms.html" class="btn btn-secondary">View Active Rooms</a>
-            </div>
-        </div>
-    </section>
+                <div class="sidebar-section">
+                    <h3>Shared Files</h3>
+                    <div class="files-list" id="filesList">
+                        <div class="empty-state">No files shared</div>
+                    </div>
+                </div>
 
-    <!-- ABOUT SECTION -->
-    <footer class="about-section">
-        <div class="footer-brand">
-            <h3 style="font-size: 1.5rem; letter-spacing: -0.02em;">ABYSSLINK</h3>
-            <p style="margin-top: 1rem; color: var(--text-dim); max-width: 400px; font-size: 0.9rem;">
-                Founded on the principle that digital communication should mirror the transience of physical conversation. We build for the shadows.
-            </p>
-        </div>
-        <div class="footer-grid">
-            <div class="footer-col">
-                <h4>Protocol</h4>
-                <p>E2E Encryption</p>
-                <p>Volatile Nodes</p>
-                <p>Entropy Injection</p>
-                <p>24hr Auto-Destruct</p>
-            </div>
-            <div class="footer-col">
-                <h4>Features</h4>
-                <p>Anonymous Chat</p>
-                <p>File Sharing</p>
-                <p>Instant Vanish</p>
-                <p>No Logs</p>
-            </div>
-            <div class="footer-col">
-                <h4>Legal</h4>
-                <p>Terms of Void</p>
-                <p>No-Log Policy</p>
-                <p>Privacy Manifesto</p>
-                <p>Transparency</p>
-            </div>
-            <div class="footer-col">
-                <h4>Access</h4>
-                <a href="rooms.html">Active Rooms</a>
-                <a href="#" onclick="openCreateModal(); return false;">Create Session</a>
-                <p>Documentation</p>
-                <p>API Access</p>
-            </div>
-        </div>
-        <div style="width: 100%; margin-top: 3rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
-            &copy; 2025 AbyssLink Systems. All rights reserved. No data stored.
-        </div>
-    </footer>
-
-    <!-- Join Room Modal -->
-    <div id="joinModal" class="modal">
-        <div class="modal-content">
-            <h2>Join Session</h2>
-            <form id="joinForm" onsubmit="handleJoinRoom(event)">
-                <div class="form-group">
-                    <label>Room ID</label>
-                    <input type="text" id="joinRoomId" required placeholder="Room identifier">
+                <div class="action-buttons" id="creatorActions" style="display: none;">
+                    <button class="btn btn-danger" onclick="confirmVanish()" style="width: 100%;">
+                        Vanish Room
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>Access Key</label>
-                    <input type="password" id="joinPassword" required placeholder="Encryption passphrase">
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn" style="flex: 1;">Enter</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeJoinModal()" style="flex: 1;">Cancel</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <!-- Create Room Modal -->
-    <div id="createModal" class="modal">
-        <div class="modal-content">
-            <h2>Create Session</h2>
-            <form id="createForm" onsubmit="handleCreateRoom(event)">
-                <div class="form-group">
-                    <label>Room Topic</label>
-                    <input type="text" id="topicInput" required placeholder="Session identifier">
-                </div>
-                <div class="form-group">
-                    <label>Access Key</label>
-                    <input type="password" id="passwordInput" required placeholder="Encryption passphrase">
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn" style="flex: 1;">Initialize</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Room Created Success Modal -->
-    <div id="successModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <h2>Session Active</h2>
-            
-            <div class="info-box">
-                <p>Room Identifier:</p>
-                <div class="value" id="roomIdDisplay" onclick="copyToClipboard('roomIdDisplay')"></div>
-            </div>
-
-            <div class="info-box">
-                <p>Creator Key (Destruction Authority):</p>
-                <div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')"></div>
-            </div>
-
-            <div class="warning">
-                ⚠️ PROTOCOL: Distribute Room ID and access key through separate channels. Save creator key for emergency termination. This session will auto-destruct in 24 hours.
-            </div>
-
-            <button class="btn" onclick="enterCreatedRoom()" style="width: 100%;">
-                Enter Session →
-            </button>
-        </div>
-    </div>
-
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script>
-        // Configuration - Backend URL
+        // Configuration
         const API_URL = 'https://abysslink.onrender.com';
 
-        // Store current room data
-        let currentRoom = null;
+        // Get room ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
 
-        // GSAP Init
-        gsap.registerPlugin(ScrollTrigger);
+        if (!roomId) {
+            alert('No room specified');
+            window.location.href = 'index.html';
+        }
 
-        window.addEventListener("load", () => {
-            window.scrollTo(0, 0);
-            setTimeout(() => {
-                ScrollTrigger.refresh();
-            }, 100);
-        });
+        // Initialize variables
+        const socket = io(API_URL);
+        let mySocketId = null;
+        let roomData = null;
+        let timerInterval = null;
 
-        // --- WARRIOR ENTRANCE ANIMATION ---
-        gsap.fromTo("#warrior-img",
-            { opacity: 0, y: 100, scale: 0.95 },
-            { 
-                opacity: 1, 
-                y: 0, 
-                scale: 1,
-                duration: 2, 
-                ease: "power2.out",
-                delay: 0.5
-            }
-        );
-
-        // WARRIOR FADE OUT ON SCROLL
-        gsap.to("#warrior-img", {
-            scrollTrigger: {
-                trigger: "#hero",
-                start: "top top", 
-                end: "bottom center",
-                scrub: 2,
-                invalidateOnRefresh: true,
-            },
-            opacity: 0,
-            y: -80, 
-            scale: 1.1,
-            ease: "none" 
-        });
-
-        // BACKGROUND BLUR ANIMATION (Starts Blurred -> Becomes Clear -> Returns to Blur)
-        gsap.to("#bg-image", {
-            scrollTrigger: {
-                trigger: "#hero", 
-                start: "top top",
-                end: "bottom top", 
-                scrub: 2
-            },
-            filter: "blur(0px) brightness(0.8)",
-            ease: "none"
-        });
-
-        // --- PULSING WAVE GLITCH ---
+        // Glitch effect for loading text
         function pulsingWaveGlitch(element) {
-            const text = element.dataset.text || element.textContent;
+            const text = element.textContent;
             const chars = '█▓▒░/\\|_-<>[]{}';
             element.innerHTML = '';
             
             const spans = text.split('').map(char => {
                 const span = document.createElement('span');
-                span.className = 'glitch-char';
                 span.textContent = char;
                 span.dataset.original = char;
+                span.style.display = 'inline-block';
                 element.appendChild(span);
                 return span;
             });
 
             let waveIndex = 0;
-            setInterval(() => {
-                spans.forEach((span, i) => {
-                    const distance = Math.abs(i - waveIndex);
-                    const isInWave = distance < 4;
-                    
-                    if (isInWave && Math.random() > 0.3) {
-                        span.textContent = chars[Math.floor(Math.random() * chars.length)];
-                        span.style.opacity = 0.6 + Math.random() * 0.4;
-                    } else if (!isInWave) {
-                        span.textContent = span.dataset.original;
-                        span.style.opacity = '1';
-                    }
-                });
-                
-                waveIndex = (waveIndex + 1) % (spans.length + 5);
-            }, 120);
-        }
-
-        document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
-
-        // Content fade-in animations
-        document.querySelectorAll('.content-wrapper').forEach((content, index) => {
-            gsap.to(content, {
-                scrollTrigger: {
-                    trigger: content,
-                    start: "top 85%",
-                    toggleActions: "play none none reverse"
-                },
-                opacity: 1,
-                y: 0,
-                duration: 1.2,
-                ease: "power3.out",
-                delay: index * 0.1
-            });
-        });
-
-        // Sticky right nav scroll tracking
-        const navItems = document.querySelectorAll('.sticky-nav .nav-item');
-        const sections = document.querySelectorAll('section[id]');
-
-        window.addEventListener('scroll', () => {
-            let current = '';
-            
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                if (window.pageYOffset >= sectionTop - 300) {
-                    current = section.getAttribute('id');
+            const interval = setInterval(() => {
+                if (!document.getElementById('loadingScreen').style.display || 
+                    document.getElementById('loadingScreen').style.display !== 'none') {
+                    spans.forEach((span, i) => {
+                        const distance = Math.abs(i - waveIndex);
+                        const isInWave = distance < 3;
+                        
+                        if (isInWave && Math.random() > 0.4) {
+                            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+                            span.style.opacity = 0.6 + Math.random() * 0.4;
+                        } else {
+                            span.textContent = span.dataset.original;
+                            span.style.opacity = '1';
+                        }
+                    });
+                    waveIndex = (waveIndex + 1) % (spans.length + 4);
+                } else {
+                    clearInterval(interval);
                 }
-            });
+            }, 100);
+        }
 
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('data-section') === current) {
-                    item.classList.add('active');
+        // Initialize glitch effect
+        pulsingWaveGlitch(document.getElementById('loadingTitle'));
+
+        // Load room from localStorage
+        function loadRoomData() {
+            const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
+            roomData = rooms.find(r => r.roomId === roomId);
+
+            if (!roomData) {
+                const password = prompt('This room requires an access key:');
+                if (!password) {
+                    window.location.href = 'index.html';
+                    return;
                 }
-            });
-        });
-
-        // Menu toggle
-        const menuToggle = document.getElementById('menuToggle');
-        const menuOverlay = document.getElementById('menuOverlay');
-        
-        menuToggle.addEventListener('click', () => {
-            menuToggle.classList.toggle('active');
-            menuOverlay.classList.toggle('active');
-        });
-
-        function closeMenu() {
-            menuToggle.classList.remove('active');
-            menuOverlay.classList.remove('active');
+                joinRoom(password);
+            } else {
+                setTimeout(() => initializeRoom(), 1500);
+            }
         }
 
-        // --- MODAL FUNCTIONS ---
-        function openJoinModal() {
-            document.getElementById('joinModal').style.display = 'flex';
-            document.getElementById('joinRoomId').focus();
-        }
-
-        function closeJoinModal() {
-            document.getElementById('joinModal').style.display = 'none';
-            document.getElementById('joinForm').reset();
-        }
-
-        function openCreateModal() {
-            document.getElementById('createModal').style.display = 'flex';
-            document.getElementById('topicInput').focus();
-        }
-
-        function closeCreateModal() {
-            document.getElementById('createModal').style.display = 'none';
-            document.getElementById('createForm').reset();
-        }
-
-        function closeSuccessModal() {
-            document.getElementById('successModal').style.display = 'none';
-        }
-
-        // --- ROOM HANDLING ---
-        async function handleJoinRoom(event) {
-            event.preventDefault();
-            const roomId = document.getElementById('joinRoomId').value.trim();
-            const password = document.getElementById('joinPassword').value;
-            
-            closeJoinModal();
-            window.location.href = `chat.html?room=${roomId}`;
-        }
-
-        async function handleCreateRoom(event) {
-            event.preventDefault();
-
-            const topic = document.getElementById('topicInput').value.trim();
-            const password = document.getElementById('passwordInput').value;
-
+        // Join room with password
+        async function joinRoom(password) {
             try {
-                const response = await fetch(`${API_URL}/api/rooms/create`, {
+                const response = await fetch(`${API_URL}/api/rooms/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, password })
+                    body: JSON.stringify({ roomId, password })
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to create room');
+                    const error = await response.json();
+                    alert(error.error || 'Invalid access key');
+                    window.location.href = 'index.html';
+                    return;
                 }
 
                 const data = await response.json();
 
                 const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-                currentRoom = {
+                roomData = {
                     roomId: data.roomId,
-                    topic: topic,
+                    topic: data.topic,
                     password: password,
-                    creatorKey: data.creatorKey,
                     expiresAt: data.expiresAt,
-                    isCreator: true
+                    isCreator: false
                 };
-                rooms.push(currentRoom);
+                rooms.push(roomData);
                 localStorage.setItem('abysslink_rooms', JSON.stringify(rooms));
 
-                document.getElementById('roomIdDisplay').textContent = data.roomId;
-                document.getElementById('creatorKeyDisplay').textContent = data.creatorKey;
-                
-                closeCreateModal();
-                document.getElementById('successModal').style.display = 'flex';
+                setTimeout(() => initializeRoom(), 1000);
 
             } catch (error) {
-                alert('Error creating room. Please check backend connection.');
+                alert('Error joining room');
+                console.error(error);
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Initialize room UI
+        function initializeRoom() {
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('chatApp').classList.add('visible');
+
+            document.getElementById('roomTopic').textContent = roomData.topic || 'Untitled Session';
+            document.getElementById('roomId').textContent = roomData.roomId.substring(0, 12) + '...';
+
+            if (roomData.isCreator && roomData.creatorKey) {
+                document.getElementById('creatorActions').style.display = 'flex';
+            }
+
+            startTimer();
+            connectSocket();
+
+            // Animate header entrance
+            gsap.fromTo('.chat-header', 
+                { y: -50, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' }
+            );
+
+            gsap.fromTo('.messages-panel', 
+                { opacity: 0 },
+                { opacity: 1, duration: 0.8, delay: 0.2, ease: 'power2.out' }
+            );
+
+            gsap.fromTo('.sidebar', 
+                { x: 50, opacity: 0 },
+                { x: 0, opacity: 1, duration: 0.6, delay: 0.3, ease: 'power2.out' }
+            );
+        }
+
+        // Connect to Socket.IO
+        function connectSocket() {
+            socket.on('connect', () => {
+                mySocketId = socket.id;
+                console.log('Connected:', mySocketId);
+                socket.emit('join_room', { roomId });
+            });
+
+            socket.on('chat_history', (messages) => {
+                messages.forEach((msg, index) => {
+                    setTimeout(() => addMessage(msg), index * 50);
+                });
+            });
+
+            socket.on('new_message', (msg) => {
+                addMessage(msg);
+            });
+
+            socket.on('participant_joined', (data) => {
+                updateParticipantCount(data.count);
+                addSystemMessage('A new participant has joined');
+            });
+
+            socket.on('participant_left', (data) => {
+                updateParticipantCount(data.count);
+                addSystemMessage('A participant has left');
+            });
+
+            socket.on('file_uploaded', (file) => {
+                addFileToList(file);
+                addSystemMessage('A file was shared');
+            });
+
+            socket.on('room_vanished', () => {
+                alert('This session has been destroyed by the creator');
+                removeRoomFromStorage();
+                window.location.href = 'index.html';
+            });
+
+            socket.on('error', (error) => {
+                console.error('Socket error:', error);
+            });
+        }
+
+        // Add message to chat
+        function addMessage(msg) {
+            const messagesDiv = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            
+            const isOwn = msg.sender === mySocketId;
+            messageEl.className = `message ${isOwn ? 'own' : 'other'}`;
+
+            const time = new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            messageEl.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-text">${escapeHtml(msg.text)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+
+            messagesDiv.appendChild(messageEl);
+            
+            // Animate message
+            requestAnimationFrame(() => {
+                messageEl.classList.add('animated');
+            });
+
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Add system message
+        function addSystemMessage(text) {
+            const messagesDiv = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'system-message';
+            messageEl.textContent = text;
+            messagesDiv.appendChild(messageEl);
+            
+            requestAnimationFrame(() => {
+                messageEl.classList.add('animated');
+            });
+
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Update participant count
+        function updateParticipantCount(count) {
+            document.getElementById('participantCount').textContent = count;
+            document.getElementById('sidebarParticipants').textContent = count;
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (message) {
+                socket.emit('send_message', { roomId, message });
+                input.value = '';
+            }
+        }
+
+        // Handle key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Handle file select
+        async function handleFileSelect() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            if (file.size > 50 * 1024 * 1024) {
+                alert('File size must be less than 50MB');
+                fileInput.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_URL}/api/rooms/${roomId}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    fileInput.value = '';
+                } else {
+                    alert('File upload failed');
+                }
+            } catch (error) {
+                alert('Error uploading file');
                 console.error(error);
             }
         }
 
-        function copyToClipboard(elementId) {
-            const text = document.getElementById(elementId).textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                const el = document.getElementById(elementId);
-                const original = el.textContent;
-                el.textContent = 'COPIED ✓';
-                setTimeout(() => {
-                    el.textContent = original;
-                }, 1000);
-            });
+        // Add file to list
+        function addFileToList(file) {
+            const filesList = document.getElementById('filesList');
+            
+            const empty = filesList.querySelector('.empty-state');
+            if (empty) {
+                empty.remove();
+            }
+
+            const fileEl = document.createElement('a');
+            fileEl.href = `${API_URL}${file.url}`;
+            fileEl.target = '_blank';
+            fileEl.className = 'file-item';
+            fileEl.innerHTML = `
+                <div class="file-name">${escapeHtml(file.name)}</div>
+                <div class="file-meta">${formatFileSize(file.size)}</div>
+            `;
+
+            filesList.insertBefore(fileEl, filesList.firstChild);
         }
 
-        function enterCreatedRoom() {
-            if (currentRoom) {
-                window.location.href = `chat.html?room=${currentRoom.roomId}`;
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Start timer
+        function startTimer() {
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Update timer
+        function updateTimer() {
+            if (!roomData) return;
+
+            const now = Date.now();
+            const remaining = roomData.expiresAt - now;
+
+            if (remaining <= 0) {
+                clearInterval(timerInterval);
+                alert('Session has expired');
+                removeRoomFromStorage();
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const hours = Math.floor(remaining / (1000 * 60 * 60));
+            const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+            const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            document.getElementById('timeRemaining').textContent = timeString;
+            document.getElementById('sidebarTimer').textContent = timeString;
+
+            // Warning when less than 5 minutes
+            if (remaining < 5 * 60 * 1000) {
+                document.querySelector('.timer-display').style.background = 'rgba(255, 0, 0, 0.1)';
+                document.querySelector('.timer-display').style.borderColor = 'rgba(255, 0, 0, 0.3)';
             }
         }
 
-        // Close modals on ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeCreateModal();
-                closeJoinModal();
-                closeSuccessModal();
-                closeMenu();
+        // Leave room
+        function leaveRoom() {
+            if (confirm('Leave this session?')) {
+                clearInterval(timerInterval);
+                socket.disconnect();
+                window.location.href = 'index.html';
             }
-        });
+        }
 
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    closeMenu();
+        // Confirm vanish
+        function confirmVanish() {
+            if (!confirm('⚠️ This will permanently destroy this session and all its contents for everyone.\n\nAre you absolutely sure?')) {
+                return;
+            }
+            vanishRoom();
+        }
+
+        // Vanish room
+        async function vanishRoom() {
+            if (!roomData || !roomData.creatorKey) {
+                alert('Only the creator can vanish this session');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/rooms/vanish`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roomId,
+                        creatorKey: roomData.creatorKey
+                    })
+                });
+
+                if (response.ok) {
+                    removeRoomFromStorage();
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Failed to vanish session');
                 }
-            });
+            } catch (error) {
+                alert('Error vanishing session');
+                console.error(error);
+            }
+        }
+
+        // Remove room from localStorage
+        function removeRoomFromStorage() {
+            const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
+            const filtered = rooms.filter(r => r.roomId !== roomId);
+            localStorage.setItem('abysslink_rooms', JSON.stringify(filtered));
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(timerInterval);
+            socket.disconnect();
         });
+
+        // Initialize
+        loadRoomData();
     </script>
 </body>
 </html>
