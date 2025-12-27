@@ -59,10 +59,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* URL Updated as requested */
-            background: url('https://ibb.co/jkT3q9Sj') center/cover no-repeat;
+            /* 
+               TEMPORARY WORKING BACKGROUND (Dark Abstract) 
+               Replace the URL below with your DIRECT ImgBB link (ending in .jpg/.png)
+            */
+            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') center/cover no-repeat;
+            
             /* Start state: Blurred */
-            filter: blur(12px) brightness(0.6); 
+            filter: blur(12px) brightness(0.4); 
             transform: scale(1.1);
             z-index: -2;
             will-change: filter, transform;
@@ -81,7 +85,7 @@
             z-index: 1; 
             pointer-events: none;
             overflow: hidden;
-            background: transparent; /* Ensure container has no background */
+            background: transparent;
         }
 
         /* WARRIOR IMAGE */
@@ -93,16 +97,21 @@
             object-fit: contain;
             object-position: bottom center;
             display: block;
-            background: transparent; /* Ensure image bg is transparent */
+            background: transparent;
             
-            /* KEY FIX: Mix-blend-mode helps remove black/dark backgrounds from the image itself */
+            /* 
+               mix-blend-mode: screen; 
+               This makes black pixels transparent. 
+               It works great for dark stock images or transparent PNGs.
+            */
             mix-blend-mode: screen; 
             
             border: none !important;
             outline: none !important;
             box-shadow: none !important;
 
-            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); 
+            /* Adds a subtle glow */
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)) grayscale(100%) contrast(1.2); 
             
             /* Soft gradient mask at the bottom to blend with floor */
             mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
@@ -575,8 +584,12 @@
     
     <!-- Warrior -->
     <div id="warrior-container">
-        <!-- Using URL as requested -->
-        <img id="warrior-img" src="https://ibb.co/LXVfqTbg" alt="Warrior">
+        <!-- 
+            TEMPORARY WORKING WARRIOR IMAGE
+            Replace the 'src' below with your DIRECT ImgBB link (ending in .png or .jpg).
+            Tip: Right-click image on ImgBB -> Copy Image Address.
+        -->
+        <img id="warrior-img" src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=1931&auto=format&fit=crop" alt="Warrior">
     </div>
 
     <div class="vignette"></div>
@@ -893,7 +906,7 @@
                 end: "bottom top", 
                 scrub: 2
             },
-            filter: "blur(0px) brightness(0.8)", // Transition to clear
+            filter: "blur(0px) brightness(0.4)", // Transition to clear
             ease: "none"
         });
 
