@@ -59,14 +59,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* 
-               TEMPORARY WORKING BACKGROUND (Dark Abstract) 
-               Replace the URL below with your DIRECT ImgBB link (ending in .jpg/.png)
-            */
-            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') center/cover no-repeat;
+            /* UPDATED: Direct ImgBB Link */
+            background: url('https://i.ibb.co/TMkPJDsN/1.jpg') center/cover no-repeat;
             
             /* Start state: Blurred */
-            filter: blur(12px) brightness(0.4); 
+            filter: blur(12px) brightness(0.6); 
             transform: scale(1.1);
             z-index: -2;
             will-change: filter, transform;
@@ -101,8 +98,9 @@
             
             /* 
                mix-blend-mode: screen; 
-               This makes black pixels transparent. 
-               It works great for dark stock images or transparent PNGs.
+               This removes pure black backgrounds from the image.
+               If your PNG is already transparent, this might make dark parts of the warrior 
+               transparent. If that happens, remove this line.
             */
             mix-blend-mode: screen; 
             
@@ -110,8 +108,7 @@
             outline: none !important;
             box-shadow: none !important;
 
-            /* Adds a subtle glow */
-            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)) grayscale(100%) contrast(1.2); 
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); 
             
             /* Soft gradient mask at the bottom to blend with floor */
             mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
@@ -584,12 +581,8 @@
     
     <!-- Warrior -->
     <div id="warrior-container">
-        <!-- 
-            TEMPORARY WORKING WARRIOR IMAGE
-            Replace the 'src' below with your DIRECT ImgBB link (ending in .png or .jpg).
-            Tip: Right-click image on ImgBB -> Copy Image Address.
-        -->
-        <img id="warrior-img" src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=1931&auto=format&fit=crop" alt="Warrior">
+        <!-- UPDATED: Direct ImgBB Link -->
+        <img id="warrior-img" src="https://i.ibb.co/fzj7K3BN/warrior.png" alt="Warrior">
     </div>
 
     <div class="vignette"></div>
@@ -906,7 +899,7 @@
                 end: "bottom top", 
                 scrub: 2
             },
-            filter: "blur(0px) brightness(0.4)", // Transition to clear
+            filter: "blur(0px) brightness(0.8)", // Transition to clear
             ease: "none"
         });
 
