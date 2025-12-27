@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AbyssLink | Secure Transmission Layer</title>
     
-    <!-- IMPORTS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
@@ -22,7 +21,6 @@
             --text-main: #ffffff;
             --text-dim: #888888;
             --border: #222222;
-            --grid-line: rgba(255, 255, 255, 0.03);
             --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
         }
 
@@ -45,18 +43,68 @@
             cursor: default;
         }
 
-        /* STAGE */
-        #webgl-stage {
+        /* BACKGROUND WRAPPER - Replaces Three.js */
+        .background-wrapper {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            overflow: hidden;
         }
 
-        /* UI OVERLAY */
+        #bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('C:/Users/Nischith R/abysslink/1.jpeg') center/cover no-repeat;
+            filter: blur(12px) brightness(0.6); 
+            transform: scale(1.1);
+            z-index: -2;
+            will-change: filter, transform;
+        }
+
+        /* WARRIOR CONTAINER */
+        #warrior-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1; 
+            pointer-events: none;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        /* WARRIOR IMAGE */
+        #warrior-img {
+            position: relative;
+            height: 85vh; 
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            object-position: bottom center;
+            display: block;
+            background: transparent;
+            mix-blend-mode: screen; 
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); 
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            will-change: opacity, transform;
+            transform-origin: bottom center;
+        }
+
+        /* VIGNETTE */
         .vignette {
             position: fixed;
             top: 0;
@@ -527,6 +575,7 @@
             section { padding: 0 4rem; }
             .about-section { padding: 3rem 2rem; }
             .footer-grid { grid-template-columns: 1fr 1fr; }
+            #warrior-img { height: 80vh; max-width: 85%; }
             .menu-toggle { left: 2rem; }
             .sticky-nav { right: 2rem; }
             .glass-grid { grid-template-columns: repeat(2, 1fr); }
@@ -535,6 +584,7 @@
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
             h2 { font-size: 2rem; }
+            #warrior-img { height: 70vh; max-width: 90%; min-height: 500px; }
             .button-group { gap: 1rem; }
             .sticky-nav { display: none; }
             .glass-grid { grid-template-columns: 1fr; }
@@ -548,6 +598,7 @@
             .about-section { padding: 2rem 1.5rem; }
             .footer-grid { grid-template-columns: 1fr; }
             .modal-actions { flex-direction: column; }
+            #warrior-img { height: 65vh; max-width: 95%; min-height: 400px; }
         }
     </style>
 </head>
@@ -563,8 +614,16 @@
         });
     </script>
 
-    <!-- 3D BACKGROUND -->
-    <div id="webgl-stage"></div>
+    <!-- BACKGROUND - Replaces Three.js -->
+    <div class="background-wrapper">
+        <div id="bg-image"></div>
+    </div>
+    
+    <!-- WARRIOR -->
+    <div id="warrior-container">
+        <img id="warrior-img" src="C:/Users/Nischith R/abysslink/warrior.png" alt="Warrior">
+    </div>
+
     <div class="vignette"></div>
 
     <!-- HAMBURGER MENU -->
@@ -841,6 +900,46 @@
             }, 100);
         });
 
+        // --- WARRIOR ENTRANCE ANIMATION ---
+        gsap.fromTo("#warrior-img",
+            { opacity: 0, y: 100, scale: 0.95 },
+            { 
+                opacity: 1, 
+                y: 0, 
+                scale: 1,
+                duration: 2, 
+                ease: "power2.out",
+                delay: 0.5
+            }
+        );
+
+        // WARRIOR FADE OUT ON SCROLL
+        gsap.to("#warrior-img", {
+            scrollTrigger: {
+                trigger: "#hero",
+                start: "top top", 
+                end: "bottom center",
+                scrub: 2,
+                invalidateOnRefresh: true,
+            },
+            opacity: 0,
+            y: -80, 
+            scale: 1.1,
+            ease: "none" 
+        });
+
+        // BACKGROUND BLUR ANIMATION (Starts Blurred -> Becomes Clear -> Returns to Blur)
+        gsap.to("#bg-image", {
+            scrollTrigger: {
+                trigger: "#hero", 
+                start: "top top",
+                end: "bottom top", 
+                scrub: 2
+            },
+            filter: "blur(0px) brightness(0.8)",
+            ease: "none"
+        });
+
         // --- PULSING WAVE GLITCH ---
         function pulsingWaveGlitch(element) {
             const text = element.dataset.text || element.textContent;
@@ -877,80 +976,7 @@
 
         document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
 
-        // --- THREE.JS SETUP ---
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.02);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x050505);
-        document.getElementById('webgl-stage').appendChild(renderer.domElement);
-
-        // --- ASSET 1: THE GRID ---
-        const gridGroup = new THREE.Group();
-        
-        const gridHelper = new THREE.GridHelper(100, 100, 0x222222, 0x111111);
-        gridHelper.position.y = -10;
-        gridGroup.add(gridHelper);
-
-        const blockGeo = new THREE.BoxGeometry(1, 1, 1);
-        const blockMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.1 });
-        
-        for(let i=0; i<20; i++) {
-            const block = new THREE.Mesh(blockGeo, blockMat);
-            block.position.set(
-                (Math.random() - 0.5) * 60,
-                (Math.random() - 0.5) * 20,
-                (Math.random() - 0.5) * 60
-            );
-            block.rotation.set(Math.random(), Math.random(), Math.random());
-            gridGroup.add(block);
-        }
-        scene.add(gridGroup);
-
-        // --- ASSET 2: THE NETWORK ---
-        const networkGroup = new THREE.Group();
-        const particlesGeo = new THREE.BufferGeometry();
-        const pCount = 2000;
-        const pPos = new Float32Array(pCount * 3);
-        const pSizes = new Float32Array(pCount);
-
-        for(let i=0; i<pCount*3; i++) {
-            pPos[i] = (Math.random() - 0.5) * 80;
-        }
-        for(let i=0; i<pCount; i++) {
-            pSizes[i] = Math.random() * 2;
-        }
-
-        particlesGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-        particlesGeo.setAttribute('size', new THREE.BufferAttribute(pSizes, 1));
-
-        const pMat = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 0.1,
-            transparent: true,
-            opacity: 0,
-            blending: THREE.AdditiveBlending
-        });
-        const networkParticles = new THREE.Points(particlesGeo, pMat);
-        networkGroup.add(networkParticles);
-        scene.add(networkGroup);
-
-        // --- ASSET 3: THE VOID ---
-        const voidGroup = new THREE.Group();
-        const lineGeo = new THREE.CylinderGeometry(15, 15, 60, 32, 1, true);
-        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0 });
-        const voidCylinder = new THREE.Mesh(lineGeo, lineMat);
-        voidGroup.add(voidCylinder);
-        scene.add(voidGroup);
-
-        camera.position.z = 30;
-        camera.position.y = 5;
-
-        // --- ANIMATION & SCROLL LOGIC ---
+        // Content fade-in animations
         document.querySelectorAll('.content-wrapper').forEach((content, index) => {
             gsap.to(content, {
                 scrollTrigger: {
@@ -964,63 +990,6 @@
                 ease: "power3.out",
                 delay: index * 0.1
             });
-        });
-
-        const masterTimeline = gsap.timeline({
-            scrollTrigger: {
-                trigger: "body",
-                start: "top top",
-                end: "bottom bottom",
-                scrub: 1.5
-            }
-        });
-
-        masterTimeline
-            .to(gridGroup.position, { z: -50, duration: 3 }, 0)
-            .to(gridGroup.rotation, { x: -0.2, duration: 3 }, 0)
-            .to(camera.position, { z: 40, y: 10, duration: 3 }, 0)
-            .to(blockMat, { opacity: 0, duration: 2 }, 0)
-            .to(pMat, { opacity: 0.8, duration: 2 }, 1)
-            .to(networkParticles.rotation, { y: Math.PI * 0.5, duration: 3 }, 3)
-            .to(networkGroup.scale, { x: 0, y: 0, z: 0, duration: 2 }, 4)
-            .to(pMat, { opacity: 0, duration: 2 }, 4)
-            .to(lineMat, { opacity: 0.1, duration: 2 }, 4.5)
-            .to(voidCylinder.rotation, { z: Math.PI * 0.2, duration: 3 }, 5)
-            .to(camera.position, { z: 20, y: -5, duration: 3 }, 7)
-            .to(lineMat, { opacity: 0, duration: 2 }, 8);
-
-        // --- RENDER LOOP ---
-        const clock = new THREE.Clock();
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = clock.getElapsedTime();
-
-            gridGroup.children.forEach((child, i) => {
-                if(child.geometry && child.geometry.type === 'BoxGeometry') {
-                    child.position.y += Math.sin(time + i) * 0.01;
-                }
-            });
-
-            const positions = networkParticles.geometry.attributes.position.array;
-            for(let i=0; i<pCount; i++) {
-                const ix = i * 3;
-                positions[ix+1] += Math.sin(time * 0.5 + positions[ix] * 0.1) * 0.02;
-            }
-            networkParticles.geometry.attributes.position.needsUpdate = true;
-
-            voidCylinder.rotation.y -= 0.001;
-            camera.position.x += (Math.sin(time * 0.5) * 0.5 - camera.position.x) * 0.01;
-
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
         // Sticky right nav scroll tracking
