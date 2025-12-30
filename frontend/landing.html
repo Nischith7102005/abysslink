@@ -42,7 +42,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Background - Starts BLURRED, becomes NORMAL on scroll */
+        /* Background - Optimized for performance */
         .background-wrapper {
             position: fixed;
             top: 0;
@@ -60,11 +60,23 @@
             width: 100%;
             height: 100%;
             background: url('1.jpeg') center/cover no-repeat;
-            /* Start state: Blurred */
-            filter: blur(12px) brightness(0.6); 
-            transform: scale(1.1);
+            transform: scale(1.05);
+            opacity: 0.5;
             z-index: -2;
-            will-change: filter, transform;
+            will-change: opacity, transform;
+        }
+        
+        /* Blur overlay - separate element for better performance */
+        #bg-blur-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: -1;
+            will-change: opacity;
         }
 
         /* Warrior Container */
@@ -83,7 +95,7 @@
             background: transparent;
         }
 
-        /* WARRIOR IMAGE */
+        /* WARRIOR IMAGE - Optimized */
         #warrior-img {
             position: relative;
             height: 85vh; 
@@ -93,22 +105,18 @@
             object-position: bottom center;
             display: block;
             background: transparent;
-            
-            /* KEY FIX: Mix-blend-mode helps remove black/dark backgrounds */
             mix-blend-mode: screen; 
-            
             border: none !important;
             outline: none !important;
             box-shadow: none !important;
-
             filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); 
-            
-            /* Soft gradient mask at the bottom */
             mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
             -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            
             will-change: opacity, transform;
             transform-origin: bottom center;
+            /* Start hidden for entrance animation */
+            opacity: 0;
+            transform: translateY(50px) scale(0.98);
         }
 
         /* Vignette */
@@ -555,6 +563,18 @@
             #warrior-img { height: 65vh; max-width: 95%; min-height: 400px; }
             .menu-toggle { left: 1rem; top: 1rem; }
         }
+        
+        /* Reduced motion for accessibility and performance */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            #warrior-img, #bg-image, #bg-blur-overlay {
+                will-change: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -564,14 +584,13 @@
         if (history.scrollRestoration) {
             history.scrollRestoration = 'manual';
         }
-        window.addEventListener('beforeunload', () => {
-            window.scrollTo(0, 0);
-        });
+        window.scrollTo(0, 0);
     </script>
 
     <!-- Background -->
     <div class="background-wrapper">
         <div id="bg-image"></div>
+        <div id="bg-blur-overlay"></div>
     </div>
     
     <!-- Warrior -->
@@ -843,56 +862,79 @@
         // GSAP Init
         gsap.registerPlugin(ScrollTrigger);
 
-        // Ensure scroll to top on load
+        // Ensure scroll to top on load for consistent GSAP start
         window.addEventListener("load", () => {
             window.scrollTo(0, 0);
             
+            // Small delay to ensure DOM is fully ready and ScrollTrigger recalculates
             setTimeout(() => {
                 ScrollTrigger.refresh();
             }, 100);
         });
 
+        // ============================================
+        // WARRIOR ANIMATIONS - SMOOTH FADE IN/OUT
+        // ============================================
+        
         // Warrior Initial Entrance Animation
-        gsap.fromTo("#warrior-img",
-            { opacity: 0, y: 100, scale: 0.95 },
-            { 
-                opacity: 1, 
-                y: 0, 
-                scale: 1,
-                duration: 2, 
-                ease: "power2.out",
-                delay: 0.5
-            }
-        );
+        gsap.to("#warrior-img", { 
+            opacity: 1, 
+            y: 0, 
+            scale: 1,
+            duration: 1.5, 
+            ease: "power2.out",
+            delay: 0.3
+        });
 
-        // Warrior Exit Animation on Scroll
+        // Warrior Exit Animation - Fades out as #security section approaches
+        // The warrior should be completely gone when "ABSOLUTE PRIVACY" is visible
         gsap.to("#warrior-img", {
             scrollTrigger: {
-                trigger: "#hero",
-                start: "top top", 
-                end: "bottom center",
-                scrub: 2,
+                trigger: "#security",
+                start: "top 80%",  // Start fading when security section is 80% from top
+                end: "top 30%",    // Fully faded when security section is 30% from top
+                scrub: 1.5,        // Smooth scrubbing
                 invalidateOnRefresh: true,
             },
             opacity: 0,
-            y: -80,
-            scale: 1.1,
-            ease: "none" 
+            y: -40,
+            scale: 1.02,
+            ease: "none"
         });
 
-        // Background Image Blur/Brightness Animation on Scroll
+        // ============================================
+        // BACKGROUND ANIMATIONS - SMOOTH TRANSITIONS
+        // ============================================
+        
+        // Background blur removal (using overlay opacity)
+        gsap.to("#bg-blur-overlay", {
+            scrollTrigger: {
+                trigger: "#hero", 
+                start: "top top",
+                end: "bottom top",
+                scrub: 1.5
+            },
+            opacity: 0,
+            ease: "none"
+        });
+
+        // Background brightness/opacity increase
         gsap.to("#bg-image", {
             scrollTrigger: {
                 trigger: "#hero", 
                 start: "top top",
                 end: "bottom top",
-                scrub: 2
+                scrub: 1.5
             },
-            filter: "blur(0px) brightness(0.8)",
+            opacity: 0.7,
+            scale: 1,
             ease: "none"
         });
 
-        // Content fade-in animations
+        // ============================================
+        // CONTENT FADE-IN ANIMATIONS
+        // ============================================
+        
         document.querySelectorAll('.content-wrapper').forEach((content, index) => {
             gsap.to(content, {
                 scrollTrigger: {
@@ -902,13 +944,16 @@
                 },
                 opacity: 1,
                 y: 0,
-                duration: 1.2,
+                duration: 1,
                 ease: "power3.out",
-                delay: index * 0.1
+                delay: index * 0.05
             });
         });
 
-        // Pulsing Wave Glitch Effect
+        // ============================================
+        // PULSING WAVE GLITCH EFFECT (Optimized)
+        // ============================================
+        
         function pulsingWaveGlitch(element) {
             const text = element.dataset.text || element.textContent;
             const chars = '█▓▒░/\\|_-<>[]{}';
@@ -924,49 +969,83 @@
             });
 
             let waveIndex = 0;
-            setInterval(() => {
-                spans.forEach((span, i) => {
-                    const distance = Math.abs(i - waveIndex);
-                    const isInWave = distance < 4;
+            let rafId;
+            let lastTime = 0;
+            const interval = 120;
+
+            function animate(currentTime) {
+                if (currentTime - lastTime >= interval) {
+                    lastTime = currentTime;
                     
-                    if (isInWave && Math.random() > 0.3) {
-                        span.textContent = chars[Math.floor(Math.random() * chars.length)];
-                        span.style.opacity = 0.6 + Math.random() * 0.4;
-                    } else if (!isInWave) {
-                        span.textContent = span.dataset.original;
-                        span.style.opacity = '1';
-                    }
-                });
-                
-                waveIndex = (waveIndex + 1) % (spans.length + 5);
-            }, 120);
+                    spans.forEach((span, i) => {
+                        const distance = Math.abs(i - waveIndex);
+                        const isInWave = distance < 4;
+                        
+                        if (isInWave && Math.random() > 0.3) {
+                            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+                            span.style.opacity = 0.6 + Math.random() * 0.4;
+                        } else if (!isInWave) {
+                            span.textContent = span.dataset.original;
+                            span.style.opacity = '1';
+                        }
+                    });
+                    
+                    waveIndex = (waveIndex + 1) % (spans.length + 5);
+                }
+                rafId = requestAnimationFrame(animate);
+            }
+            
+            rafId = requestAnimationFrame(animate);
+            
+            // Cleanup on page hide to save resources
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    cancelAnimationFrame(rafId);
+                } else {
+                    rafId = requestAnimationFrame(animate);
+                }
+            });
         }
 
         document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
 
-        // Sticky Right Navigation Logic
+        // ============================================
+        // STICKY NAVIGATION LOGIC
+        // ============================================
+        
         const navItems = document.querySelectorAll('.sticky-nav .nav-item');
         const sections = document.querySelectorAll('section[id]');
 
+        let ticking = false;
         window.addEventListener('scroll', () => {
-            let current = '';
-            
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                if (window.pageYOffset >= sectionTop - 300) { 
-                    current = section.getAttribute('id');
-                }
-            });
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    let current = '';
+                    
+                    sections.forEach(section => {
+                        const sectionTop = section.offsetTop;
+                        if (window.pageYOffset >= sectionTop - 300) { 
+                            current = section.getAttribute('id');
+                        }
+                    });
 
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('data-section') === current) {
-                    item.classList.add('active');
-                }
-            });
+                    navItems.forEach(item => {
+                        item.classList.remove('active');
+                        if (item.getAttribute('data-section') === current) {
+                            item.classList.add('active');
+                        }
+                    });
+                    
+                    ticking = false;
+                });
+                ticking = true;
+            }
         });
 
-        // Hamburger Menu Toggle
+        // ============================================
+        // HAMBURGER MENU TOGGLE
+        // ============================================
+        
         const menuToggle = document.getElementById('menuToggle');
         const menuOverlay = document.getElementById('menuOverlay');
         
@@ -980,7 +1059,10 @@
             menuOverlay.classList.remove('active');
         }
 
-        // Modal Functions
+        // ============================================
+        // MODAL FUNCTIONS
+        // ============================================
+        
         function openJoinModal() {
             document.getElementById('joinModal').style.display = 'flex';
             document.getElementById('joinRoomId').focus();
@@ -1005,12 +1087,15 @@
             document.getElementById('successModal').style.display = 'none';
         }
 
-        // Room Handling
+        // ============================================
+        // ROOM HANDLING LOGIC
+        // ============================================
+        
         async function handleJoinRoom(event) {
             event.preventDefault();
             const roomId = document.getElementById('joinRoomId').value.trim();
             const password = document.getElementById('joinPassword').value;
-
+            
             try {
                 const response = await fetch(`${API_URL}/api/rooms/join`, {
                     method: 'POST',
@@ -1025,9 +1110,9 @@
                 }
 
                 const data = await response.json();
-
-                const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
                 
+                // Save to localStorage
+                const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
                 if (!rooms.find(r => r.roomId === roomId)) {
                     rooms.push({
                         roomId: data.roomId,
@@ -1041,9 +1126,9 @@
 
                 closeJoinModal();
                 window.location.href = `chat.html?room=${roomId}`;
-
+                
             } catch (error) {
-                alert('Connection failed');
+                alert('Connection failed. Please try again.');
                 console.error(error);
             }
         }
@@ -1063,7 +1148,7 @@
                 if (!response.ok) {
                     throw new Error('Failed to create room');
                 }
-
+                
                 const data = await response.json();
 
                 currentRoom = {
@@ -1086,7 +1171,7 @@
                 document.getElementById('successModal').style.display = 'flex';
 
             } catch (error) {
-                alert('Error creating room');
+                alert('Error creating room. Please check connection and try again.');
                 console.error(error);
             }
         }
@@ -1110,7 +1195,7 @@
             closeSuccessModal();
         }
 
-        // Close modals on ESC
+        // Close modals/menu on ESC key press
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeCreateModal();
@@ -1120,7 +1205,7 @@
             }
         });
 
-        // Smooth scroll
+        // Smooth scroll for internal navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
