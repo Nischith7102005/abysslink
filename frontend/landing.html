@@ -1,1132 +1,1238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbyssLink | Secure Transmission Layer</title>
-    
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-
-    <style>
-        :root {
-            --bg: #050505;
-            --surface: #0a0a0a;
-            --text-main: #ffffff;
-            --text-dim: #888888;
-            --border: #222222;
-            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            font-family: 'Manrope', sans-serif;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Background - Starts BLURRED, becomes NORMAL on scroll */
-        .background-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -3;
-            overflow: hidden;
-        }
-
-        #bg-image {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* Local Path Preserved */
-            background: url('C:/Users/Nischith R/abysslink/1.jpeg') center/cover no-repeat;
-            /* Start state: Blurred */
-            filter: blur(12px) brightness(0.6); 
-            transform: scale(1.1);
-            z-index: -2;
-            will-change: filter, transform;
-        }
-
-        /* Warrior Container */
-        #warrior-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            z-index: 1; 
-            pointer-events: none;
-            overflow: hidden;
-            background: transparent; /* Ensure container has no background */
-        }
-
-        /* WARRIOR IMAGE */
-        #warrior-img {
-            position: relative;
-            height: 85vh; 
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-            object-position: bottom center;
-            display: block;
-            background: transparent; /* Ensure image bg is transparent */
-            
-            /* KEY FIX: Mix-blend-mode helps remove black/dark backgrounds from the image itself */
-            mix-blend-mode: screen; 
-            
-            border: none !important;
-            outline: none !important;
-            box-shadow: none !important;
-
-            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); 
-            
-            /* Soft gradient mask at the bottom to blend with floor */
-            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            
-            will-change: opacity, transform;
-            transform-origin: bottom center;
-        }
-
-        /* Vignette */
-        .vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, transparent 30%, var(--bg) 100%);
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* Hamburger Menu */
-        .menu-toggle {
-            position: fixed;
-            top: 2rem;
-            left: 4rem;
-            width: 32px;
-            height: 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            cursor: pointer;
-            z-index: 1001;
-        }
-        .menu-toggle span {
-            width: 100%;
-            height: 2px;
-            background: var(--text-main);
-            transition: all 0.3s ease;
-        }
-        .menu-toggle.active span:nth-child(1) {
-            transform: translateY(11px) rotate(45deg);
-        }
-        .menu-toggle.active span:nth-child(2) {
-            opacity: 0;
-        }
-        .menu-toggle.active span:nth-child(3) {
-            transform: translateY(-11px) rotate(-45deg);
-        }
-
-        /* Menu Overlay */
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 5, 5, 0.98);
-            backdrop-filter: blur(20px);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 3rem;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-        }
-        .menu-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .menu-overlay a {
-            color: var(--text-main);
-            text-decoration: none;
-            font-family: 'Space Mono', monospace;
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-        }
-        .menu-overlay a:hover {
-            opacity: 1;
-        }
-
-        /* Right-side sticky navigation */
-        .sticky-nav {
-            position: fixed;
-            top: 2rem;
-            right: 4rem;
-            z-index: 500;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .sticky-nav a {
-            color: var(--text-dim);
-            text-decoration: none;
-            opacity: 0.5;
-            transition: all 0.3s ease;
-            padding-right: 1rem;
-            border-right: 2px solid transparent;
-        }
-        .sticky-nav a.active {
-            color: var(--text-main);
-            opacity: 1;
-            border-right-color: var(--text-main);
-        }
-
-        /* Sections */
-        section {
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 8rem;
-            z-index: 10;
-        }
-
-        #hero {
-            background: transparent;
-        }
-
-        section:not(#hero) {
-            background: rgba(5, 5, 5, 0.92);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px); /* For Safari support */
-            box-shadow: 0 -150px 100px rgba(5,5,5,1);
-        }
-
-        #hero .content-wrapper {
-            text-align: center;
-            margin: 0 auto;
-            z-index: 20;
-            margin-top: 5vh;
-        }
-
-        .content-wrapper {
-            max-width: 900px;
-            opacity: 0;
-            transform: translateY(20px);
-            margin: 0 auto;
-        }
-
-        /* Typography */
-        h1, h2, h3 {
-            font-family: 'Space Mono', monospace;
-            font-weight: 200;
-            letter-spacing: -0.04em;
-            text-transform: uppercase;
-        }
-        h1 {
-            font-size: clamp(3.5rem, 10vw, 7rem);
-            line-height: 0.9;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 0 30px rgba(0,0,0,1);
-        }
-        h2 {
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            margin-bottom: 2rem;
-        }
-        p.lead {
-            font-size: 1.25rem;
-            color: #ddd;
-            line-height: 1.6;
-            margin-bottom: 3rem;
-            font-weight: 300;
-            text-shadow: 0 2px 10px rgba(0,0,0,1);
-        }
-
-        /* Glitch text */
-        .glitch-text {
-            position: relative;
-        }
-        .glitch-char {
-            display: inline-block;
-            position: relative;
-        }
-
-        /* Button group */
-        .button-group {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 2rem;
-        }
-
-        /* 2x2 GLASS PANE GRID */
-        .glass-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .glass-pane {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 2.5rem;
-            border-radius: 4px;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative;
-        }
-
-        .glass-pane:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-5px);
-        }
-
-        .glass-pane h3 {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            color: var(--text-main);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 0.5rem;
-            display: inline-block;
-        }
-
-        .glass-pane p {
-            font-size: 0.95rem;
-            color: var(--text-dim);
-            line-height: 1.6;
-        }
-
-        /* Grid */
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 4rem;
-        }
-        .card {
-            border-top: 1px solid var(--border);
-            padding-top: 1.5rem;
-            transition: border-color 0.3s ease;
-        }
-        .card:hover {
-            border-color: var(--text-main);
-        }
-        .card h3 {
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-        .card p {
-            font-size: 1rem;
-            color: var(--text-dim);
-            line-height: 1.5;
-        }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            background: var(--text-main);
-            color: var(--bg);
-            padding: 1rem 2.5rem;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.3s var(--ease-out);
-            z-index: 30;
-        }
-        .btn:hover {
-            transform: translateX(10px);
-        }
-        .btn-secondary {
-            background: rgba(0,0,0,0.6);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-        }
-        .btn-secondary:hover {
-            background: var(--text-main);
-            color: var(--bg);
-            transform: translateX(0) scale(1.05);
-        }
-
-        /* Footer */
-        .about-section {
-            min-height: 60vh;
-            background: var(--bg);
-            border-top: 1px solid var(--border);
-            padding: 4rem 8rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            z-index: 20;
-        }
-        .footer-brand {
-            width: 100%;
-            margin-bottom: 3rem;
-        }
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-            width: 100%;
-        }
-        .footer-col h4 {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            margin-bottom: 1rem;
-        }
-        .footer-col p, .footer-col a {
-            font-size: 0.9rem;
-            color: var(--text-main);
-            line-height: 1.8;
-            text-decoration: none;
-        }
-        .footer-col a:hover {
-            color: var(--text-dim);
-        }
-
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px); /* For Safari support */
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .modal-content {
-            background: var(--surface);
-            padding: 3rem;
-            max-width: 500px;
-            width: 90%;
-            border: 1px solid var(--border);
-            animation: slideUp 0.4s ease;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .modal-content h2 {
-            margin-bottom: 2rem;
-            color: var(--text-main);
-            font-size: 2rem;
-            font-weight: 200;
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            font-family: 'Space Mono', monospace;
-            text-transform: uppercase;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 1rem;
-            border: 1px solid var(--border);
-            background: var(--bg);
-            color: var(--text-main);
-            font-size: 1rem;
-            font-family: 'Manrope', sans-serif;
-            transition: all 0.3s ease;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--text-main);
-            background: var(--surface);
-        }
-        .modal-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-        .info-box {
-            background: var(--bg);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border);
-        }
-        .info-box p {
-            color: var(--text-dim);
-            margin-bottom: 0.5rem;
-            font-size: 0.8rem;
-        }
-        .info-box .value {
-            color: var(--text-main);
-            word-break: break-all;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-        .warning {
-            color: #ff6b6b;
-            margin-bottom: 2rem;
-            font-size: 0.85rem;
-            padding: 1rem;
-            background: rgba(255, 0, 0, 0.05);
-            border: 1px solid rgba(255, 0, 0, 0.2);
-            font-family: 'Space Mono', monospace;
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            section { padding: 0 4rem; }
-            .about-section { padding: 3rem 2rem; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
-            #warrior-img { height: 80vh; max-width: 85%; }
-            .menu-toggle { left: 2rem; }
-            .sticky-nav { right: 2rem; }
-            .glass-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
-            h2 { font-size: 2rem; }
-            #warrior-img { height: 70vh; max-width: 90%; min-height: 500px; }
-            .button-group { gap: 1rem; }
-            .sticky-nav { display: none; } /* Hide sticky nav on smaller screens */
-            .glass-grid { grid-template-columns: 1fr; }
-            section { padding: 0 2rem; }
-        }
-        @media (max-width: 600px) {
-            h1 { font-size: 2rem; }
-            .about-section { padding: 2rem 1.5rem; }
-            .footer-grid { grid-template-columns: 1fr; }
-            .modal-actions { flex-direction: column; }
-            #warrior-img { height: 65vh; max-width: 95%; min-height: 400px; }
-            .menu-toggle { left: 1rem; top: 1rem; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AbyssLink | Secure Transmission Layer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg: #050505;
+--surface: #0a0a0a;
+--text-main: #ffffff;
+--text-dim: #888888;
+--border: #222222;
+--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+html {
+scroll-behavior: smooth;
+}
+body {
+background-color: var(--bg);
+color: var(--text-main);
+font-family: 'Manrope', sans-serif;
+overflow-x: hidden;
+-webkit-font-smoothing: antialiased;
+will-change: scroll-position;
+}
+.background-wrapper {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: -3;
+overflow: hidden;
+}
+#bg-image {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: url('https://i.ibb.co/TMkPJDsN/1.jpg') center/cover no-repeat;
+filter: blur(12px) brightness(0.6);
+transform: scale(1.1);
+z-index: -2;
+will-change: filter, transform;
+transform: translate3d(0, 0, 0) scale(1.1);
+backface-visibility: hidden;
+perspective: 1000px;
+}
+#warrior-container {
+position: fixed;
+bottom: -15vh;
+left: 0;
+width: 100%;
+height: 100vh;
+display: flex;
+align-items: flex-end;
+justify-content: center;
+z-index: 1;
+pointer-events: none;
+overflow: hidden;
+background: transparent;
+will-change: transform, opacity;
+}
+#warrior-img {
+position: relative;
+height: 100vh;
+width: auto;
+max-width: 100%;
+object-fit: contain;
+object-position: bottom center;
+display: block;
+background: transparent;
+mix-blend-mode: screen;
+border: none !important;
+outline: none !important;
+box-shadow: none !important;
+filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+mask-image: linear-gradient(to bottom,
+black 0%,
+black 85%,
+transparent 100%);
+-webkit-mask-image: linear-gradient(to bottom,
+black 0%,
+black 85%,
+transparent 100%);
+will-change: opacity, transform;
+transform-origin: bottom center;
+transform: translate3d(0, 0, 0);
+backface-visibility: hidden;
+perspective: 1000px;
+}
+#sword-container {
+position: fixed;
+bottom: -18vh;
+left: -8%;
+width: 100%;
+height: 115vh;
+display: flex;
+align-items: flex-end;
+justify-content: flex-start;
+padding-left: 0;
+z-index: 5;
+pointer-events: none;
+overflow: hidden;
+will-change: transform, opacity;
+}
+#sword-img {
+position: relative;
+height: 100vh;
+width: auto;
+max-height: none;
+object-fit: contain;
+object-position: bottom left;
+display: block;
+opacity: 0;
+filter: drop-shadow(0 0 25px rgba(255,255,255,0.3));
+will-change: opacity, transform;
+transform: translate3d(0, 0, 0);
+backface-visibility: hidden;
+perspective: 1000px;
+mix-blend-mode: normal;
+mask-image: linear-gradient(to bottom,
+transparent 0%,
+black 5%,
+black 100%);
+-webkit-mask-image: linear-gradient(to bottom,
+transparent 0%,
+black 5%,
+black 100%);
+/* Smooth transitions for opacity & transform */
+transition: opacity 1.2s cubic-bezier(0.23, 1, 0.32, 1), transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.vignette {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: radial-gradient(circle at center, transparent 30%, rgba(5,5,5,0.7) 100%);
+z-index: 2;
+pointer-events: none;
+}
+.menu-toggle {
+position: fixed;
+top: 2rem;
+left: 4rem;
+width: 32px;
+height: 24px;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+cursor: pointer;
+z-index: 1001;
+}
+.menu-toggle span {
+width: 100%;
+height: 2px;
+background: var(--text-main);
+transition: all 0.3s ease;
+}
+.menu-toggle.active span:nth-child(1) {
+transform: translateY(11px) rotate(45deg);
+}
+.menu-toggle.active span:nth-child(2) {
+opacity: 0;
+}
+.menu-toggle.active span:nth-child(3) {
+transform: translateY(-11px) rotate(-45deg);
+}
+.menu-overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(5, 5, 5, 0.98);
+backdrop-filter: blur(20px);
+z-index: 1000;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+gap: 3rem;
+opacity: 0;
+visibility: hidden;
+transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.menu-overlay.active {
+opacity: 1;
+visibility: visible;
+}
+.menu-overlay a {
+color: var(--text-main);
+text-decoration: none;
+font-family: 'Space Mono', monospace;
+font-size: clamp(1.5rem, 4vw, 2.5rem);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+opacity: 0.7;
+transition: opacity 0.3s ease;
+cursor: pointer;
+}
+.menu-overlay a:hover {
+opacity: 1;
+}
+.sticky-nav {
+position: fixed;
+top: 2rem;
+right: 4rem;
+z-index: 500;
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.sticky-nav a {
+color: var(--text-dim);
+text-decoration: none;
+opacity: 0.5;
+transition: all 0.3s ease;
+padding-right: 1rem;
+border-right: 2px solid transparent;
+}
+.sticky-nav a.active {
+color: var(--text-main);
+opacity: 1;
+border-right-color: var(--text-main);
+}
+section {
+position: relative;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: 0 8rem;
+z-index: 10;
+background: transparent;
+will-change: transform, opacity;
+}
+#hero {
+background: transparent;
+}
+#hero .content-wrapper {
+text-align: center;
+margin: 0 auto;
+z-index: 20;
+margin-top: 5vh;
+}
+.content-wrapper {
+max-width: 900px;
+opacity: 0;
+transform: translateY(20px);
+margin: 0 auto;
+position: relative;
+z-index: 15;
+will-change: transform, opacity;
+backface-visibility: hidden;
+}
+h1, h2, h3 {
+font-family: 'Space Mono', monospace;
+font-weight: 200;
+letter-spacing: -0.04em;
+text-transform: uppercase;
+}
+h1 {
+font-size: clamp(3.5rem, 10vw, 7rem);
+line-height: 0.9;
+margin-bottom: 1.5rem;
+text-shadow: 0 0 30px rgba(0,0,0,1);
+}
+h2 {
+font-size: clamp(2rem, 4vw, 3.5rem);
+margin-bottom: 2rem;
+text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+}
+p.lead {
+font-size: 1.25rem;
+color: #ddd;
+line-height: 1.6;
+margin-bottom: 3rem;
+font-weight: 300;
+text-shadow: 0 2px 10px rgba(0,0,0,1);
+}
+.glitch-text {
+position: relative;
+}
+.glitch-char {
+display: inline-block;
+position: relative;
+will-change: opacity, transform;
+}
+.button-group {
+display: flex;
+gap: 2rem;
+justify-content: center;
+flex-wrap: wrap;
+margin-top: 2rem;
+}
+.glass-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 2rem;
+margin-top: 3rem;
+}
+.glass-pane {
+background: rgba(0, 0, 0, 0.6);
+border: 1px solid rgba(255, 255, 255, 0.1);
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+padding: 2.5rem;
+border-radius: 4px;
+transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+position: relative;
+will-change: transform, background, border-color;
+backface-visibility: hidden;
+}
+.glass-pane:hover {
+background: rgba(0, 0, 0, 0.75);
+border-color: rgba(255, 255, 255, 0.25);
+transform: translateY(-5px);
+}
+.glass-pane h3 {
+font-size: 1rem;
+margin-bottom: 1rem;
+color: var(--text-main);
+border-bottom: 1px solid rgba(255,255,255,0.1);
+padding-bottom: 0.5rem;
+display: inline-block;
+}
+.glass-pane p {
+font-size: 0.95rem;
+color: var(--text-dim);
+line-height: 1.6;
+}
+.grid-3 {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 2rem;
+margin-top: 4rem;
+}
+.card {
+border-top: 1px solid var(--border);
+padding-top: 1.5rem;
+transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+background: rgba(0, 0, 0, 0.5);
+padding: 1.5rem;
+backdrop-filter: blur(5px);
+will-change: transform, background, border-color;
+backface-visibility: hidden;
+}
+.card:hover {
+border-color: var(--text-main);
+background: rgba(0, 0, 0, 0.7);
+transform: translateY(-3px);
+}
+.card h3 {
+font-size: 0.9rem;
+margin-bottom: 1rem;
+}
+.card p {
+font-size: 1rem;
+color: var(--text-dim);
+line-height: 1.5;
+}
+.btn {
+display: inline-flex;
+align-items: center;
+background: var(--text-main);
+color: var(--bg);
+padding: 1rem 2.5rem;
+font-family: 'Space Mono', monospace;
+font-size: 0.8rem;
+text-transform: uppercase;
+font-weight: 700;
+border: none;
+cursor: pointer;
+transition: transform 0.3s var(--ease-out);
+z-index: 30;
+text-decoration: none;
+will-change: transform;
+}
+.btn:hover {
+transform: translateX(10px);
+}
+.btn-secondary {
+background: rgba(0,0,0,0.6);
+color: var(--text-main);
+border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+background: var(--text-main);
+color: var(--bg);
+transform: translateX(0) scale(1.05);
+}
+.about-section {
+min-height: 60vh;
+background: rgba(5, 5, 5, 0.9);
+border-top: 1px solid var(--border);
+padding: 4rem 8rem;
+display: flex;
+justify-content: space-between;
+align-items: flex-start;
+flex-wrap: wrap;
+z-index: 20;
+backdrop-filter: blur(10px);
+}
+.footer-brand {
+width: 100%;
+margin-bottom: 3rem;
+}
+.footer-grid {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 2rem;
+width: 100%;
+}
+.footer-col h4 {
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+text-transform: uppercase;
+color: var(--text-dim);
+margin-bottom: 1rem;
+}
+.footer-col p, .footer-col a {
+font-size: 0.9rem;
+color: var(--text-main);
+line-height: 1.8;
+text-decoration: none;
+display: block;
+}
+.footer-col a:hover {
+color: var(--text-dim);
+}
+.modal {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0, 0, 0, 0.95);
+z-index: 2000;
+justify-content: center;
+align-items: center;
+animation: fadeIn 0.3s ease;
+backdrop-filter: blur(10px);
+}
+@keyframes fadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+.modal-content {
+background: var(--surface);
+padding: 3rem;
+max-width: 500px;
+width: 90%;
+border: 1px solid var(--border);
+animation: slideUp 0.4s ease;
+}
+@keyframes slideUp {
+from { transform: translateY(50px); opacity: 0; }
+to { transform: translateY(0); opacity: 1; }
+}
+.modal-content h2 {
+margin-bottom: 2rem;
+color: var(--text-main);
+font-size: 2rem;
+font-weight: 200;
+}
+.form-group {
+margin-bottom: 1.5rem;
+}
+.form-group label {
+display: block;
+margin-bottom: 0.5rem;
+color: var(--text-dim);
+font-size: 0.8rem;
+font-family: 'Space Mono', monospace;
+text-transform: uppercase;
+}
+.form-group input {
+width: 100%;
+padding: 1rem;
+border: 1px solid var(--border);
+background: var(--bg);
+color: var(--text-main);
+font-size: 1rem;
+font-family: 'Manrope', sans-serif;
+transition: all 0.3s ease;
+}
+.form-group input:focus {
+outline: none;
+border-color: var(--text-main);
+background: var(--surface);
+}
+.modal-actions {
+display: flex;
+gap: 1rem;
+margin-top: 2rem;
+}
+.info-box {
+background: var(--bg);
+padding: 1.5rem;
+margin-bottom: 1.5rem;
+border: 1px solid var(--border);
+}
+.info-box p {
+color: var(--text-dim);
+margin-bottom: 0.5rem;
+font-size: 0.8rem;
+font-family: 'Space Mono', monospace;
+text-transform: uppercase;
+}
+.info-box .value {
+color: var(--text-main);
+word-break: break-all;
+font-family: 'Space Mono', monospace;
+font-size: 0.9rem;
+cursor: pointer;
+transition: color 0.2s;
+}
+.info-box .value:hover {
+color: var(--text-dim);
+}
+.warning {
+color: #ff6b6b;
+margin-bottom: 2rem;
+font-size: 0.85rem;
+padding: 1rem;
+background: rgba(255, 0, 0, 0.05);
+border: 1px solid rgba(255, 0, 0, 0.2);
+font-family: 'Space Mono', monospace;
+}
+@media (max-width: 1024px) {
+section { padding: 0 4rem; }
+.about-section { padding: 3rem 2rem; }
+.footer-grid { grid-template-columns: 1fr 1fr; }
+#warrior-container { bottom: -12vh; }
+#warrior-img { height: 95vh; }
+#sword-container {
+bottom: -15vh;
+left: -5%;
+}
+#sword-img {
+height: 95vh;
+}
+.menu-toggle { left: 2rem; }
+.sticky-nav { right: 2rem; }
+.glass-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+#warrior-container { bottom: -8vh; }
+#warrior-img { height: 90vh; }
+#sword-container {
+bottom: -12vh;
+left: -3%;
+}
+#sword-img {
+height: 85vh;
+}
+.button-group { gap: 1rem; }
+.sticky-nav { display: none; }
+.glass-grid { grid-template-columns: 1fr; }
+section { padding: 0 2rem; }
+}
+@media (max-width: 600px) {
+h1 { font-size: 2rem; }
+.about-section { padding: 2rem 1.5rem; }
+.footer-grid { grid-template-columns: 1fr; }
+.modal-actions { flex-direction: column; }
+#warrior-container { bottom: -5vh; }
+#warrior-img { height: 85vh; }
+#sword-container {
+bottom: -8vh;
+left: 0;
+}
+#sword-img { height: 75vh; }
+.menu-toggle { left: 1rem; top: 1rem; }
+}
+</style>
 </head>
 <body>
-
-    <!-- Force scroll to top on load -->
-    <script>
-        if (history.scrollRestoration) {
-            history.scrollRestoration = 'manual';
-        }
-        window.addEventListener('beforeunload', () => {
-            window.scrollTo(0, 0);
-        });
-    </script>
-
-    <!-- Background -->
-    <div class="background-wrapper">
-        <div id="bg-image"></div>
-    </div>
-    
-    <!-- Warrior -->
-    <div id="warrior-container">
-        <!-- Using local path as requested -->
-        <img id="warrior-img" src="C:/Users/Nischith R/abysslink/warrior.png" alt="Warrior">
-    </div>
-
-    <div class="vignette"></div>
-
-    <!-- Hamburger Menu -->
-    <div class="menu-toggle" id="menuToggle">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-
-    <!-- Sticky Right Navigation -->
-    <div class="sticky-nav">
-        <a href="#hero" class="nav-item active" data-section="hero">Overview</a>
-        <a href="#infrastructure" class="nav-item" data-section="infrastructure">Infrastructure</a>
-        <a href="#security" class="nav-item" data-section="security">Security</a>
-        <a href="#implementation" class="nav-item" data-section="implementation">Implementation</a>
-        <a href="#contact" class="nav-item" data-section="contact">Contact</a>
-    </div>
-
-    <!-- Menu Overlay -->
-    <div class="menu-overlay" id="menuOverlay">
-        <a href="#" onclick="closeMenu(); openJoinModal();">Join Room</a>
-        <a href="#" onclick="closeMenu(); openCreateModal();">Create Room</a>
-        <a href="#infrastructure" onclick="closeMenu();">Features</a>
-    </div>
-
-    <!-- HERO -->
-    <section id="hero">
-        <div class="content-wrapper">
-            <h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
-            <p class="lead">
-                An ephemeral communication layer designed for professionals who require absolute stealth. 
-                No persistent storage. No logs. Just silence.
-            </p>
-            <div class="button-group">
-                <button class="btn" onclick="openCreateModal()">Initiate Session</button>
-                <button class="btn btn-secondary" onclick="openJoinModal()">Join Room</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- INFRASTRUCTURE -->
-    <section id="infrastructure">
-        <div class="content-wrapper">
-            <h2>STRUCTURED ANONYMITY.</h2>
-            <p style="color: var(--text-dim); margin-bottom: 2rem;">
-                Our architecture prioritizes complete anonymity through distributed protocols and zero-knowledge proof systems.
-            </p>
-            
-            <div class="glass-grid">
-                <div class="glass-pane">
-                    <h3>01 // Zero-Persistence</h3>
-                    <p>Volatile memory stacks ensure messages cease to exist once delivered. 24-hour automatic expiration with instant destruction capability.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>02 // Complete Anonymity</h3>
-                    <p>No accounts, no usernames, no identity tracking. All participants appear as encrypted nodes in the network.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>03 // Invite-Only Architecture</h3>
-                    <p>Password-protected rooms with isolated access. Share credentials through separate channels for maximum security.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>04 // Real-Time Encryption</h3>
-                    <p>End-to-end encrypted messaging with file sharing. All data is encrypted in transit and at rest.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECURITY -->
-    <section id="security">
-        <div class="content-wrapper">
-            <h2>ABSOLUTE PRIVACY.</h2>
-            <p class="lead">
-                In the modern digital landscape, surveillance is the default. We have built a system where privacy is the baseline.
-            </p>
-            <div class="grid-3">
-                <div class="card">
-                    <h3>Military-Grade Encryption</h3>
-                    <p>AES-256 encryption standard with perfect forward secrecy. Every session generates new keys.</p>
-                </div>
-                <div class="card">
-                    <h3>No User Accounts</h3>
-                    <p>Registration is surveillance. We operate on a zero-knowledge principle. You exist only in the present moment.</p>
-                </div>
-                <div class="card">
-                    <h3>No Message Storage</h3>
-                    <p>Messages exist only in volatile memory during active sessions. Once you leave, everything dissolves.</p>
-                </div>
-                <div class="card">
-                    <h3>No Analytics</h3>
-                    <p>We don't track usage patterns, behaviors, or metadata. Your existence leaves no digital footprint.</p>
-                </div>
-                <div class="card">
-                    <h3>No Backdoors</h3>
-                    <p>Open-source codebase. Peer-reviewed security. No hidden vulnerabilities. No government access.</p>
-                </div>
-                <div class="card">
-                    <h3>Distributed Infrastructure</h3>
-                    <p>No central servers to infiltrate. No single point of failure. Pure peer-to-peer architecture.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- IMPLEMENTATION -->
-    <section id="implementation">
-        <div class="content-wrapper">
-            <h2>HOW IT WORKS.</h2>
-            <p class="lead">
-                AbyssLink operates on a simple principle: communication should be ephemeral.
-            </p>
-            
-            <div class="glass-grid">
-                <div class="glass-pane">
-                    <h3>Step 1: Create Room</h3>
-                    <p>Generate a secure room with a single passphrase. No registration. No email. No phone number.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>Step 2: Share Credentials</h3>
-                    <p>Distribute the Room ID and passphrase through separate channels for compartmentalization.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>Step 3: Communicate</h3>
-                    <p>Connect to the room. All messages are encrypted end-to-end. No one can see your communications.</p>
-                </div>
-                <div class="glass-pane">
-                    <h3>Step 4: Vanish</h3>
-                    <p>When the conversation ends, leave the room. Everything dissolves. No trace.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CONTACT/CTA -->
-    <section id="contact" style="text-align: center; align-items: center;">
-        <div class="content-wrapper" style="max-width: 100%; text-align: center;">
-            <h2>READY TO VANISH?</h2>
-            <p class="lead">Join the network that forgets.</p>
-            <div class="button-group" style="justify-content: center;">
-                <button class="btn" onclick="openCreateModal()">Create Room</button>
-                <button class="btn btn-secondary" onclick="openJoinModal()">Join Existing Room</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="about-section">
-        <div class="footer-brand">
-            <h3 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h3>
-            <p style="margin-top: 1rem; color: var(--text-dim); max-width: 400px; font-size: 0.9rem;">
-                Founded on the principle that digital communication should mirror the transience of physical conversation. We build for the shadows.
-            </p>
-        </div>
-        <div class="footer-grid">
-            <div class="footer-col">
-                <h4>Protocol</h4>
-                <a href="#">E2E Encryption</a>
-                <a href="#">Volatile Nodes</a>
-                <a href="#">Entropy Injection</a>
-                <a href="#">24hr Auto-Destruct</a>
-            </div>
-            <div class="footer-col">
-                <h4>Features</h4>
-                <a href="#">Anonymous Chat</a>
-                <a href="#">File Sharing</a>
-                <a href="#">Instant Vanish</a>
-                <a href="#">Zero Logs</a>
-            </div>
-            <div class="footer-col">
-                <h4>Legal</h4>
-                <a href="#">Terms of Service</a>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Security Report</a>
-                <a href="#">Transparency</a>
-            </div>
-            <div class="footer-col">
-                <h4>Access</h4>
-                <a href="#contact">Get Started</a>
-                <a href="rooms.html">Active Rooms</a>
-                <a href="#">Documentation</a>
-                <a href="#">API Access</a>
-            </div>
-        </div>
-        <div style="width: 100%; margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
-            &copy; 2025 AbyssLink Systems. All rights reserved. No data stored.
-        </div>
-    </footer>
-
-    <!-- MODALS -->
-    <div id="joinModal" class="modal">
-        <div class="modal-content">
-            <h2>Join Session</h2>
-            <form id="joinForm" onsubmit="handleJoinRoom(event)">
-                <div class="form-group">
-                    <label>Room ID</label>
-                    <input type="text" id="joinRoomId" required placeholder="Room identifier">
-                </div>
-                <div class="form-group">
-                    <label>Access Key</label>
-                    <input type="password" id="joinPassword" required placeholder="Encryption passphrase">
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn" style="flex: 1;">Enter</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeJoinModal()" style="flex: 1;">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="createModal" class="modal">
-        <div class="modal-content">
-            <h2>Create Session</h2>
-            <form id="createForm" onsubmit="handleCreateRoom(event)">
-                <div class="form-group">
-                    <label>Room Topic</label>
-                    <input type="text" id="topicInput" required placeholder="Session identifier">
-                </div>
-                <div class="form-group">
-                    <label>Access Key</label>
-                    <input type="password" id="passwordInput" required placeholder="Encryption passphrase">
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn" style="flex: 1;">Initialize</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="successModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <h2>Session Active</h2>
-            
-            <div class="info-box">
-                <p>Room Identifier:</p>
-                <div class="value" id="roomIdDisplay" onclick="copyToClipboard('roomIdDisplay')" style="cursor: pointer; padding: 0.5rem 0;">Click to copy</div>
-            </div>
-
-            <div class="info-box">
-                <p>Creator Key (Destruction Authority):</p>
-                <div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')" style="cursor: pointer; padding: 0.5rem 0;">Click to copy</div>
-            </div>
-
-            <div class="warning">
-                ⚠️ PROTOCOL: Distribute Room ID and access key through separate channels. This session will auto-destruct in 24 hours.
-            </div>
-
-            <button class="btn" onclick="enterCreatedRoom()" style="width: 100%;">
-                Enter Session →
-            </button>
-        </div>
-    </div>
-
-    <script>
-        // Configuration - Backend URL
-        const API_URL = 'https://abysslink.onrender.com'; // Keeping for structure, but mocking API response.
-
-        // Store current room data
-        let currentRoom = null;
-
-        // GSAP Init
-        gsap.registerPlugin(ScrollTrigger);
-
-        // Ensure scroll to top on load for consistent GSAP start
-        window.addEventListener("load", () => {
-            window.scrollTo(0, 0);
-            
-            // Small delay to ensure DOM is fully ready and ScrollTrigger recalculates
-            setTimeout(() => {
-                ScrollTrigger.refresh();
-            }, 100);
-        });
-
-        // Warrior Initial Entrance Animation
-        gsap.fromTo("#warrior-img",
-            { opacity: 0, y: 100, scale: 0.95 },
-            { 
-                opacity: 1, 
-                y: 0, 
-                scale: 1,
-                duration: 2, 
-                ease: "power2.out",
-                delay: 0.5
-            }
-        );
-
-        // Warrior Exit Animation on Scroll
-        gsap.to("#warrior-img", {
-            scrollTrigger: {
-                trigger: "#hero",
-                start: "top top", 
-                end: "bottom center", // Extended for smoother transition
-                scrub: 2, // Smooth scrubbing
-                invalidateOnRefresh: true, // Recalculate on refresh
-            },
-            opacity: 0,
-            y: -80, // Move up slightly as it fades
-            scale: 1.1, // Scale up slightly for depth effect
-            ease: "none" 
-        });
-
-        // Background Image Blur/Brightness Animation on Scroll
-        gsap.to("#bg-image", {
-            scrollTrigger: {
-                trigger: "#hero", 
-                start: "top top",
-                end: "bottom top", // Ends when hero bottom hits top of viewport
-                scrub: 2 // Smooth scrubbing
-            },
-            filter: "blur(0px) brightness(0.8)", // Transition to clear and brighter
-            ease: "none"
-        });
-
-        // Content fade-in animations for all content-wrapper elements
-        document.querySelectorAll('.content-wrapper').forEach((content, index) => {
-            gsap.to(content, {
-                scrollTrigger: {
-                    trigger: content,
-                    start: "top 85%", // Starts animation when 85% of content is visible
-                    toggleActions: "play none none reverse" // Play on enter, reverse on leave back
-                },
-                opacity: 1,
-                y: 0,
-                duration: 1.2,
-                ease: "power3.out",
-                delay: index * 0.1 // Stagger the animation slightly
-            });
-        });
-
-        // --- PULSING WAVE GLITCH EFFECT ---
-        function pulsingWaveGlitch(element) {
-            const text = element.dataset.text || element.textContent;
-            const chars = '█▓▒░/\\|_-<>[]{}';
-            element.innerHTML = ''; // Clear original content
-
-            // Create spans for each character
-            const spans = text.split('').map(char => {
-                const span = document.createElement('span');
-                span.className = 'glitch-char';
-                span.textContent = char;
-                span.dataset.original = char; // Store original char
-                element.appendChild(span);
-                return span;
-            });
-
-            let waveIndex = 0;
-            setInterval(() => {
-                spans.forEach((span, i) => {
-                    const distance = Math.abs(i - waveIndex);
-                    const isInWave = distance < 4; // Characters within this range are affected
-                    
-                    if (isInWave && Math.random() > 0.3) {
-                        // Apply glitch effect
-                        span.textContent = chars[Math.floor(Math.random() * chars.length)];
-                        span.style.opacity = 0.6 + Math.random() * 0.4;
-                    } else if (!isInWave) {
-                        // Restore original character outside the wave
-                        span.textContent = span.dataset.original;
-                        span.style.opacity = '1';
-                    }
-                });
-                
-                waveIndex = (waveIndex + 1) % (spans.length + 5); // Move wave across text
-            }, 120); // Interval for glitch update
-        }
-
-        // Apply glitch effect to all elements with 'glitch-text' class
-        document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
-
-        // --- Sticky Right Navigation Logic ---
-        const navItems = document.querySelectorAll('.sticky-nav .nav-item');
-        const sections = document.querySelectorAll('section[id]');
-
-        window.addEventListener('scroll', () => {
-            let current = '';
-            
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                // Determine current section based on scroll position, with an offset
-                if (window.pageYOffset >= sectionTop - 300) { 
-                    current = section.getAttribute('id');
-                }
-            });
-
-            // Update active state for sticky navigation items
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('data-section') === current) {
-                    item.classList.add('active');
-                }
-            });
-        });
-
-        // --- Hamburger Menu Toggle Logic ---
-        const menuToggle = document.getElementById('menuToggle');
-        const menuOverlay = document.getElementById('menuOverlay');
-        
-        menuToggle.addEventListener('click', () => {
-            menuToggle.classList.toggle('active');
-            menuOverlay.classList.toggle('active');
-        });
-
-        function closeMenu() {
-            menuToggle.classList.remove('active');
-            menuOverlay.classList.remove('active');
-        }
-
-        // --- Modal Functions ---
-        function openJoinModal() {
-            document.getElementById('joinModal').style.display = 'flex';
-            document.getElementById('joinRoomId').focus();
-        }
-
-        function closeJoinModal() {
-            document.getElementById('joinModal').style.display = 'none';
-            document.getElementById('joinForm').reset();
-        }
-
-        function openCreateModal() {
-            document.getElementById('createModal').style.display = 'flex';
-            document.getElementById('topicInput').focus();
-        }
-
-        function closeCreateModal() {
-            document.getElementById('createModal').style.display = 'none';
-            document.getElementById('createForm').reset();
-        }
-
-        function closeSuccessModal() {
-            document.getElementById('successModal').style.display = 'none';
-        }
-
-        // --- Room Handling Logic ---
-        async function handleJoinRoom(event) {
-            event.preventDefault();
-            const roomId = document.getElementById('joinRoomId').value.trim();
-            // In a real application, this would send an API request to join the room.
-            // For now, we simulate the action.
-            closeJoinModal();
-            alert(`Attempting to join Room: ${roomId}. (Simulation)`);
-            // You would typically redirect to a chat page:
-            // window.location.href = `chat.html?room=${roomId}`; 
-        }
-
-        async function handleCreateRoom(event) {
-            event.preventDefault();
-            const topic = document.getElementById('topicInput').value.trim();
-            const password = document.getElementById('passwordInput').value;
-
-            try {
-                // Simulating API response since the backend isn't available for direct testing.
-                // In a real scenario, this would be an actual fetch call:
-                /*
-                const response = await fetch(`${API_URL}/api/rooms/create`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, password })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to create room');
-                }
-                const data = await response.json();
-                */
-
-                // Mock data for demonstration
-                const mockRoomId = "ROOM-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-                const mockKey = "KEY-" + Math.random().toString(36).substr(2, 12).toUpperCase();
-                const mockExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours from now
-                
-                const data = {
-                    roomId: mockRoomId,
-                    creatorKey: mockKey,
-                    expiresAt: mockExpiresAt
-                };
-
-                currentRoom = {
-                    roomId: data.roomId,
-                    topic: topic,
-                    password: password, // For client-side reference, not sent in mock
-                    creatorKey: data.creatorKey,
-                    expiresAt: data.expiresAt,
-                    isCreator: true
-                };
-
-                // Store in localStorage if needed (original code had this, preserving structure)
-                const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-                rooms.push(currentRoom);
-                localStorage.setItem('abysslink_rooms', JSON.stringify(rooms));
-
-                document.getElementById('roomIdDisplay').textContent = data.roomId;
-                document.getElementById('creatorKeyDisplay').textContent = data.creatorKey;
-                
-                closeCreateModal();
-                document.getElementById('successModal').style.display = 'flex';
-
-            } catch (error) {
-                alert('Error creating room. Please check connection and try again.');
-                console.error(error);
-            }
-        }
-
-        function copyToClipboard(elementId) {
-            const text = document.getElementById(elementId).textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                const el = document.getElementById(elementId);
-                const original = el.textContent;
-                el.textContent = 'COPIED ✓'; // Updated message
-                setTimeout(() => {
-                    el.textContent = original;
-                }, 1000);
-            });
-        }
-
-        function enterCreatedRoom() {
-            if (currentRoom) {
-                // In a real application, this would redirect to the chat page for the created room.
-                alert(`Simulating entry to Room: ${currentRoom.roomId}. (Redirect would occur here)`);
-                // window.location.href = `chat.html?room=${currentRoom.roomId}`;
-            }
-            closeSuccessModal();
-        }
-
-        // Close modals/menu on ESC key press
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeCreateModal();
-                closeJoinModal();
-                closeMenu();
-                closeSuccessModal();
-            }
-        });
-
-        // Smooth scroll for internal navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    closeMenu(); // Close menu after clicking a link
-                }
-            });
-        });
-    </script>
+<script>
+if (history.scrollRestoration) {
+history.scrollRestoration = 'manual';
+}
+window.addEventListener('beforeunload', () => {
+window.scrollTo(0, 0);
+});
+</script>
+<div class="background-wrapper">
+<div id="bg-image"></div>
+</div>
+<div id="warrior-container">
+<img id="warrior-img" src="https://i.ibb.co/fzj7K3BN/warrior.png" alt="Warrior">
+</div>
+<div id="sword-container">
+<img id="sword-img" src="https://i.ibb.co/Z6Fq164h/berserk.png" alt="Berserk Sword">
+</div>
+<div class="vignette"></div>
+<div class="menu-toggle" id="menuToggle">
+<span></span>
+<span></span>
+<span></span>
+</div>
+<div class="sticky-nav">
+<a href="#hero" class="nav-item active" data-section="hero">Overview</a>
+<a href="#infrastructure" class="nav-item" data-section="infrastructure">Infrastructure</a>
+<a href="#security" class="nav-item" data-section="security">Security</a>
+<a href="#implementation" class="nav-item" data-section="implementation">Implementation</a>
+<a href="#contact" class="nav-item" data-section="contact">Contact</a>
+</div>
+<div class="menu-overlay" id="menuOverlay">
+<a href="#" onclick="closeMenu(); openJoinModal(); return false;">Join Room</a>
+<a href="#" onclick="closeMenu(); openCreateModal(); return false;">Create Room</a>
+<a href="rooms.html">Active Rooms</a>
+<a href="#infrastructure" onclick="closeMenu();">Features</a>
+</div>
+<section id="hero">
+<div class="content-wrapper">
+<h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
+<p class="lead">
+An ephemeral communication layer designed for professionals who require absolute stealth.
+No persistent storage. No logs. Just silence.
+</p>
+<div class="button-group">
+<button class="btn" onclick="openCreateModal()">Initiate Session</button>
+<button class="btn btn-secondary" onclick="openJoinModal()">Join Room</button>
+</div>
+</div>
+</section>
+<section id="infrastructure">
+<div class="content-wrapper">
+<h2>STRUCTURED ANONYMITY.</h2>
+<p style="color: var(--text-dim); margin-bottom: 2rem;">
+Our architecture prioritizes complete anonymity through distributed protocols and zero-knowledge proof systems.
+</p>
+<div class="glass-grid">
+<div class="glass-pane">
+<h3>01 // Zero-Persistence</h3>
+<p>Messages never stored - real-time broadcast only. 24-hour automatic expiration with instant destruction capability.</p>
+</div>
+<div class="glass-pane">
+<h3>02 // Complete Anonymity</h3>
+<p>No accounts, no usernames, no identity tracking. All participants appear as encrypted nodes in the network.</p>
+</div>
+<div class="glass-pane">
+<h3>03 // Single-Use Invites</h3>
+<p>Password-protected rooms with single-use invite codes. Each invite invalidated after first use or expiration.</p>
+</div>
+<div class="glass-pane">
+<h3>04 // Real-Time Encryption</h3>
+<p>End-to-end encrypted messaging with ephemeral file sharing. All secrets hashed with SHA-256.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="security">
+<div class="content-wrapper">
+<h2 id="absolute-privacy-trigger">ABSOLUTE PRIVACY.</h2>
+<p class="lead">
+In the modern digital landscape, surveillance is the default. We have built a system where privacy is the baseline.
+</p>
+<div class="grid-3">
+<div class="card">
+<h3>Hashed Secrets</h3>
+<p>All passwords and keys hashed with SHA-256. No plain-text storage. Rate-limited authentication.</p>
+</div>
+<div class="card">
+<h3>No User Accounts</h3>
+<p>Registration is surveillance. Session tokens only - scoped to room lifetime.</p>
+</div>
+<div class="card">
+<h3>No Message Storage</h3>
+<p>Messages broadcast in real-time only. Zero persistence. Once delivered, vanished.</p>
+</div>
+<div class="card">
+<h3>No Analytics</h3>
+<p>We don't track usage patterns, behaviors, or metadata. Your existence leaves no digital footprint.</p>
+</div>
+<div class="card">
+<h3>Rate Limiting</h3>
+<p>Brute-force protection: 5 attempts per 15 minutes. IP-based throttling.</p>
+</div>
+<div class="card">
+<h3>Complete Destruction</h3>
+<p>Room expiration purges all sessions, invites, messages, and files. Irrecoverable.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="implementation">
+<div class="content-wrapper">
+<h2>HOW IT WORKS.</h2>
+<p class="lead">
+AbyssLink operates on a simple principle: communication should be ephemeral.
+</p>
+<div class="glass-grid">
+<div class="glass-pane">
+<h3>Step 1: Create Room</h3>
+<p>Generate a secure room with a passphrase. Receive a creator key for destruction authority.</p>
+</div>
+<div class="glass-pane">
+<h3>Step 2: Generate Invites</h3>
+<p>Create single-use invite codes. Each code works only once. Share via separate channels.</p>
+</div>
+<div class="glass-pane">
+<h3>Step 3: Communicate</h3>
+<p>Participants join with invite + password. Messages are real-time only - never stored.</p>
+</div>
+<div class="glass-pane">
+<h3>Step 4: Vanish</h3>
+<p>When done, leave or destroy. Everything dissolves. No trace. No recovery.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="contact" style="text-align: center; align-items: center;">
+<div class="content-wrapper" style="max-width: 100%; text-align: center;">
+<h2>READY TO VANISH?</h2>
+<p class="lead">Join the network that forgets.</p>
+<div class="button-group" style="justify-content: center;">
+<button class="btn" onclick="openCreateModal()">Create Room</button>
+<a href="rooms.html" class="btn btn-secondary">View Active Rooms</a>
+</div>
+</div>
+</section>
+<footer class="about-section">
+<div class="footer-brand">
+<h3>ABYSSLINK</h3>
+<p style="margin-top: 1rem; color: var(--text-dim); max-width: 400px; font-size: 0.9rem;">
+Founded on the principle that digital communication should mirror the transience of physical conversation. We build for the shadows.
+</p>
+</div>
+<div class="footer-grid">
+<div class="footer-col">
+<h4>Protocol</h4>
+<p>E2E Encryption</p>
+<p>Volatile Nodes</p>
+<p>Single-Use Invites</p>
+<p>24hr Auto-Destruct</p>
+</div>
+<div class="footer-col">
+<h4>Features</h4>
+<p>Anonymous Chat</p>
+<p>File Sharing</p>
+<p>Instant Vanish</p>
+<p>Zero Logs</p>
+</div>
+<div class="footer-col">
+<h4>Legal</h4>
+<p>Terms of Service</p>
+<p>Privacy Policy</p>
+<p>Security Report</p>
+<p>Transparency</p>
+</div>
+<div class="footer-col">
+<h4>Access</h4>
+<a href="#contact">Get Started</a>
+<a href="rooms.html">Active Rooms</a>
+<p>Documentation</p>
+<p>API Access</p>
+</div>
+</div>
+<div style="width: 100%; margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
+&copy; 2025 AbyssLink Systems. All rights reserved. No data stored.
+</div>
+</footer>
+<!-- JOIN MODAL (WITH INVITE CODE) -->
+<div id="joinModal" class="modal">
+<div class="modal-content">
+<h2>Join Session</h2>
+<div class="warning">
+⚠️ SINGLE-USE INVITE: Each invite code can only be used once. Ensure you have both Room ID, Invite Code, and Password.
+</div>
+<form id="joinForm" onsubmit="handleJoinRoom(event)">
+<div class="form-group">
+<label>Room ID</label>
+<input type="text" id="joinRoomId" required placeholder="Room identifier">
+</div>
+<div class="form-group">
+<label>Invite Code</label>
+<input type="text" id="joinInviteCode" required placeholder="Single-use invite code">
+</div>
+<div class="form-group">
+<label>Password</label>
+<input type="password" id="joinPassword" required placeholder="Room password">
+</div>
+<div class="modal-actions">
+<button type="submit" class="btn" style="flex: 1;">Enter</button>
+<button type="button" class="btn btn-secondary" onclick="closeJoinModal()" style="flex: 1;">Cancel</button>
+</div>
+</form>
+</div>
+</div>
+<!-- CREATE MODAL -->
+<div id="createModal" class="modal">
+<div class="modal-content">
+<h2>Create Session</h2>
+<form id="createForm" onsubmit="handleCreateRoom(event)">
+<div class="form-group">
+<label>Room Topic</label>
+<input type="text" id="topicInput" required placeholder="Session identifier">
+</div>
+<div class="form-group">
+<label>Password (min 8 chars)</label>
+<input type="password" id="passwordInput" required minlength="8" placeholder="Encryption passphrase">
+</div>
+<div class="modal-actions">
+<button type="submit" class="btn" style="flex: 1;">Initialize</button>
+<button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
+</div>
+</form>
+</div>
+</div>
+<!-- SUCCESS MODAL (WITH INVITE GENERATION) -->
+<div id="successModal" class="modal">
+<div class="modal-content" style="max-width: 600px;">
+<h2>Session Created</h2>
+<div class="info-box">
+<p>Room ID:</p>
+<div class="value" id="roomIdDisplay" onclick="copyToClipboard('roomIdDisplay')"></div>
+</div>
+<div class="info-box">
+<p>Creator Key (Destruction Authority):</p>
+<div class="value" id="creatorKeyDisplay" onclick="copyToClipboard('creatorKeyDisplay')"></div>
+</div>
+<div class="warning">
+⚠️ PROTOCOL: Save the Creator Key securely. You'll need it to generate invites and destroy the room. Once you close this window, you cannot retrieve it.
+</div>
+<div class="modal-actions">
+<button class="btn" onclick="enterCreatedRoom()" style="flex: 1;">
+Enter Session →
+</button>
+<button class="btn btn-secondary" onclick="closeSuccessModal()" style="flex: 1;">
+Close
+</button>
+</div>
+</div>
+</div>
+<script>
+const API_URL = 'https://abysslink.onrender.com';
+let currentRoom = null;
+gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({
+autoRefreshEvents: "visibilitychange,DOMContentLoaded,load",
+syncInterval: 8,
+anticipatePin: 1
+});
+window.addEventListener("load", () => {
+window.scrollTo(0, 0);
+setTimeout(() => {
+ScrollTrigger.refresh();
+initializeAnimations();
+}, 200);
+});
+function initializeAnimations() {
+gsap.fromTo("#warrior-img",
+{
+opacity: 0,
+y: 250,
+scale: 0.85
+},
+{
+opacity: 1,
+y: 0,
+scale: 1,
+duration: 2,
+ease: "power3.out",
+delay: 0.3,
+force3D: true
+}
+);
+gsap.to("#warrior-img", {
+scrollTrigger: {
+trigger: "#hero",
+start: "top top",
+end: "bottom top",
+scrub: 1.5,
+invalidateOnRefresh: true,
+fastScrollEnd: true
+},
+opacity: 0,
+y: -100,
+scale: 1.15,
+ease: "none",
+force3D: true
+});
+// Enhanced sword animation with smooth fade-in/out and easing
+gsap.fromTo("#sword-img",
+{
+opacity: 0,
+y: 80,
+scale: 0.95
+},
+{
+scrollTrigger: {
+trigger: "#infrastructure",
+start: "top 80%",
+end: "top 20%",
+scrub: 2.5,
+invalidateOnRefresh: true,
+fastScrollEnd: true
+},
+opacity: 0.95,
+y: 0,
+scale: 1,
+ease: "power2.out",
+force3D: true
+}
+);
+gsap.to("#sword-img", {
+scrollTrigger: {
+trigger: "#absolute-privacy-trigger",
+start: "top center",
+end: "top top",
+scrub: 1.5,
+invalidateOnRefresh: true,
+fastScrollEnd: true
+},
+opacity: 0,
+y: -60,
+scale: 1.05,
+ease: "power3.in",
+force3D: true
+});
+gsap.to("#bg-image", {
+scrollTrigger: {
+trigger: "#hero",
+start: "top top",
+end: "bottom top",
+scrub: 1.5,
+fastScrollEnd: true
+},
+filter: "blur(0px) brightness(0.8)",
+ease: "none",
+force3D: true
+});
+document.querySelectorAll('.content-wrapper').forEach((content, index) => {
+gsap.to(content, {
+scrollTrigger: {
+trigger: content,
+start: "top 85%",
+toggleActions: "play none none reverse",
+fastScrollEnd: true
+},
+opacity: 1,
+y: 0,
+duration: 1,
+ease: "power3.out",
+delay: index * 0.05,
+force3D: true
+});
+});
+gsap.utils.toArray('.glass-pane').forEach((pane, i) => {
+gsap.from(pane, {
+scrollTrigger: {
+trigger: pane,
+start: "top 90%",
+toggleActions: "play none none reverse",
+fastScrollEnd: true
+},
+opacity: 0,
+y: 30,
+duration: 0.8,
+delay: i * 0.1,
+ease: "power2.out",
+force3D: true
+});
+});
+gsap.utils.toArray('.card').forEach((card, i) => {
+gsap.from(card, {
+scrollTrigger: {
+trigger: card,
+start: "top 90%",
+toggleActions: "play none none reverse",
+fastScrollEnd: true
+},
+opacity: 0,
+y: 30,
+duration: 0.8,
+delay: i * 0.08,
+ease: "power2.out",
+force3D: true
+});
+});
+}
+function pulsingWaveGlitch(element) {
+const text = element.dataset.text || element.textContent;
+const chars = '█▓▒░/\\|_-<>[]{}';
+element.innerHTML = '';
+const spans = text.split('').map(char => {
+const span = document.createElement('span');
+span.className = 'glitch-char';
+span.textContent = char;
+span.dataset.original = char;
+element.appendChild(span);
+return span;
+});
+let waveIndex = 0;
+let lastTime = 0;
+const interval = 120;
+function animate(currentTime) {
+if (currentTime - lastTime >= interval) {
+spans.forEach((span, i) => {
+const distance = Math.abs(i - waveIndex);
+const isInWave = distance < 4;
+if (isInWave && Math.random() > 0.3) {
+span.textContent = chars[Math.floor(Math.random() * chars.length)];
+span.style.opacity = 0.6 + Math.random() * 0.4;
+} else if (!isInWave) {
+span.textContent = span.dataset.original;
+span.style.opacity = '1';
+}
+});
+waveIndex = (waveIndex + 1) % (spans.length + 5);
+lastTime = currentTime;
+}
+requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+}
+document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
+let scrollTimeout;
+const navItems = document.querySelectorAll('.sticky-nav .nav-item');
+const sections = document.querySelectorAll('section[id]');
+function updateActiveNav() {
+let current = '';
+sections.forEach(section => {
+const sectionTop = section.offsetTop;
+if (window.pageYOffset >= sectionTop - 300) {
+current = section.getAttribute('id');
+}
+});
+navItems.forEach(item => {
+item.classList.remove('active');
+if (item.getAttribute('data-section') === current) {
+item.classList.add('active');
+}
+});
+}
+window.addEventListener('scroll', () => {
+if (scrollTimeout) {
+window.cancelAnimationFrame(scrollTimeout);
+}
+scrollTimeout = window.requestAnimationFrame(updateActiveNav);
+}, { passive: true });
+const menuToggle = document.getElementById('menuToggle');
+const menuOverlay = document.getElementById('menuOverlay');
+menuToggle.addEventListener('click', () => {
+menuToggle.classList.toggle('active');
+menuOverlay.classList.toggle('active');
+});
+function closeMenu() {
+menuToggle.classList.remove('active');
+menuOverlay.classList.remove('active');
+}
+function openJoinModal() {
+document.getElementById('joinModal').style.display = 'flex';
+document.getElementById('joinRoomId').focus();
+}
+function closeJoinModal() {
+document.getElementById('joinModal').style.display = 'none';
+document.getElementById('joinForm').reset();
+}
+function openCreateModal() {
+document.getElementById('createModal').style.display = 'flex';
+document.getElementById('topicInput').focus();
+}
+function closeCreateModal() {
+document.getElementById('createModal').style.display = 'none';
+document.getElementById('createForm').reset();
+}
+function closeSuccessModal() {
+document.getElementById('successModal').style.display = 'none';
+}
+// JOIN ROOM (WITH INVITE CODE)
+async function handleJoinRoom(event) {
+event.preventDefault();
+const roomId = document.getElementById('joinRoomId').value.trim();
+const inviteCode = document.getElementById('joinInviteCode').value.trim();
+const password = document.getElementById('joinPassword').value;
+try {
+const response = await fetch(`${API_URL}/api/rooms/join`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ roomId, inviteCode, password })
+});
+if (!response.ok) {
+const error = await response.json();
+alert(error.error || 'Failed to join room');
+return;
+}
+const data = await response.json();
+// Store session (with token, NOT password)
+const sessions = JSON.parse(localStorage.getItem('abysslink_sessions') || '[]');
+sessions.push({
+roomId: data.roomId,
+topic: data.topic,
+sessionToken: data.sessionToken,
+expiresAt: data.expiresAt,
+role: 'participant'
+});
+localStorage.setItem('abysslink_sessions', JSON.stringify(sessions));
+closeJoinModal();
+window.location.href = `chat.html?room=${roomId}`;
+} catch (error) {
+alert('Connection failed. Check backend.');
+console.error(error);
+}
+}
+// CREATE ROOM
+async function handleCreateRoom(event) {
+event.preventDefault();
+const topic = document.getElementById('topicInput').value.trim();
+const password = document.getElementById('passwordInput').value;
+if (password.length < 8) {
+alert('Password must be at least 8 characters');
+return;
+}
+try {
+const response = await fetch(`${API_URL}/api/rooms/create`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ topic, password })
+});
+if (!response.ok) {
+throw new Error('Failed to create room');
+}
+const data = await response.json();
+// Generate first invite automatically
+const inviteResponse = await fetch(`${API_URL}/api/rooms/invite`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+roomId: data.roomId,
+creatorKey: data.creatorKey
+})
+});
+if (!inviteResponse.ok) {
+throw new Error('Failed to generate invite');
+}
+const inviteData = await inviteResponse.json();
+// Join with the invite to get session token
+const joinResponse = await fetch(`${API_URL}/api/rooms/join`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+roomId: data.roomId,
+inviteCode: inviteData.inviteCode,
+password: password
+})
+});
+if (!joinResponse.ok) {
+throw new Error('Failed to auto-join');
+}
+const joinData = await joinResponse.json();
+// Store session with creator key
+const sessions = JSON.parse(localStorage.getItem('abysslink_sessions') || '[]');
+currentRoom = {
+roomId: data.roomId,
+topic: topic,
+sessionToken: joinData.sessionToken,
+creatorKey: data.creatorKey, // Store for invite generation
+expiresAt: data.expiresAt,
+role: 'creator'
+};
+sessions.push(currentRoom);
+localStorage.setItem('abysslink_sessions', JSON.stringify(sessions));
+document.getElementById('roomIdDisplay').textContent = data.roomId;
+document.getElementById('creatorKeyDisplay').textContent = data.creatorKey;
+closeCreateModal();
+document.getElementById('successModal').style.display = 'flex';
+} catch (error) {
+alert('Error creating room. Please check backend connection.');
+console.error(error);
+}
+}
+function copyToClipboard(elementId) {
+const text = document.getElementById(elementId).textContent;
+navigator.clipboard.writeText(text).then(() => {
+const el = document.getElementById(elementId);
+const original = el.textContent;
+el.textContent = 'COPIED ✓';
+setTimeout(() => el.textContent = original, 1000);
+});
+}
+function enterCreatedRoom() {
+if (currentRoom) {
+window.location.href = `chat.html?room=${currentRoom.roomId}`;
+}
+}
+document.addEventListener('keydown', (e) => {
+if (e.key === 'Escape') {
+closeCreateModal();
+closeJoinModal();
+closeSuccessModal();
+closeMenu();
+}
+});
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+anchor.addEventListener('click', function (e) {
+e.preventDefault();
+const target = document.querySelector(this.getAttribute('href'));
+if (target) {
+target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+closeMenu();
+}
+});
+});
+let resizeTimeout;
+window.addEventListener('resize', () => {
+clearTimeout(resizeTimeout);
+resizeTimeout = setTimeout(() => {
+ScrollTrigger.refresh();
+}, 250);
+}, { passive: true });
+</script>
 </body>
 </html>
+
