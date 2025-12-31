@@ -18,7 +18,7 @@ const httpServer = createServer(app);
 
 // Environment config
 const PORT = process.env.PORT || 10000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.onrender.com';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.vercel.app';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Security headers
