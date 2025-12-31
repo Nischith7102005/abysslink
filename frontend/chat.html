@@ -87,6 +87,23 @@ font-family: 'Space Mono', monospace;
 font-size: 0.75rem;
 color: var(--text-dim);
 text-transform: uppercase;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+.copy-btn {
+font-family: 'Space Mono', monospace;
+font-size: 0.7rem;
+padding: 0.2rem 0.5rem;
+background: transparent;
+color: var(--text-dim);
+border: 1px solid var(--border);
+cursor: pointer;
+transition: all 0.2s ease;
+}
+.copy-btn:hover {
+color: var(--text-main);
+border-color: var(--text-main);
 }
 .header-right {
 display: flex;
@@ -300,19 +317,20 @@ to { transform: translateX(0); opacity: 1; }
 <div class="loading-text">Joining Session...</div>
 </div>
 </div>
-
 <div id="chatApp" style="display:none; height:100%; flex-direction:column;">
 <div class="chat-header">
 <div class="room-info">
 <h2 id="roomTopic">Untitled Session</h2>
-<div class="room-meta">Key: <span id="roomKey"></span></div>
+<div class="room-meta">
+Key: <span id="roomKeyDisplay"></span>
+<button class="copy-btn" onclick="copyFullKey()">Copy Full</button>
+</div>
 </div>
 <div class="header-right">
 <div class="status-badge participants"><span id="participantCount">0</span> Active</div>
 <div class="status-badge timer" id="timerBadge"><span id="timeRemaining">24:00:00</span></div>
 </div>
 </div>
-
 <div class="chat-container">
 <div style="flex:1; display:flex; flex-direction:column;">
 <div class="messages" id="messages"></div>
@@ -323,7 +341,6 @@ to { transform: translateX(0); opacity: 1; }
 <button class="btn btn-primary" onclick="sendMessage()">Send</button>
 </div>
 </div>
-
 <div class="sidebar">
 <div>
 <h3>Session Status</h3>
@@ -339,21 +356,18 @@ to { transform: translateX(0); opacity: 1; }
 </div>
 </div>
 </div>
-
 <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
 <script>
 // Hardcoded backend URLs for Render deployment
 const API_URL = 'https://abysslink.onrender.com';
 const SOCKET_URL = 'https://abysslink.onrender.com';
-
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('room');
 const password = urlParams.get('password');
 const topic = urlParams.get('topic');
-
 if (!roomId || !password) {
-alert('Missing room key or password');
-window.location.href = 'rooms.html';
+  alert('Missing room key or password');
+  window.location.href = 'rooms.html';
 }
 
 let socket = null;
@@ -362,222 +376,228 @@ let expiresAt = null;
 let timer = null;
 
 function showError(message) {
-const errorDiv = document.createElement('div');
-errorDiv.className = 'error-message';
-errorDiv.textContent = message;
-errorDiv.onclick = () => errorDiv.remove();
-document.body.appendChild(errorDiv);
-setTimeout(() => errorDiv.remove(), 5000);
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
+  errorDiv.textContent = message;
+  errorDiv.onclick = () => errorDiv.remove();
+  document.body.appendChild(errorDiv);
+  setTimeout(() => errorDiv.remove(), 5000);
+}
+
+function copyFullKey() {
+  navigator.clipboard.writeText(roomId).then(() => {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => {
+      btn.textContent = originalText;
+    }, 2000);
+  }).catch(err => {
+    showError('Failed to copy key');
+  });
 }
 
 function initialize() {
-document.getElementById('loadingScreen').style.display = 'none';
-document.getElementById('chatApp').style.display = 'flex';
-document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
-document.getElementById('roomKey').textContent = roomId.substring(0, 8).toUpperCase();
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('chatApp').style.display = 'flex';
+  document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
+  document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase();
 
-// Initialize Socket.IO with backend URL
-socket = io(SOCKET_URL, {
-transports: ['websocket', 'polling'],
-reconnection: true,
-reconnectionAttempts: 5,
-reconnectionDelay: 1000
-});
+  socket = io(SOCKET_URL, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
+  });
 
-socket.on('connect', () => {
-console.log('Connected to server');
-myId = socket.id;
-// Join room with password
-socket.emit('join_room', { roomId, password });
-});
+  socket.on('connect', () => {
+    console.log('Connected to server');
+    myId = socket.id;
+    socket.emit('join_room', { roomId, password });
+  });
 
-socket.on('connect_error', (error) => {
-console.error('Connection error:', error);
-showError('Failed to connect to chat server');
-});
+  socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    showError('Failed to connect to chat server');
+  });
 
-socket.on('join_success', (data) => {
-console.log('Successfully joined room:', data);
-expiresAt = data.expiresAt;
-updateParticipants(data.participantCount || 1);
-updateTimer();
-});
+  socket.on('join_success', (data) => {
+    console.log('Successfully joined room:', data);
+    expiresAt = data.expiresAt;
+    updateParticipants(data.participantCount || 1);
+    updateTimer();
+  });
 
-socket.on('error', (message) => {
-console.error('Socket error:', message);
-showError(message);
-if (message.includes('password') || message.includes('found')) {
-cleanupAndRedirect();
-}
-});
+  socket.on('error', (message) => {
+    console.error('Socket error:', message);
+    showError(message);
+    if (message.includes('password') || message.includes('found')) {
+      cleanupAndRedirect();
+    }
+  });
 
-socket.on('new_message', (msg) => {
-addMessage(msg);
-});
+  socket.on('new_message', (msg) => {
+    addMessage(msg);
+  });
 
-socket.on('participant_joined', (data) => {
-updateParticipants(data.count);
-if (data.message) {
-const systemMsg = {
-id: Date.now().toString(),
-text: data.message,
-timestamp: Date.now(),
-type: 'system'
-};
-addMessage(systemMsg);
-}
-});
+  socket.on('participant_joined', (data) => {
+    updateParticipants(data.count);
+    if (data.message) {
+      const systemMsg = {
+        id: Date.now().toString(),
+        text: data.message,
+        timestamp: Date.now(),
+        type: 'system'
+      };
+      addMessage(systemMsg);
+    }
+  });
 
-socket.on('participant_left', (data) => {
-updateParticipants(data.count);
-if (data.message) {
-const systemMsg = {
-id: Date.now().toString(),
-text: data.message,
-timestamp: Date.now(),
-type: 'system'
-};
-addMessage(systemMsg);
-}
-});
+  socket.on('participant_left', (data) => {
+    updateParticipants(data.count);
+    if (data.message) {
+      const systemMsg = {
+        id: Date.now().toString(),
+        text: data.message,
+        timestamp: Date.now(),
+        type: 'system'
+      };
+      addMessage(systemMsg);
+    }
+  });
 
-socket.on('room_vanished', () => {
-showError('Room has been destroyed.');
-cleanupAndRedirect();
-});
+  socket.on('room_vanished', () => {
+    showError('Room has been destroyed.');
+    cleanupAndRedirect();
+  });
 
-socket.on('file_uploaded', (fileData) => {
-const msg = {
-id: fileData.id,
-text: `📎 ${fileData.name} (${formatFileSize(fileData.size)})`,
-timestamp: fileData.uploadedAt,
-sender: 'system',
-isFile: true
-};
-addMessage(msg);
-});
+  socket.on('file_uploaded', (fileData) => {
+    const msg = {
+      id: fileData.id,
+      text: `📎 ${fileData.name} (${formatFileSize(fileData.size)})`,
+      timestamp: fileData.uploadedAt,
+      sender: 'system',
+      isFile: true
+    };
+    addMessage(msg);
+  });
 }
 
 function addMessage(msg) {
-const el = document.createElement('div');
-el.className = msg.type === 'system' ? 'system-message' : 
-              (msg.sender === myId ? 'message own' : 'message other');
-              
-if (msg.type === 'system') {
-el.textContent = msg.text;
-} else {
-const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-el.innerHTML = `<div class="message-text">${escape(msg.text)}</div><div class="message-time">${time}</div>`;
-}
-
-document.getElementById('messages').appendChild(el);
-el.scrollIntoView({ behavior: 'smooth' });
+  const el = document.createElement('div');
+  el.className = msg.type === 'system' ? 'system-message' :
+    (msg.sender === myId ? 'message own' : 'message other');
+  if (msg.type === 'system') {
+    el.textContent = msg.text;
+  } else {
+    const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    el.innerHTML = `<div class="message-text">${escape(msg.text)}</div><div class="message-time">${time}</div>`;
+  }
+  document.getElementById('messages').appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth' });
 }
 
 function updateParticipants(count) {
-document.getElementById('participantCount').textContent = count;
-document.getElementById('sidebarParticipants').textContent = count;
+  document.getElementById('participantCount').textContent = count;
+  document.getElementById('sidebarParticipants').textContent = count;
 }
 
 function sendMessage() {
-const input = document.getElementById('messageInput');
-const text = input.value.trim();
-if (text) {
-socket.emit('send_message', { roomId, message: text });
-input.value = '';
-}
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (text) {
+    socket.emit('send_message', { roomId, message: text });
+    input.value = '';
+  }
 }
 
 function handleKeyPress(e) {
-if (e.key === 'Enter') sendMessage();
+  if (e.key === 'Enter') sendMessage();
 }
 
 function handleFileSelect() {
-alert('File sharing is disabled in this version for simplicity.');
-document.getElementById('fileInput').value = '';
+  alert('File sharing is disabled in this version for simplicity.');
+  document.getElementById('fileInput').value = '';
 }
 
 function formatFileSize(bytes) {
-if (bytes === 0) return '0 Bytes';
-const k = 1024;
-const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-const i = Math.floor(Math.log(bytes) / Math.log(k));
-return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function updateTimer() {
-if (!expiresAt) return;
-const now = Date.now();
-const remaining = expiresAt - now;
-if (remaining <= 0) {
-showError('Session expired.');
-cleanupAndRedirect();
-return;
-}
-const h = Math.floor(remaining / 3600000);
-const m = Math.floor((remaining % 3600000) / 60000);
-const s = Math.floor((remaining % 60000) / 1000);
-document.getElementById('timeRemaining').textContent =
-`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-if (remaining < 300000) {
-document.getElementById('timerBadge').style.borderColor = 'var(--danger)';
-document.getElementById('timerBadge').style.color = 'var(--danger)';
-}
-timer = setTimeout(updateTimer, 1000);
+  if (!expiresAt) return;
+  const now = Date.now();
+  const remaining = expiresAt - now;
+  if (remaining <= 0) {
+    showError('Session expired.');
+    cleanupAndRedirect();
+    return;
+  }
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  document.getElementById('timeRemaining').textContent =
+    `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  if (remaining < 300000) {
+    document.getElementById('timerBadge').style.borderColor = 'var(--danger)';
+    document.getElementById('timerBadge').style.color = 'var(--danger)';
+  }
+  timer = setTimeout(updateTimer, 1000);
 }
 
 function confirmVanish() {
-if (confirm('Destroy this room for everyone? This cannot be undone.')) {
-fetch(`${API_URL}/api/rooms/vanish`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ roomId, password })
-})
-.then(res => res.json())
-.then(data => {
-if (data.success) {
-showError('Room destruction initiated.');
-cleanupAndRedirect();
-} else {
-showError('Failed to vanish room');
-}
-})
-.catch(err => {
-console.error('Vanish error:', err);
-showError('Failed to vanish room');
-});
-}
+  if (confirm('Destroy this room for everyone? This cannot be undone.')) {
+    fetch(`${API_URL}/api/rooms/vanish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showError('Room destruction initiated.');
+        cleanupAndRedirect();
+      } else {
+        showError('Failed to vanish room');
+      }
+    })
+    .catch(err => {
+      console.error('Vanish error:', err);
+      showError('Failed to vanish room');
+    });
+  }
 }
 
 function leaveRoom() {
-if (confirm('Leave this session?')) {
-cleanupAndRedirect();
-}
+  if (confirm('Leave this session?')) {
+    cleanupAndRedirect();
+  }
 }
 
 function cleanupAndRedirect() {
-if (timer) clearTimeout(timer);
-if (socket) socket.disconnect();
-window.location.href = 'rooms.html';
+  if (timer) clearTimeout(timer);
+  if (socket) socket.disconnect();
+  window.location.href = 'rooms.html';
 }
 
 function escape(str) {
-return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+  return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
 }
 
-// Handle page visibility for timer accuracy
 document.addEventListener('visibilitychange', () => {
-if (!document.hidden && expiresAt) {
-// Recalculate timer when tab becomes visible
-updateTimer();
-}
+  if (!document.hidden && expiresAt) {
+    updateTimer();
+  }
 });
 
 window.addEventListener('beforeunload', () => {
-if (socket) socket.disconnect();
+  if (socket) socket.disconnect();
 });
 
-// Start initialization
 initialize();
 </script>
 </body>
