@@ -383,6 +383,7 @@ function showError(message) {
   setTimeout(() => errorDiv.remove(), 5000);
 }
 
+// ✅ FIXED: event is passed correctly
 function copyFullKey(event) {
   navigator.clipboard.writeText(roomId).then(() => {
     const btn = event.target;
@@ -436,6 +437,97 @@ async function decryptMessage(ivB64, ciphertextB64) {
   }
 }
 
+// Encrypt metadata (e.g. file name)
+async function encryptMetadata(plaintext) {
+  const key = await deriveEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(plaintext);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
+    encoded
+  );
+  const ivB64 = btoa(String.fromCharCode(...iv));
+  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return { iv: ivB64, ciphertext: ctB64 };
+}
+
+// Encrypt file content
+async function encryptFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const key = await deriveEncryptionKey();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv },
+          await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
+          e.target.result
+        );
+        const ivB64 = btoa(String.fromCharCode(...iv));
+        const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+        resolve({ iv: ivB64, ciphertext: ctB64, originalSize: file.size });
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function handleFileSelect() {
+  const input = document.getElementById('fileInput');
+  const file = input.files[0];
+  if (!file) return;
+
+  if (file.size > 50 * 1024 * 1000) {
+    showError('File too large (max 50MB)');
+    return;
+  }
+
+  try {
+    const encryptedName = await encryptMetadata(file.name);
+    const encryptedFile = await encryptFile(file);
+    
+    const binary = atob(encryptedFile.ciphertext);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+    const encryptedBlob = new Blob([array], { type: 'application/octet-stream' });
+
+    const formData = new FormData();
+    formData.append('encryptedFile', encryptedBlob, 'encrypted.bin');
+    formData.append('encryptedName', JSON.stringify(encryptedName));
+    formData.append('originalSize', encryptedFile.originalSize);
+
+    const res = await fetch(`${API_URL}/api/rooms/${roomId}/upload`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error('Upload failed');
+
+    const fileData = await res.json();
+    addMessage({
+      id: fileData.id,
+      text: `📎 File shared (${formatFileSize(fileData.originalSize)})`,
+      timestamp: Date.now(),
+      sender: 'system',
+      isFile: true,
+      fileData
+    });
+
+    input.value = '';
+  } catch (err) {
+    console.error('File upload error:', err);
+    showError('Failed to upload file');
+    input.value = '';
+  }
+}
+
 function initialize() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('chatApp').style.display = 'flex';
@@ -478,7 +570,7 @@ function initialize() {
       addMessage(msg);
       return;
     }
-    let displayText = msg.text; // fallback (legacy)
+    let displayText = msg.text;
     if (msg.encrypted) {
       displayText = await decryptMessage(msg.encrypted.iv, msg.encrypted.ciphertext);
     }
@@ -500,10 +592,22 @@ function initialize() {
     cleanupAndRedirect();
   });
 
-  socket.on('file_uploaded', (fileData) => {
+  socket.on('file_uploaded', async (fileData) => {
+    let displayName = '📎 File shared';
+    if (fileData.encryptedName) {
+      try {
+        const name = await decryptMessage(
+          fileData.encryptedName.iv,
+          fileData.encryptedName.ciphertext
+        );
+        displayName = `📎 ${name} (${formatFileSize(fileData.originalSize)})`;
+      } catch (e) {
+        displayName = `📎 Encrypted file (${formatFileSize(fileData.originalSize)})`;
+      }
+    }
     addMessage({
       id: fileData.id,
-      text: `📎 ${fileData.name} (${formatFileSize(fileData.size)})`,
+      text: displayName,
       timestamp: fileData.uploadedAt,
       sender: 'system',
       isFile: true
@@ -530,7 +634,6 @@ function updateParticipants(count) {
   document.getElementById('sidebarParticipants').textContent = count;
 }
 
-// ✅ SEND ENCRYPTED MESSAGE
 async function sendMessage() {
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
@@ -548,11 +651,6 @@ async function sendMessage() {
 
 function handleKeyPress(e) {
   if (e.key === 'Enter') sendMessage();
-}
-
-function handleFileSelect() {
-  alert('File sharing is disabled in this version for simplicity.');
-  document.getElementById('fileInput').value = '';
 }
 
 function formatFileSize(bytes) {
