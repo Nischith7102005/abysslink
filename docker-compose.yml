@@ -13,7 +13,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=10000
-      - FRONTEND_URL= https://abysslink.vercel.app,https://abysslink.onrender.com,http://localhost:3000
+      - FRONTEND_URL= https://abysslink.vercel.app
     volumes:
       - abysslink_uploads:/app/uploads  # Persistent uploads (optional)
     healthcheck:
