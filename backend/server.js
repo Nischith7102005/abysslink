@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 const app = express();
 const httpServer = createServer(app);
 
-// Environment variables
+// Environment config
 const PORT = process.env.PORT || 10000;
 const FRONTEND_URL = process.env.FRONTEND_URL || '*';
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -23,18 +23,18 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 console.log('🔧 Environment:', NODE_ENV);
 console.log('🌐 Frontend URL:', FRONTEND_URL);
 
-// CORS configuration
+// CORS
 const corsOptions = {
   origin: FRONTEND_URL === '*' ? '*' : FRONTEND_URL.split(','),
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type']
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Socket.IO with CORS
+// Socket.IO
 const io = new Server(httpServer, {
   cors: corsOptions,
   transports: ['websocket', 'polling'],
@@ -42,15 +42,14 @@ const io = new Server(httpServer, {
   pingInterval: 25000
 });
 
-// Serve uploaded files
+// Serve uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // In-memory storage
 const rooms = new Map();
 const roomTimers = new Map();
-const socketToRoom = new Map();
 
-// File upload configuration
+// Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = path.join(__dirname, 'uploads');
@@ -62,151 +61,107 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
-  storage, 
-  limits: { fileSize: 50 * 1024 * 1024 }
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1000 } // 50MB
 });
 
-// ==================== HEALTH CHECK ====================
+// ==================== API ENDPOINTS ====================
+
+// Health check
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    activeRooms: rooms.size,
-    uptime: process.uptime(),
-    environment: NODE_ENV
-  });
+  res.json({ status: 'ok', activeRooms: rooms.size });
 });
 
-app.get('/', (req, res) => {
-  res.json({
-    name: 'AbyssLink API',
-    version: '1.0.0',
-    status: 'running',
-    endpoints: {
-      health: '/api/health',
-      createRoom: 'POST /api/rooms/create',
-      joinRoom: 'POST /api/rooms/join',
-      vanishRoom: 'POST /api/rooms/vanish'
-    }
-  });
-});
-
-// ==================== CREATE ROOM ====================
+// Create room
 app.post('/api/rooms/create', (req, res) => {
   try {
     const { topic, password } = req.body;
-    
-    if (!topic || !password) {
-      return res.status(400).json({ error: 'Topic and password are required' });
+    if (!topic || !password || password.length < 8) {
+      return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
     }
 
     const roomId = uuidv4();
-    const creatorKey = uuidv4();
-    const expiresAt = Date.now() + (24 * 60 * 60 * 1000);
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
 
     rooms.set(roomId, {
       id: roomId,
       topic,
       password,
-      creatorKey,
-      createdAt: Date.now(),
       expiresAt,
       messages: [],
       files: [],
       participants: new Set()
     });
 
-    console.log(`[CREATE] Room: ${roomId} | Topic: ${topic}`);
-
+    // Auto-expire timer
     const timer = setTimeout(() => {
-      console.log(`[EXPIRE] Room: ${roomId}`);
+      console.log(`[AUTO-EXPIRE] Room ${roomId}`);
       destroyRoom(roomId);
     }, 24 * 60 * 60 * 1000);
-    
     roomTimers.set(roomId, timer);
 
-    res.json({
-      roomId,
-      creatorKey,
-      inviteLink: roomId,
-      expiresAt
-    });
-  } catch (error) {
-    console.error('[CREATE ERROR]', error);
+    console.log(`[ROOM CREATED] ${roomId}`);
+    res.json({ roomId, expiresAt });
+  } catch (err) {
+    console.error('[CREATE ERROR]', err);
     res.status(500).json({ error: 'Failed to create room' });
   }
 });
 
-// ==================== JOIN ROOM ====================
-app.post('/api/rooms/join', (req, res) => {
+// Validate room (for joining)
+app.post('/api/rooms/validate', (req, res) => {
   try {
     const { roomId, password } = req.body;
     const room = rooms.get(roomId);
 
     if (!room) {
-      return res.status(404).json({ error: 'Room not found or expired' });
+      return res.status(404).json({ error: 'Room not found' });
     }
-
     if (room.password !== password) {
-      return res.status(401).json({ error: 'Invalid password' });
+      return res.status(401).json({ error: 'Invalid room key or password' });
     }
-
-    console.log(`[JOIN] Room: ${roomId}`);
 
     res.json({
       roomId: room.id,
       topic: room.topic,
-      expiresAt: room.expiresAt,
-      timeRemaining: room.expiresAt - Date.now(),
-      messageCount: room.messages.length
+      expiresAt: room.expiresAt
     });
-  } catch (error) {
-    console.error('[JOIN ERROR]', error);
-    res.status(500).json({ error: 'Failed to join room' });
+  } catch (err) {
+    console.error('[VALIDATE ERROR]', err);
+    res.status(500).json({ error: 'Validation failed' });
   }
 });
 
-// ==================== VANISH ROOM ====================
+// Vanish room (any participant with password can trigger)
 app.post('/api/rooms/vanish', (req, res) => {
   try {
-    const { roomId, creatorKey } = req.body;
+    const { roomId, password } = req.body;
     const room = rooms.get(roomId);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }
-
-    if (room.creatorKey !== creatorKey) {
-      return res.status(403).json({ error: 'Unauthorized' });
+    if (room.password !== password) {
+      return res.status(401).json({ error: 'Invalid password' });
     }
 
-    console.log(`[VANISH] Room: ${roomId}`);
-    
-    io.to(roomId).emit('room_vanished', {
-      message: 'This room has been destroyed by the creator'
-    });
-
+    console.log(`[ROOM VANISHED] ${roomId}`);
+    io.to(roomId).emit('room_vanished');
     destroyRoom(roomId);
-    
-    res.json({ success: true, message: 'Room vanished' });
-  } catch (error) {
-    console.error('[VANISH ERROR]', error);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[VANISH ERROR]', err);
     res.status(500).json({ error: 'Failed to vanish room' });
   }
 });
 
-// ==================== UPLOAD FILE ====================
+// File upload
 app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
   try {
     const room = rooms.get(req.params.roomId);
-    
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
     const fileData = {
       id: uuidv4(),
@@ -217,48 +172,36 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
     };
 
     room.files.push(fileData);
-    
-    console.log(`[FILE] Room: ${req.params.roomId} | File: ${req.file.originalname}`);
-
     io.to(req.params.roomId).emit('file_uploaded', fileData);
-
     res.json(fileData);
-  } catch (error) {
-    console.error('[UPLOAD ERROR]', error);
-    res.status(500).json({ error: 'Failed to upload file' });
+  } catch (err) {
+    console.error('[UPLOAD ERROR]', err);
+    res.status(500).json({ error: 'Upload failed' });
   }
 });
 
 // ==================== SOCKET.IO ====================
 io.on('connection', (socket) => {
-  console.log(`[SOCKET] Connected: ${socket.id}`);
-
-  socket.on('join_room', ({ roomId }) => {
+  socket.on('join_room', ({ roomId, password }) => {
     const room = rooms.get(roomId);
-    
-    if (!room) {
-      socket.emit('error', 'Room not found');
+    if (!room || room.password !== password) {
+      socket.emit('error', 'Unauthorized');
+      socket.disconnect(true);
       return;
     }
 
     socket.join(roomId);
     room.participants.add(socket.id);
-    socketToRoom.set(socket.id, roomId);
 
-    console.log(`[SOCKET] ${socket.id} joined ${roomId} (${room.participants.size} users)`);
-
+    // Send history
     socket.emit('chat_history', room.messages);
-    room.files.forEach(file => socket.emit('file_uploaded', file));
-    
-    io.to(roomId).emit('participant_joined', {
-      count: room.participants.size
-    });
+    room.files.forEach(f => socket.emit('file_uploaded', f));
+    io.to(roomId).emit('participant_joined', { count: room.participants.size });
   });
 
   socket.on('send_message', ({ roomId, message }) => {
     const room = rooms.get(roomId);
-    
-    if (!room || !message || !message.trim()) return;
+    if (!room || !message?.trim()) return;
 
     const msg = {
       id: uuidv4(),
@@ -266,28 +209,19 @@ io.on('connection', (socket) => {
       timestamp: Date.now(),
       sender: socket.id
     };
-
     room.messages.push(msg);
     io.to(roomId).emit('new_message', msg);
   });
 
   socket.on('disconnect', () => {
-    const roomId = socketToRoom.get(socket.id);
-    
-    if (roomId) {
-      const room = rooms.get(roomId);
-      
-      if (room) {
+    // Find room this socket belonged to
+    for (const [roomId, room] of rooms) {
+      if (room.participants.has(socket.id)) {
         room.participants.delete(socket.id);
-        io.to(roomId).emit('participant_left', {
-          count: room.participants.size
-        });
+        io.to(roomId).emit('participant_left', { count: room.participants.size });
+        break;
       }
-      
-      socketToRoom.delete(socket.id);
     }
-    
-    console.log(`[SOCKET] Disconnected: ${socket.id}`);
   });
 });
 
@@ -296,54 +230,50 @@ function destroyRoom(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  console.log(`[DESTROY] Room: ${roomId}`);
-
+  // Clean up files
   room.files.forEach(file => {
     try {
-      const filePath = path.join(__dirname, file.url);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    } catch (error) {
-      console.error(`[DESTROY] File error:`, error);
+      const fullPath = path.join(__dirname, file.url);
+      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+    } catch (e) {
+      console.error(`[FILE DELETE ERROR] ${file.url}`, e);
     }
   });
 
+  // Clear timer
   const timer = roomTimers.get(roomId);
   if (timer) clearTimeout(timer);
   roomTimers.delete(roomId);
 
-  room.participants.forEach(socketId => socketToRoom.delete(socketId));
   rooms.delete(roomId);
 }
 
-// Cleanup expired rooms every hour
+// Periodic cleanup (optional safety net)
 setInterval(() => {
   const now = Date.now();
-  rooms.forEach((room, roomId) => {
+  for (const [id, room] of rooms) {
     if (room.expiresAt <= now) {
-      console.log(`[CLEANUP] Expired: ${roomId}`);
-      io.to(roomId).emit('room_vanished', { message: 'Room expired' });
-      destroyRoom(roomId);
+      console.log(`[CLEANUP EXPIRED] ${id}`);
+      io.to(id).emit('room_vanished');
+      destroyRoom(id);
     }
-  });
-}, 60 * 60 * 1000);
+  }
+}, 60 * 60 * 1000); // hourly
 
-// ==================== START SERVER ====================
+// ==================== START ====================
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
   console.log(`🚀 AbyssLink Server`);
   console.log(`📡 Port: ${PORT}`);
   console.log(`🌐 Environment: ${NODE_ENV}`);
-  console.log(`🔗 Frontend: ${FRONTEND_URL}`);
   console.log('=================================');
 });
 
 process.on('SIGTERM', () => {
   console.log('[SHUTDOWN] Cleaning up...');
-  rooms.forEach((room, roomId) => {
-    io.to(roomId).emit('room_vanished', { message: 'Server shutdown' });
-    destroyRoom(roomId);
-  });
+  for (const [id] of rooms) {
+    io.to(id).emit('room_vanished');
+    destroyRoom(id);
+  }
   httpServer.close(() => process.exit(0));
 });
