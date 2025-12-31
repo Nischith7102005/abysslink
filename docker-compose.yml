@@ -1,19 +1,55 @@
 version: '3.8'
 
 services:
+  # 🔒 Backend: Ephemeral chat server (Node.js)
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: abysslink-backend
+    restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "10000:10000"
     environment:
-      - PORT=5000
+      - NODE_ENV=production
+      - PORT=10000
+      - FRONTEND_URL=https://abysslink.onrender.com
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - abysslink_uploads:/app/uploads  # Persistent uploads (optional)
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:10000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - abyssnet
+    # Run as non-root (enforced by Dockerfile)
+    user: "1001:1001"
 
+  # 🛡️ Frontend: Static files (Nginx)
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: abysslink-frontend
+    restart: unless-stopped
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - abyssnet
+    # Run as nginx user (enforced by Dockerfile)
+    user: "101:101"
+
+# Volumes for uploads (ephemeral by design, but persistent across restarts)
+volumes:
+  abysslink_uploads:
+    driver: local
+
+# Isolated network
+networks:
+  abyssnet:
+    driver: bridge
