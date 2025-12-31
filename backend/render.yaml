@@ -3,7 +3,7 @@ services:
 - type: web
   name: abysslink-backend
   env: docker
-  dockerfilePath: ./backend/Dockerfile  # ✅ Correct path
+  dockerfilePath: ./Dockerfile  # ✅ Correct path
   dockerContext: .                      # ✅ Build context = repo root
   plan: free
   region: oregon
