@@ -1,4 +1,4 @@
-  import express from 'express';
+ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -92,7 +92,8 @@ app.post('/api/rooms/create', (req, res) => {
       expiresAt,
       messages: [],
       files: [],
-      participants: new Set()
+      participants: new Set(),
+      participantNames: new Map() // Track participant info for display
     });
 
     // Auto-expire timer
@@ -103,7 +104,11 @@ app.post('/api/rooms/create', (req, res) => {
     roomTimers.set(roomId, timer);
 
     console.log(`[ROOM CREATED] ${roomId}`);
-    res.json({ roomId, expiresAt });
+    res.json({ 
+      roomId, 
+      expiresAt,
+      topic // Include topic in response
+    });
   } catch (err) {
     console.error('[CREATE ERROR]', err);
     res.status(500).json({ error: 'Failed to create room' });
@@ -114,12 +119,18 @@ app.post('/api/rooms/create', (req, res) => {
 app.post('/api/rooms/validate', (req, res) => {
   try {
     const { roomId, password } = req.body;
-    const room = rooms.get(roomId);
+    
+    // Ensure roomId is a string and trim whitespace
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
 
     if (!room) {
+      console.log(`[VALIDATE] Room not found: ${cleanRoomId}`);
       return res.status(404).json({ error: 'Room not found' });
     }
+    
     if (room.password !== password) {
+      console.log(`[VALIDATE] Invalid password for room: ${cleanRoomId}`);
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
 
@@ -138,7 +149,8 @@ app.post('/api/rooms/validate', (req, res) => {
 app.post('/api/rooms/vanish', (req, res) => {
   try {
     const { roomId, password } = req.body;
-    const room = rooms.get(roomId);
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
@@ -147,9 +159,9 @@ app.post('/api/rooms/vanish', (req, res) => {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    console.log(`[ROOM VANISHED] ${roomId}`);
-    io.to(roomId).emit('room_vanished');
-    destroyRoom(roomId);
+    console.log(`[ROOM VANISHED] ${cleanRoomId}`);
+    io.to(cleanRoomId).emit('room_vanished');
+    destroyRoom(cleanRoomId);
     res.json({ success: true });
   } catch (err) {
     console.error('[VANISH ERROR]', err);
@@ -160,7 +172,8 @@ app.post('/api/rooms/vanish', (req, res) => {
 // File upload
 app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
   try {
-    const room = rooms.get(req.params.roomId);
+    const cleanRoomId = String(req.params.roomId).trim();
+    const room = rooms.get(cleanRoomId);
     if (!room) return res.status(404).json({ error: 'Room not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -173,7 +186,7 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
     };
 
     room.files.push(fileData);
-    io.to(req.params.roomId).emit('file_uploaded', fileData);
+    io.to(cleanRoomId).emit('file_uploaded', fileData);
     res.json(fileData);
   } catch (err) {
     console.error('[UPLOAD ERROR]', err);
@@ -186,41 +199,60 @@ io.on('connection', (socket) => {
   console.log(`[SOCKET CONNECTED] ${socket.id}`);
 
   socket.on('join_room', ({ roomId, password }) => {
-    const room = rooms.get(roomId);
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
     
     if (!room) {
+      console.log(`[JOIN FAILED] Room not found: ${cleanRoomId}`);
       socket.emit('error', 'Room not found');
       return;
     }
     
     if (room.password !== password) {
-      socket.emit('error', 'Invalid password');
+      console.log(`[JOIN FAILED] Invalid password for room: ${cleanRoomId}`);
+      socket.emit('error', 'Invalid room key or password');
       return;
     }
 
     // Join room
-    socket.join(roomId);
+    socket.join(cleanRoomId);
     room.participants.add(socket.id);
-    socketToRoom.set(socket.id, roomId);
+    socketToRoom.set(socket.id, cleanRoomId);
 
-    console.log(`[JOINED] Socket ${socket.id} joined room ${roomId} (${room.participants.size} users)`);
+    console.log(`[JOINED] Socket ${socket.id} joined room ${cleanRoomId} (${room.participants.size} users)`);
     
-    // Send join confirmation
+    // Send join confirmation with full room data
     socket.emit('join_success', {
       expiresAt: room.expiresAt,
-      topic: room.topic
+      topic: room.topic,
+      participantCount: room.participants.size
     });
     
     // Send history
     socket.emit('chat_history', room.messages);
     room.files.forEach(file => socket.emit('file_uploaded', file));
     
-    // Notify others
-    io.to(roomId).emit('participant_joined', { count: room.participants.size });
+    // Send system message that user joined
+    const joinMessage = {
+      id: uuidv4(),
+      text: 'A participant joined the room',
+      timestamp: Date.now(),
+      type: 'system',
+      sender: 'system'
+    };
+    room.messages.push(joinMessage);
+    socket.broadcast.to(cleanRoomId).emit('new_message', joinMessage);
+    
+    // Notify others about participant count change
+    io.to(cleanRoomId).emit('participant_joined', { 
+      count: room.participants.size,
+      message: 'Participant joined'
+    });
   });
 
   socket.on('send_message', ({ roomId, message }) => {
-    const room = rooms.get(roomId);
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
     if (!room || !message?.trim()) return;
 
     const msg = {
@@ -230,7 +262,7 @@ io.on('connection', (socket) => {
       sender: socket.id
     };
     room.messages.push(msg);
-    io.to(roomId).emit('new_message', msg);
+    io.to(cleanRoomId).emit('new_message', msg);
   });
 
   socket.on('disconnect', () => {
@@ -238,8 +270,23 @@ io.on('connection', (socket) => {
     if (roomId) {
       const room = rooms.get(roomId);
       if (room) {
+        // Send system message that user left
+        const leaveMessage = {
+          id: uuidv4(),
+          text: 'A participant left the room',
+          timestamp: Date.now(),
+          type: 'system',
+          sender: 'system'
+        };
+        room.messages.push(leaveMessage);
+        io.to(roomId).emit('new_message', leaveMessage);
+        
+        // Update participant count
         room.participants.delete(socket.id);
-        io.to(roomId).emit('participant_left', { count: room.participants.size });
+        io.to(roomId).emit('participant_left', { 
+          count: room.participants.size,
+          message: 'Participant left'
+        });
       }
       socketToRoom.delete(socket.id);
     }
@@ -251,6 +298,18 @@ io.on('connection', (socket) => {
 function destroyRoom(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
+
+  // Send final system message
+  const vanishMessage = {
+    id: uuidv4(),
+    text: 'Room has been destroyed',
+    timestamp: Date.now(),
+    type: 'system',
+    sender: 'system'
+  };
+  room.messages.push(vanishMessage);
+  io.to(roomId).emit('new_message', vanishMessage);
+  io.to(roomId).emit('room_vanished');
 
   // Clean up files
   room.files.forEach(file => {
@@ -278,7 +337,6 @@ setInterval(() => {
   for (const [id, room] of rooms) {
     if (room.expiresAt <= now) {
       console.log(`[CLEANUP EXPIRED] ${id}`);
-      io.to(id).emit('room_vanished');
       destroyRoom(id);
     }
   }
@@ -297,8 +355,29 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 process.on('SIGTERM', () => {
   console.log('[SHUTDOWN] Cleaning up...');
   for (const [id] of rooms) {
-    io.to(id).emit('room_vanished');
     destroyRoom(id);
   }
   httpServer.close(() => process.exit(0));
 });
+
+socket.on('join_success', (data) => {
+  expiresAt = data.expiresAt; // Use this for countdown
+  document.getElementById('roomTopic').textContent = data.topic || 'Untitled Session';
+  updateParticipants(data.participantCount);
+  updateTimer(); // Start your countdown
+});
+
+function addMessage(msg) {
+  const el = document.createElement('div');
+  
+  if (msg.type === 'system') {
+    el.className = 'system-message';
+    el.textContent = msg.text;
+  } else {
+    el.className = `message ${msg.sender === myId ? 'own' : 'other'}`;
+    // ... rest of your message rendering
+  }
+  
+  document.getElementById('messages').appendChild(el);
+  el.scrollIntoView();
+}
