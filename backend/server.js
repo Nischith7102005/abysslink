@@ -21,9 +21,6 @@ const PORT = process.env.PORT || 10000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.onrender.com';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-console.log('🔧 Environment:', NODE_ENV);
-console.log('🌐 Frontend URL:', FRONTEND_URL);
-
 // Security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -66,12 +63,12 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, `${uuidv4()}-${file.originalname}`);
+    cb(null, `${uuidv4()}-${Date.now()}.bin`);
   }
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1000 } // 50MB
+  limits: { fileSize: 50 * 1024 * 1000 }
 });
 
 // 🔐 Hash password with SHA-256
@@ -105,12 +102,8 @@ app.post('/api/rooms/create', (req, res) => {
       participants: new Set()
     });
 
-    const timer = setTimeout(() => {
-      console.log(`[AUTO-EXPIRE] Room ${roomId}`);
-      destroyRoom(roomId);
-    }, 24 * 60 * 60 * 1000);
+    const timer = setTimeout(() => destroyRoom(roomId), 24 * 60 * 60 * 1000);
     roomTimers.set(roomId, timer);
-
     console.log(`[ROOM CREATED] ${roomId}`);
     res.json({ roomId, expiresAt, topic });
   } catch (err) {
@@ -131,11 +124,7 @@ app.post('/api/rooms/validate', (req, res) => {
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
 
-    res.json({
-      roomId: room.id,
-      topic: room.topic,
-      expiresAt: room.expiresAt
-    });
+    res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
   } catch (err) {
     console.error('[VALIDATE ERROR]', err);
     res.status(500).json({ error: 'Validation failed' });
@@ -163,18 +152,22 @@ app.post('/api/rooms/vanish', (req, res) => {
   }
 });
 
-app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
+// ✅ Accept encrypted file + encrypted metadata
+app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res) => {
   try {
     const cleanRoomId = String(req.params.roomId).trim();
     const room = rooms.get(cleanRoomId);
-    if (!room) return res.status(404).json({ error: 'Room not found' });
+    if (!room) return res.status(401).json({ error: 'Room not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const encryptedName = JSON.parse(req.body.encryptedName);
+    const originalSize = parseInt(req.body.originalSize);
 
     const fileData = {
       id: uuidv4(),
-      name: req.file.originalname,
+      encryptedName,
+      originalSize,
       url: `/uploads/${req.file.filename}`,
-      size: req.file.size,
       uploadedAt: Date.now()
     };
 
@@ -190,8 +183,6 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
 // ==================== SOCKET.IO ====================
 
 io.on('connection', (socket) => {
-  console.log(`[SOCKET CONNECTED] ${socket.id}`);
-
   socket.on('join_room', ({ roomId, password }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
@@ -230,6 +221,7 @@ io.on('connection', (socket) => {
     });
   });
 
+  // ✅ Accept E2EE messages
   socket.on('send_message', ({ roomId, encrypted, message }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
@@ -239,8 +231,7 @@ io.on('connection', (socket) => {
     if (encrypted && encrypted.iv && encrypted.ciphertext) {
       payload = { encrypted };
     } else if (message?.trim()) {
-      // Legacy fallback — will be removed in future
-      payload = { text: message.trim() };
+      payload = { text: message.trim() }; // legacy fallback
     } else {
       return;
     }
@@ -278,7 +269,6 @@ io.on('connection', (socket) => {
       }
       socketToRoom.delete(socket.id);
     }
-    console.log(`[SOCKET DISCONNECTED] ${socket.id}`);
   });
 });
 
@@ -315,16 +305,14 @@ function destroyRoom(roomId) {
   console.log(`[ROOM DESTROYED] ${roomId}`);
 }
 
-// Safety net cleanup
 setInterval(() => {
   const now = Date.now();
   for (const [id, room] of rooms) {
     if (room.expiresAt <= now) {
-      console.log(`[CLEANUP EXPIRED] ${id}`);
       destroyRoom(id);
     }
   }
-}, 60 * 60 * 1000); // hourly
+}, 60 * 60 * 1000);
 
 // ==================== START SERVER ====================
 
