@@ -165,6 +165,7 @@ color: var(--text-dim);
 text-transform: uppercase;
 letter-spacing: 0.1em;
 max-width: 100%;
+text-align: center;
 }
 .input-area {
 padding: 1.5rem 2rem;
@@ -263,6 +264,22 @@ margin-top: auto;
 padding-top: 2rem;
 border-top: 1px solid var(--border);
 }
+.error-message {
+position: fixed;
+top: 20px;
+right: 20px;
+background: var(--danger);
+color: white;
+padding: 1rem 2rem;
+border-radius: 4px;
+font-family: 'Space Mono', monospace;
+z-index: 1000;
+animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+from { transform: translateX(100%); opacity: 0; }
+to { transform: translateX(0); opacity: 1; }
+}
 @media (max-width: 968px) {
 .sidebar { display: none; }
 .message { max-width: 80%; }
@@ -325,7 +342,8 @@ border-top: 1px solid var(--border);
 
 <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
 <script>
-const API_URL = 'https://abysslink.onrender.com';
+const API_URL = window.location.origin;
+const SOCKET_URL = API_URL;
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('room');
 const password = urlParams.get('password');
@@ -341,21 +359,54 @@ let myId = null;
 let expiresAt = null;
 let timer = null;
 
+function showError(message) {
+const errorDiv = document.createElement('div');
+errorDiv.className = 'error-message';
+errorDiv.textContent = message;
+errorDiv.onclick = () => errorDiv.remove();
+document.body.appendChild(errorDiv);
+setTimeout(() => errorDiv.remove(), 5000);
+}
+
 function initialize() {
 document.getElementById('loadingScreen').style.display = 'none';
 document.getElementById('chatApp').style.display = 'flex';
 document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
 document.getElementById('roomKey').textContent = roomId.substring(0, 8).toUpperCase();
 
-socket = io(API_URL);
+// Initialize Socket.IO
+socket = io(SOCKET_URL, {
+transports: ['websocket', 'polling'],
+reconnection: true,
+reconnectionAttempts: 5,
+reconnectionDelay: 1000
+});
+
 socket.on('connect', () => {
+console.log('Connected to server');
 myId = socket.id;
+// Join room with password
 socket.emit('join_room', { roomId, password });
 });
 
+socket.on('connect_error', (error) => {
+console.error('Connection error:', error);
+showError('Failed to connect to chat server');
+});
+
 socket.on('join_success', (data) => {
+console.log('Successfully joined room:', data);
 expiresAt = data.expiresAt;
+updateParticipants(data.participantCount || 1);
 updateTimer();
+});
+
+socket.on('error', (message) => {
+console.error('Socket error:', message);
+showError(message);
+if (message.includes('password') || message.includes('found')) {
+cleanupAndRedirect();
+}
 });
 
 socket.on('new_message', (msg) => {
@@ -364,30 +415,61 @@ addMessage(msg);
 
 socket.on('participant_joined', (data) => {
 updateParticipants(data.count);
+if (data.message) {
+const systemMsg = {
+id: Date.now().toString(),
+text: data.message,
+timestamp: Date.now(),
+type: 'system'
+};
+addMessage(systemMsg);
+}
 });
 
 socket.on('participant_left', (data) => {
 updateParticipants(data.count);
+if (data.message) {
+const systemMsg = {
+id: Date.now().toString(),
+text: data.message,
+timestamp: Date.now(),
+type: 'system'
+};
+addMessage(systemMsg);
+}
 });
 
 socket.on('room_vanished', () => {
-alert('Room has been destroyed.');
+showError('Room has been destroyed.');
 cleanupAndRedirect();
 });
 
-socket.on('error', (msg) => {
-alert('Error: ' + msg);
-cleanupAndRedirect();
+socket.on('file_uploaded', (fileData) => {
+const msg = {
+id: fileData.id,
+text: `📎 ${fileData.name} (${formatFileSize(fileData.size)})`,
+timestamp: fileData.uploadedAt,
+sender: 'system',
+isFile: true
+};
+addMessage(msg);
 });
 }
 
 function addMessage(msg) {
 const el = document.createElement('div');
-el.className = `message ${msg.sender === myId ? 'own' : 'other'}`;
+el.className = msg.type === 'system' ? 'system-message' : 
+              (msg.sender === myId ? 'message own' : 'message other');
+              
+if (msg.type === 'system') {
+el.textContent = msg.text;
+} else {
 const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 el.innerHTML = `<div class="message-text">${escape(msg.text)}</div><div class="message-time">${time}</div>`;
+}
+
 document.getElementById('messages').appendChild(el);
-el.scrollIntoView();
+el.scrollIntoView({ behavior: 'smooth' });
 }
 
 function updateParticipants(count) {
@@ -413,12 +495,20 @@ alert('File sharing is disabled in this version for simplicity.');
 document.getElementById('fileInput').value = '';
 }
 
+function formatFileSize(bytes) {
+if (bytes === 0) return '0 Bytes';
+const k = 1024;
+const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+const i = Math.floor(Math.log(bytes) / Math.log(k));
+return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 function updateTimer() {
 if (!expiresAt) return;
 const now = Date.now();
 const remaining = expiresAt - now;
 if (remaining <= 0) {
-alert('Session expired.');
+showError('Session expired.');
 cleanupAndRedirect();
 return;
 }
@@ -436,9 +526,24 @@ timer = setTimeout(updateTimer, 1000);
 
 function confirmVanish() {
 if (confirm('Destroy this room for everyone? This cannot be undone.')) {
-socket.emit('vanish_room', { roomId, password });
-alert('Room destruction initiated.');
+fetch(`${API_URL}/api/rooms/vanish`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ roomId, password })
+})
+.then(res => res.json())
+.then(data => {
+if (data.success) {
+showError('Room destruction initiated.');
 cleanupAndRedirect();
+} else {
+showError('Failed to vanish room');
+}
+})
+.catch(err => {
+console.error('Vanish error:', err);
+showError('Failed to vanish room');
+});
 }
 }
 
@@ -458,10 +563,19 @@ function escape(str) {
 return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
 }
 
+// Handle page visibility for timer accuracy
+document.addEventListener('visibilitychange', () => {
+if (!document.hidden && expiresAt) {
+// Recalculate timer when tab becomes visible
+updateTimer();
+}
+});
+
 window.addEventListener('beforeunload', () => {
 if (socket) socket.disconnect();
 });
 
+// Start initialization
 initialize();
 </script>
 </body>
