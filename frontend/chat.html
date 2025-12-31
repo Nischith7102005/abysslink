@@ -323,7 +323,7 @@ to { transform: translateX(0); opacity: 1; }
 <h2 id="roomTopic">Untitled Session</h2>
 <div class="room-meta">
 Key: <span id="roomKeyDisplay"></span>
-<button class="copy-btn" onclick="copyFullKey()">Copy Full</button>
+<button class="copy-btn" onclick="copyFullKey(event)">Copy Full</button>
 </div>
 </div>
 <div class="header-right">
@@ -384,7 +384,8 @@ function showError(message) {
   setTimeout(() => errorDiv.remove(), 5000);
 }
 
-function copyFullKey() {
+// ✅ FIXED: Properly receives 'event' parameter
+function copyFullKey(event) {
   navigator.clipboard.writeText(roomId).then(() => {
     const btn = event.target;
     const originalText = btn.textContent;
@@ -393,6 +394,7 @@ function copyFullKey() {
       btn.textContent = originalText;
     }, 2000);
   }).catch(err => {
+    console.error('Copy failed:', err);
     showError('Failed to copy key');
   });
 }
@@ -401,6 +403,7 @@ function initialize() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('chatApp').style.display = 'flex';
   document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
+  // ✅ Use roomKeyDisplay instead of roomKey
   document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase();
 
   socket = io(SOCKET_URL, {
