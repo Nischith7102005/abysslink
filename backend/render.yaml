@@ -1,4 +1,3 @@
-# backend/render.yaml
 services:
 - type: web
   name: abysslink-backend
@@ -13,6 +12,6 @@ services:
   - key: NODE_ENV
     value: production
   - key: FRONTEND_URL
-    value: "https://abysslink.onrender.com"  # ← or your custom domain
+    value: "https://abysslink.onrender.com"
   healthCheckPath: /api/health
   autoDeploy: true
