@@ -1,839 +1,483 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Active Rooms — AbyssLink</title>
-    
-    <!-- FONTS: Manrope (Clean/Modern) & Space Mono (Technical) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-
-    <style>
-        :root {
-            --bg: #050505;
-            --surface: #0a0a0a;
-            --text-main: #ffffff;
-            --text-dim: #888888;
-            --border: #222222;
-            --grid-line: rgba(255, 255, 255, 0.03);
-            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            font-family: 'Manrope', sans-serif;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            cursor: default;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* NAVIGATION */
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 2rem 0;
-            margin-bottom: 3rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .brand {
-            font-family: 'Space Mono', monospace;
-            font-weight: 700;
-            letter-spacing: -0.05em;
-            text-transform: uppercase;
-            font-size: 1.2rem;
-        }
-
-        .nav-items a {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
-            color: var(--text-main);
-            text-decoration: none;
-            margin-left: 2rem;
-            text-transform: uppercase;
-            opacity: 0.6;
-            transition: opacity 0.3s;
-            cursor: pointer;
-        }
-
-        .nav-items a:hover { opacity: 1; }
-
-        /* HEADER */
-        header {
-            margin-bottom: 3rem;
-            animation: fadeInDown 0.6s ease;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 200;
-            line-height: 0.9;
-            letter-spacing: -0.04em;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            color: var(--text-dim);
-            font-size: clamp(1rem, 2vw, 1.2rem);
-            font-weight: 300;
-        }
-
-        /* ACTION BAR */
-        .action-bar {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 3rem;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-
-        .action-left {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 1rem 2rem;
-            border: none;
-            cursor: pointer;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            transition: all 0.3s var(--ease-out);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .btn-primary {
-            background: var(--text-main);
-            color: var(--bg);
-        }
-
-        .btn-primary:hover {
-            transform: translateX(5px);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-main);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--text-main);
-            color: var(--bg);
-            transform: scale(1.05);
-        }
-
-        .btn-danger {
-            background: transparent;
-            color: #ff6b6b;
-            border: 1px solid #ff6b6b;
-        }
-
-        .btn-danger:hover {
-            background: #ff6b6b;
-            color: var(--bg);
-            transform: scale(1.05);
-        }
-
-        /* ROOMS GRID */
-        .rooms-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 2rem;
-            animation: fadeIn 0.6s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .room-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 2rem;
-            transition: all 0.4s var(--ease-out);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .room-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
-            transition: left 0.5s;
-        }
-
-        .room-card:hover::before {
-            left: 100%;
-        }
-
-        .room-card:hover {
-            border-color: var(--text-main);
-            transform: translateY(-5px);
-        }
-
-        .room-header {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .room-topic {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            background: transparent;
-            border: 1px solid var(--border);
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-family: 'Space Mono', monospace;
-        }
-
-        .room-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .timer {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border);
-            font-weight: 600;
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            font-family: 'Space Mono', monospace;
-            text-transform: uppercase;
-        }
-
-        .timer.critical {
-            border-color: #ff6b6b;
-            color: #ff6b6b;
-        }
-
-        .room-actions {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn-enter {
-            flex: 1;
-            background: var(--text-main);
-            color: var(--bg);
-            padding: 0.8rem;
-            text-align: center;
-            justify-content: center;
-        }
-
-        .btn-vanish {
-            background: transparent;
-            color: #ff6b6b;
-            border: 1px solid #ff6b6b;
-            padding: 0.8rem 1.5rem;
-            white-space: nowrap;
-        }
-
-        .btn-vanish:hover {
-            background: #ff6b6b;
-            color: var(--bg);
-            transform: translateY(-2px);
-        }
-
-        /* EMPTY STATE */
-        .empty-state {
-            text-align: center;
-            padding: 5rem 2rem;
-            animation: fadeIn 0.6s ease;
-        }
-
-        .empty-icon {
-            font-size: 6rem;
-            margin-bottom: 2rem;
-            opacity: 0.2;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        .empty-state h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            color: var(--text-dim);
-            font-weight: 200;
-        }
-
-        .empty-state p {
-            color: var(--text-dim);
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-        }
-
-        /* MODAL */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .modal-content {
-            background: var(--surface);
-            padding: 3rem;
-            max-width: 500px;
-            width: 90%;
-            border: 1px solid var(--border);
-            animation: slideUp 0.4s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal h2 {
-            color: var(--text-main);
-            margin-bottom: 2rem;
-            font-size: 2rem;
-            font-weight: 200;
-            font-family: 'Space Mono', monospace;
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            font-family: 'Space Mono', monospace;
-            text-transform: uppercase;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 1rem;
-            border: 1px solid var(--border);
-            background: var(--bg);
-            color: var(--text-main);
-            font-size: 1rem;
-            font-family: 'Manrope', sans-serif;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--text-main);
-            background: var(--surface);
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .warning {
-            color: #ff6b6b;
-            margin-bottom: 2rem;
-            font-size: 0.85rem;
-            padding: 1rem;
-            background: rgba(255, 0, 0, 0.05);
-            border: 1px solid rgba(255, 0, 0, 0.2);
-            font-family: 'Space Mono', monospace;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .rooms-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .action-bar {
-                flex-direction: column;
-            }
-
-            .action-left {
-                width: 100%;
-            }
-
-            .room-actions {
-                flex-direction: column;
-            }
-
-            .modal-actions {
-                flex-direction: column;
-            }
-
-            nav {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: flex-start;
-            }
-
-            .nav-items {
-                display: flex;
-                flex-wrap: wrap;
-            }
-
-            .nav-items a {
-                margin-left: 0;
-                margin-right: 1rem;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Active Rooms — AbyssLink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg: #050505;
+--surface: #0a0a0a;
+--text-main: #ffffff;
+--text-dim: #888888;
+--border: #222222;
+--grid-line: rgba(255, 255, 255, 0.03);
+--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+body {
+background-color: var(--bg);
+color: var(--text-main);
+font-family: 'Manrope', sans-serif;
+overflow-x: hidden;
+-webkit-font-smoothing: antialiased;
+cursor: default;
+min-height: 100vh;
+padding: 2rem;
+}
+.container {
+max-width: 1400px;
+margin: 0 auto;
+position: relative;
+z-index: 10;
+}
+nav {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 2rem 0;
+margin-bottom: 3rem;
+border-bottom: 1px solid var(--border);
+}
+.brand {
+font-family: 'Space Mono', monospace;
+font-weight: 700;
+letter-spacing: -0.05em;
+text-transform: uppercase;
+font-size: 1.2rem;
+}
+.nav-items a {
+font-family: 'Space Mono', monospace;
+font-size: 0.8rem;
+color: var(--text-main);
+text-decoration: none;
+margin-left: 2rem;
+text-transform: uppercase;
+opacity: 0.6;
+transition: opacity 0.3s;
+cursor: pointer;
+}
+.nav-items a:hover { opacity: 1; }
+header {
+margin-bottom: 3rem;
+animation: fadeInDown 0.6s ease;
+}
+@keyframes fadeInDown {
+from { opacity: 0; transform: translateY(-30px); }
+to { opacity: 1; transform: translateY(0); }
+}
+h1 {
+font-size: clamp(2.5rem, 5vw, 4rem);
+font-weight: 200;
+line-height: 0.9;
+letter-spacing: -0.04em;
+margin-bottom: 0.5rem;
+}
+.subtitle {
+color: var(--text-dim);
+font-size: clamp(1rem, 2vw, 1.2rem);
+font-weight: 300;
+}
+.action-bar {
+display: flex;
+gap: 1rem;
+margin-bottom: 3rem;
+flex-wrap: wrap;
+justify-content: space-between;
+}
+.action-left {
+display: flex;
+gap: 1rem;
+flex-wrap: wrap;
+}
+.btn {
+padding: 1rem 2rem;
+border: none;
+cursor: pointer;
+font-family: 'Space Mono', monospace;
+font-size: 0.8rem;
+text-transform: uppercase;
+font-weight: 700;
+transition: all 0.3s var(--ease-out);
+text-decoration: none;
+display: inline-flex;
+align-items: center;
+}
+.btn-primary {
+background: var(--text-main);
+color: var(--bg);
+}
+.btn-primary:hover {
+transform: translateX(5px);
+}
+.btn-secondary {
+background: transparent;
+color: var(--text-main);
+border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+background: var(--text-main);
+color: var(--bg);
+transform: scale(1.05);
+}
+.btn-danger {
+background: transparent;
+color: #ff6b6b;
+border: 1px solid #ff6b6b;
+}
+.btn-danger:hover {
+background: #ff6b6b;
+color: var(--bg);
+transform: scale(1.05);
+}
+.rooms-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+gap: 2rem;
+animation: fadeIn 0.6s ease;
+}
+@keyframes fadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+.room-card {
+background: var(--surface);
+border: 1px solid var(--border);
+padding: 2rem;
+transition: all 0.4s var(--ease-out);
+position: relative;
+overflow: hidden;
+}
+.room-card::before {
+content: '';
+position: absolute;
+top: 0;
+left: -100%;
+width: 100%;
+height: 100%;
+background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+transition: left 0.5s;
+}
+.room-card:hover::before {
+left: 100%;
+}
+.room-card:hover {
+border-color: var(--text-main);
+transform: translateY(-5px);
+}
+.room-header {
+margin-bottom: 1.5rem;
+padding-bottom: 1rem;
+border-bottom: 1px solid var(--border);
+}
+.room-topic {
+font-size: 1.5rem;
+font-weight: 600;
+color: var(--text-main);
+margin-bottom: 0.5rem;
+letter-spacing: -0.02em;
+}
+.room-meta {
+display: flex;
+flex-direction: column;
+gap: 0.8rem;
+margin-bottom: 1.5rem;
+}
+.timer {
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.5rem 1rem;
+border: 1px solid var(--border);
+font-weight: 600;
+color: var(--text-dim);
+font-size: 0.8rem;
+font-family: 'Space Mono', monospace;
+text-transform: uppercase;
+}
+.timer.critical {
+border-color: #ff6b6b;
+color: #ff6b6b;
+}
+.room-actions {
+display: flex;
+gap: 1rem;
+}
+.btn-enter {
+flex: 1;
+background: var(--text-main);
+color: var(--bg);
+padding: 0.8rem;
+text-align: center;
+justify-content: center;
+}
+.empty-state {
+text-align: center;
+padding: 5rem 2rem;
+animation: fadeIn 0.6s ease;
+}
+.empty-icon {
+font-size: 6rem;
+margin-bottom: 2rem;
+opacity: 0.2;
+animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(-20px); }
+}
+.empty-state h2 {
+font-size: 2rem;
+margin-bottom: 1rem;
+color: var(--text-dim);
+font-weight: 200;
+}
+.empty-state p {
+color: var(--text-dim);
+margin-bottom: 2rem;
+font-size: 1.1rem;
+}
+.modal {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0, 0, 0, 0.95);
+justify-content: center;
+align-items: center;
+z-index: 1000;
+animation: fadeIn 0.3s ease;
+backdrop-filter: blur(10px);
+}
+.modal-content {
+background: var(--surface);
+padding: 3rem;
+max-width: 500px;
+width: 90%;
+border: 1px solid var(--border);
+animation: slideUp 0.4s ease;
+}
+@keyframes slideUp {
+from { transform: translateY(50px); opacity: 0; }
+to { transform: translateY(0); opacity: 1; }
+}
+.modal h2 {
+color: var(--text-main);
+margin-bottom: 2rem;
+font-size: 2rem;
+font-weight: 200;
+font-family: 'Space Mono', monospace;
+text-transform: uppercase;
+letter-spacing: -0.02em;
+}
+.form-group {
+margin-bottom: 1.5rem;
+}
+.form-group label {
+display: block;
+margin-bottom: 0.5rem;
+color: var(--text-dim);
+font-size: 0.8rem;
+font-family: 'Space Mono', monospace;
+text-transform: uppercase;
+}
+.form-group input {
+width: 100%;
+padding: 1rem;
+border: 1px solid var(--border);
+background: var(--bg);
+color: var(--text-main);
+font-size: 1rem;
+font-family: 'Manrope', sans-serif;
+transition: all 0.3s ease;
+}
+.form-group input:focus {
+outline: none;
+border-color: var(--text-main);
+background: var(--surface);
+}
+.modal-actions {
+display: flex;
+gap: 1rem;
+margin-top: 2rem;
+}
+.warning {
+color: #ff6b6b;
+margin-bottom: 2rem;
+font-size: 0.85rem;
+padding: 1rem;
+background: rgba(255, 0, 0, 0.05);
+border: 1px solid rgba(255, 0, 0, 0.2);
+font-family: 'Space Mono', monospace;
+}
+@media (max-width: 768px) {
+.rooms-grid { grid-template-columns: 1fr; }
+.action-bar { flex-direction: column; }
+.action-left { width: 100%; }
+.room-actions { flex-direction: column; }
+.modal-actions { flex-direction: column; }
+nav { flex-direction: column; gap: 1rem; align-items: flex-start; }
+.nav-items { display: flex; flex-wrap: wrap; }
+.nav-items a { margin-left: 0; margin-right: 1rem; }
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <nav>
-            <div class="brand">AbyssLink</div>
-            <div class="nav-items">
-                <a href="landing.html">Home</a>
-                <a href="landing.html#infrastructure">Infrastructure</a>
-                <a href="landing.html#security">Security</a>
-            </div>
-        </nav>
+<div class="container">
+<nav>
+<div class="brand">AbyssLink</div>
+<div class="nav-items">
+<a href="landing.html">Home</a>
+</div>
+</nav>
+<header>
+<h1>Active Rooms</h1>
+<p class="subtitle">Your temporary conversations</p>
+</header>
+<div class="action-bar">
+<div class="action-left">
+<a href="landing.html" class="btn btn-secondary">← Back</a>
+<button class="btn btn-primary" onclick="openCreateModal()">+ Create Room</button>
+<button class="btn btn-secondary" onclick="openJoinModal()">Join Room</button>
+</div>
+</div>
+<div id="roomsContainer" class="empty-state">
+<div class="empty-icon">👻</div>
+<h2>No Rooms Yet</h2>
+<p>Create or join a room to begin.</p>
+</div>
+</div>
 
-        <header>
-            <h1>Active Rooms</h1>
-            <p class="subtitle">Your temporary conversations</p>
-        </header>
+<!-- Create Modal -->
+<div id="createModal" class="modal">
+<div class="modal-content">
+<h2>Create Session</h2>
+<div class="warning">
+ Save the Room Key and Password. Share both with participants.
+</div>
+<form onsubmit="handleCreateRoom(event)">
+<div class="form-group">
+<label>Room Topic</label>
+<input type="text" id="topicInput" required placeholder="e.g. Project Alpha">
+</div>
+<div class="form-group">
+<label>Password (min 8 chars)</label>
+<input type="password" id="passwordInput" required minlength="8" placeholder="Access passphrase">
+</div>
+<div class="modal-actions">
+<button type="submit" class="btn btn-primary" style="flex: 1;">Create & Enter</button>
+<button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
+</div>
+</form>
+</div>
+</div>
 
-        <div class="action-bar">
-            <div class="action-left">
-                <a href="landing.html" class="btn btn-secondary">← Back to Home</a>
-                <button class="btn btn-primary" onclick="openJoinModal()">+ Join Room</button>
-            </div>
-            <button class="btn btn-danger" onclick="confirmVanishAll()" id="vanishAllBtn" style="display: none;">
-                🔥 Vanish All
-            </button>
-        </div>
+<!-- Join Modal -->
+<div id="joinModal" class="modal">
+<div class="modal-content">
+<h2>Join Session</h2>
+<form onsubmit="handleJoinRoom(event)">
+<div class="form-group">
+<label>Room Key</label>
+<input type="text" id="joinRoomKey" required placeholder="Paste room key">
+</div>
+<div class="form-group">
+<label>Password</label>
+<input type="password" id="joinPassword" required placeholder="Access passphrase">
+</div>
+<div class="modal-actions">
+<button type="submit" class="btn btn-primary" style="flex: 1;">Join Room</button>
+<button type="button" class="btn btn-secondary" onclick="closeJoinModal()" style="flex: 1;">Cancel</button>
+</div>
+</form>
+</div>
+</div>
 
-        <div id="roomsContainer"></div>
-    </div>
+<script>
+const API_URL = 'https://abysslink.onrender.com';
 
-    <!-- Join Room Modal -->
-    <div id="joinModal" class="modal">
-        <div class="modal-content">
-            <h2>Join Room</h2>
-            <form onsubmit="handleJoinRoom(event)">
-                <div class="form-group">
-                    <label>Room ID</label>
-                    <input type="text" id="joinRoomId" required placeholder="Enter room identifier">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="joinPassword" required placeholder="Enter access key">
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Join Room</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeJoinModal()" style="flex: 1;">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
+function openCreateModal() {
+document.getElementById('createModal').style.display = 'flex';
+document.getElementById('topicInput').focus();
+}
+function closeCreateModal() {
+document.getElementById('createModal').style.display = 'none';
+document.getElementById('topicInput').value = '';
+document.getElementById('passwordInput').value = '';
+}
+function openJoinModal() {
+document.getElementById('joinModal').style.display = 'flex';
+document.getElementById('joinRoomKey').focus();
+}
+function closeJoinModal() {
+document.getElementById('joinModal').style.display = 'none';
+document.getElementById('joinRoomKey').value = '';
+document.getElementById('joinPassword').value = '';
+}
 
-    <!-- Vanish All Confirmation Modal -->
-    <div id="vanishAllModal" class="modal">
-        <div class="modal-content">
-            <h2>Vanish All Rooms</h2>
-            <div class="warning">
-                ⚠️ CRITICAL ACTION: This will permanently destroy ALL rooms you have creator access to and remove all room records from your device.<br><br>
-                This action cannot be undone.
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-danger" onclick="vanishAllRooms()" style="flex: 1;">
-                    Confirm Vanish All
-                </button>
-                <button type="button" class="btn btn-secondary" onclick="closeVanishAllModal()" style="flex: 1;">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
+async function handleCreateRoom(e) {
+e.preventDefault();
+const topic = document.getElementById('topicInput').value.trim();
+const password = document.getElementById('passwordInput').value;
+if (password.length < 8) {
+alert('Password must be at least 8 characters');
+return;
+}
+try {
+const res = await fetch(`${API_URL}/api/rooms/create`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ topic, password })
+});
+const data = await res.json();
+if (!res.ok) throw new Error(data.error || 'Create failed');
+closeCreateModal();
+// Redirect with room key
+window.location.href = `chat.html?room=${data.roomId}&password=${encodeURIComponent(password)}&topic=${encodeURIComponent(topic)}`;
+} catch (err) {
+alert('Failed to create room. Check backend.');
+console.error(err);
+}
+}
 
-    <script>
-        // Configuration - Backend URL
-        const API_URL = 'https://abysslink.onrender.com';
+async function handleJoinRoom(e) {
+e.preventDefault();
+const roomKey = document.getElementById('joinRoomKey').value.trim();
+const password = document.getElementById('joinPassword').value;
+if (!roomKey || !password) return;
+try {
+const res = await fetch(`${API_URL}/api/rooms/validate`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ roomId: roomKey, password })
+});
+if (!res.ok) {
+alert('Invalid room key or password');
+return;
+}
+closeJoinModal();
+window.location.href = `chat.html?room=${roomKey}&password=${encodeURIComponent(password)}`;
+} catch (err) {
+alert('Connection error');
+console.error(err);
+}
+}
 
-        // Load and display rooms from localStorage only
-        function loadRooms() {
-            const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-            const container = document.getElementById('roomsContainer');
-            const vanishAllBtn = document.getElementById('vanishAllBtn');
-            const now = Date.now();
-
-            // Filter expired rooms
-            const activeRooms = rooms.filter(room => room.expiresAt > now);
-            
-            // Update localStorage if any rooms expired
-            if (activeRooms.length !== rooms.length) {
-                localStorage.setItem('abysslink_rooms', JSON.stringify(activeRooms));
-            }
-
-            // Show/hide Vanish All button based on creator rooms
-            const creatorRooms = activeRooms.filter(room => room.isCreator && room.creatorKey);
-            if (creatorRooms.length > 0) {
-                vanishAllBtn.style.display = 'inline-flex';
-            } else {
-                vanishAllBtn.style.display = 'none';
-            }
-
-            // Show empty state if no rooms in localStorage
-            if (activeRooms.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">👻</div>
-                        <h2>No Active Rooms</h2>
-                        <p>You haven't created or joined any rooms yet</p>
-                        <a href="landing.html" class="btn btn-primary">Create Your First Room</a>
-                    </div>
-                `;
-                return;
-            }
-
-            // Create rooms grid
-            container.innerHTML = '<div class="rooms-grid"></div>';
-            const grid = container.querySelector('.rooms-grid');
-
-            activeRooms.forEach(room => {
-                const card = createRoomCard(room, now);
-                grid.appendChild(card);
-            });
-
-            // Update timers every second
-            updateTimers();
-        }
-
-        // Create room card element
-        function createRoomCard(room, now) {
-            const timeRemaining = room.expiresAt - now;
-            const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-
-            const card = document.createElement('div');
-            card.className = 'room-card';
-            card.setAttribute('data-room-id', room.roomId);
-
-            card.innerHTML = `
-                <div class="room-header">
-                    <div class="room-topic">${escapeHtml(room.topic || 'Untitled Room')}</div>
-                    <span class="badge">${room.isCreator ? 'CREATOR' : 'PARTICIPANT'}</span>
-                </div>
-                <div class="room-meta">
-                    <div class="timer ${hours === 0 && minutes < 5 ? 'critical' : ''}" data-expires="${room.expiresAt}">
-                        ⏱️ <span class="time-text">${hours}h ${minutes}m remaining</span>
-                    </div>
-                </div>
-                <div class="room-actions">
-                    <button class="btn btn-enter" onclick="enterRoom('${room.roomId}')">
-                        Enter Room →
-                    </button>
-                    ${room.isCreator && room.creatorKey ? `
-                        <button class="btn btn-vanish" onclick="confirmVanish('${room.roomId}', '${room.creatorKey}')">
-                            🔥 Vanish
-                        </button>
-                    ` : ''}
-                </div>
-            `;
-
-            return card;
-        }
-
-        // Update all timers
-        function updateTimers() {
-            const timers = document.querySelectorAll('.timer');
-            const now = Date.now();
-            let hasExpired = false;
-
-            timers.forEach(timer => {
-                const expiresAt = parseInt(timer.dataset.expires);
-                const remaining = expiresAt - now;
-
-                if (remaining <= 0) {
-                    hasExpired = true;
-                    return;
-                }
-
-                const hours = Math.floor(remaining / (1000 * 60 * 60));
-                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-
-                const timeText = timer.querySelector('.time-text');
-                if (timeText) {
-                    if (hours > 0) {
-                        timeText.textContent = `${hours}h ${minutes}m remaining`;
-                        timer.classList.remove('critical');
-                    } else if (minutes > 5) {
-                        timeText.textContent = `${minutes}m ${seconds}s remaining`;
-                        timer.classList.remove('critical');
-                    } else {
-                        timeText.textContent = `${minutes}m ${seconds}s remaining`;
-                        timer.classList.add('critical');
-                    }
-                }
-            });
-
-            if (hasExpired) {
-                loadRooms();
-            }
-        }
-
-        // Enter room
-        function enterRoom(roomId) {
-            window.location.href = `chat.html?room=${roomId}`;
-        }
-
-        // Confirm and vanish room
-        function confirmVanish(roomId, creatorKey) {
-            if (!confirm('⚠️ This will permanently destroy this room and all its contents for everyone.\n\nAre you absolutely sure?')) {
-                return;
-            }
-
-            vanishRoom(roomId, creatorKey);
-        }
-
-        // Vanish room
-        async function vanishRoom(roomId, creatorKey) {
-            try {
-                const response = await fetch(`${API_URL}/api/rooms/vanish`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId, creatorKey })
-                });
-
-                if (response.ok) {
-                    // Remove from localStorage
-                    const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-                    const filtered = rooms.filter(r => r.roomId !== roomId);
-                    localStorage.setItem('abysslink_rooms', JSON.stringify(filtered));
-                    
-                    // Reload rooms
-                    loadRooms();
-                    
-                    alert('Room vanished successfully');
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Failed to vanish room');
-                }
-            } catch (error) {
-                alert('Error vanishing room. Make sure the backend is running.');
-                console.error(error);
-            }
-        }
-
-        // Confirm vanish all
-        function confirmVanishAll() {
-            document.getElementById('vanishAllModal').style.display = 'flex';
-        }
-
-        // Close vanish all modal
-        function closeVanishAllModal() {
-            document.getElementById('vanishAllModal').style.display = 'none';
-        }
-
-        // Vanish all rooms
-        async function vanishAllRooms() {
-            const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-            const creatorRooms = rooms.filter(room => room.isCreator && room.creatorKey);
-
-            if (creatorRooms.length === 0) {
-                alert('No rooms to vanish');
-                closeVanishAllModal();
-                return;
-            }
-
-            let successCount = 0;
-            let failCount = 0;
-
-            // Vanish all creator rooms
-            for (const room of creatorRooms) {
-                try {
-                    const response = await fetch(`${API_URL}/api/rooms/vanish`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            roomId: room.roomId, 
-                            creatorKey: room.creatorKey 
-                        })
-                    });
-
-                    if (response.ok) {
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } catch (error) {
-                    console.error(`Failed to vanish room ${room.roomId}:`, error);
-                    failCount++;
-                }
-            }
-
-            // Clear all rooms from localStorage
-            localStorage.setItem('abysslink_rooms', JSON.stringify([]));
-
-            closeVanishAllModal();
-            
-            if (failCount > 0) {
-                alert(`Vanished ${successCount} room(s). ${failCount} failed to vanish from server but were removed locally.`);
-            } else {
-                alert(`Successfully vanished all ${successCount} room(s)`);
-            }
-
-            loadRooms();
-        }
-
-        // Open join modal
-        function openJoinModal() {
-            document.getElementById('joinModal').style.display = 'flex';
-            document.getElementById('joinRoomId').focus();
-        }
-
-        // Close join modal
-        function closeJoinModal() {
-            document.getElementById('joinModal').style.display = 'none';
-            document.getElementById('joinRoomId').value = '';
-            document.getElementById('joinPassword').value = '';
-        }
-
-        // Handle join room
-        async function handleJoinRoom(event) {
-            event.preventDefault();
-
-            const roomId = document.getElementById('joinRoomId').value.trim();
-            const password = document.getElementById('joinPassword').value;
-
-            try {
-                const response = await fetch(`${API_URL}/api/rooms/join`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId, password })
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    alert(error.error || 'Failed to join room');
-                    return;
-                }
-
-                const data = await response.json();
-
-                // Add to localStorage
-                const rooms = JSON.parse(localStorage.getItem('abysslink_rooms') || '[]');
-                
-                // Check if already exists
-                if (!rooms.find(r => r.roomId === roomId)) {
-                    rooms.push({
-                        roomId: data.roomId,
-                        topic: data.topic,
-                        password: password,
-                        expiresAt: data.expiresAt,
-                        isCreator: false
-                    });
-                    localStorage.setItem('abysslink_rooms', JSON.stringify(rooms));
-                }
-
-                closeJoinModal();
-                window.location.href = `chat.html?room=${roomId}`;
-
-            } catch (error) {
-                alert('Error joining room. Make sure the backend is running.');
-                console.error(error);
-            }
-        }
-
-        // Utility: Escape HTML
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Close modals on Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeJoinModal();
-                closeVanishAllModal();
-            }
-        });
-
-        // Load rooms on page load
-        loadRooms();
-
-        // Update timers every second
-        setInterval(updateTimers, 1000);
-    </script>
+document.addEventListener('keydown', (e) => {
+if (e.key === 'Escape') {
+closeCreateModal();
+closeJoinModal();
+}
+});
+</script>
 </body>
 </html>
