@@ -1,4 +1,4 @@
- import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -93,7 +93,7 @@ app.post('/api/rooms/create', (req, res) => {
       messages: [],
       files: [],
       participants: new Set(),
-      participantNames: new Map() // Track participant info for display
+      participantNames: new Map()
     });
 
     // Auto-expire timer
@@ -107,7 +107,7 @@ app.post('/api/rooms/create', (req, res) => {
     res.json({ 
       roomId, 
       expiresAt,
-      topic // Include topic in response
+      topic
     });
   } catch (err) {
     console.error('[CREATE ERROR]', err);
@@ -115,17 +115,17 @@ app.post('/api/rooms/create', (req, res) => {
   }
 });
 
-// Validate room (for joining)
+// Validate room (for joining) - FIXED
 app.post('/api/rooms/validate', (req, res) => {
   try {
     const { roomId, password } = req.body;
     
-    // Ensure roomId is a string and trim whitespace
+    // Clean the room ID - remove whitespace and ensure string
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
 
     if (!room) {
-      console.log(`[VALIDATE] Room not found: ${cleanRoomId}`);
+      console.log(`[VALIDATE] Room not found: ${cleanRoomId} (original: ${roomId})`);
       return res.status(404).json({ error: 'Room not found' });
     }
     
@@ -199,11 +199,12 @@ io.on('connection', (socket) => {
   console.log(`[SOCKET CONNECTED] ${socket.id}`);
 
   socket.on('join_room', ({ roomId, password }) => {
+    // Clean the room ID
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
     
     if (!room) {
-      console.log(`[JOIN FAILED] Room not found: ${cleanRoomId}`);
+      console.log(`[JOIN FAILED] Room not found: ${cleanRoomId} (original: ${roomId})`);
       socket.emit('error', 'Room not found');
       return;
     }
@@ -221,7 +222,7 @@ io.on('connection', (socket) => {
 
     console.log(`[JOINED] Socket ${socket.id} joined room ${cleanRoomId} (${room.participants.size} users)`);
     
-    // Send join confirmation with full room data
+    // Send join confirmation
     socket.emit('join_success', {
       expiresAt: room.expiresAt,
       topic: room.topic,
@@ -243,7 +244,7 @@ io.on('connection', (socket) => {
     room.messages.push(joinMessage);
     socket.broadcast.to(cleanRoomId).emit('new_message', joinMessage);
     
-    // Notify others about participant count change
+    // Notify others
     io.to(cleanRoomId).emit('participant_joined', { 
       count: room.participants.size,
       message: 'Participant joined'
@@ -359,25 +360,3 @@ process.on('SIGTERM', () => {
   }
   httpServer.close(() => process.exit(0));
 });
-
-socket.on('join_success', (data) => {
-  expiresAt = data.expiresAt; // Use this for countdown
-  document.getElementById('roomTopic').textContent = data.topic || 'Untitled Session';
-  updateParticipants(data.participantCount);
-  updateTimer(); // Start your countdown
-});
-
-function addMessage(msg) {
-  const el = document.createElement('div');
-  
-  if (msg.type === 'system') {
-    el.className = 'system-message';
-    el.textContent = msg.text;
-  } else {
-    el.className = `message ${msg.sender === myId ? 'own' : 'other'}`;
-    // ... rest of your message rendering
-  }
-  
-  document.getElementById('messages').appendChild(el);
-  el.scrollIntoView();
-}
