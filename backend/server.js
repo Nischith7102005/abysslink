@@ -1,8 +1,8 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 const server = http.createServer(app);
@@ -141,7 +141,6 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Leave any previous rooms
     socket.rooms.forEach((r) => {
       if (r !== socket.id) {
         socket.leave(r);
@@ -155,14 +154,12 @@ io.on('connection', (socket) => {
 
     console.log(`${username} joined room ${roomId}`);
 
-    // Notify room
     socket.to(roomId).emit('user-joined', {
       userId: socket.id,
       username,
       users: room.getUsers()
     });
 
-    // Send current users to the joining user
     socket.emit('room-joined', {
       roomId,
       users: room.getUsers()
@@ -220,14 +217,13 @@ io.on('connection', (socket) => {
           users: room.getUsers()
         });
 
-        // Clean up empty rooms after a delay
         if (room.isEmpty()) {
           setTimeout(() => {
             if (room.isEmpty()) {
               rooms.delete(socket.roomId);
               console.log(`Room ${socket.roomId} deleted (empty)`);
             }
-          }, 60000); // 1 minute delay
+          }, 60000);
         }
       }
     }
@@ -243,7 +239,7 @@ setInterval(() => {
       console.log(`Room ${roomId} deleted (old and empty)`);
     }
   });
-}, 300000); // Every 5 minutes
+}, 300000);
 
 // Start server
 server.listen(PORT, () => {
