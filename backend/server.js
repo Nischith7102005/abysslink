@@ -48,6 +48,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // In-memory storage
 const rooms = new Map();
 const roomTimers = new Map();
+const socketToRoom = new Map(); // Track which room each socket is in
 
 // Multer setup
 const storage = multer.diskStorage({
@@ -182,20 +183,45 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
 
 // ==================== SOCKET.IO ====================
 io.on('connection', (socket) => {
+  console.log(`[SOCKET CONNECTED] ${socket.id}`);
+
   socket.on('join_room', ({ roomId, password }) => {
+    console.log(`[JOIN ATTEMPT] Socket ${socket.id} trying to join room ${roomId}`);
+    
     const room = rooms.get(roomId);
-    if (!room || room.password !== password) {
-      socket.emit('error', 'Unauthorized');
-      socket.disconnect(true);
+    
+    // Check if room exists
+    if (!room) {
+      console.log(`[JOIN FAILED] Room ${roomId} not found`);
+      socket.emit('error', 'Room not found');
+      return;
+    }
+    
+    // Validate password
+    if (room.password !== password) {
+      console.log(`[JOIN FAILED] Invalid password for room ${roomId}`);
+      socket.emit('error', 'Invalid password');
       return;
     }
 
+    // Successfully join room
     socket.join(roomId);
     room.participants.add(socket.id);
+    socketToRoom.set(socket.id, roomId);
 
-    // Send history
+    console.log(`[JOINED SUCCESS] Socket ${socket.id} joined room ${roomId} (${room.participants.size} participants)`);
+    
+    // Send room join success confirmation
+    socket.emit('join_success', {
+      expiresAt: room.expiresAt,
+      topic: room.topic
+    });
+    
+    // Send chat history and files
     socket.emit('chat_history', room.messages);
-    room.files.forEach(f => socket.emit('file_uploaded', f));
+    room.files.forEach(file => socket.emit('file_uploaded', file));
+    
+    // Notify other participants
     io.to(roomId).emit('participant_joined', { count: room.participants.size });
   });
 
@@ -214,14 +240,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // Find room this socket belonged to
-    for (const [roomId, room] of rooms) {
-      if (room.participants.has(socket.id)) {
+    const roomId = socketToRoom.get(socket.id);
+    if (roomId) {
+      const room = rooms.get(roomId);
+      if (room) {
         room.participants.delete(socket.id);
         io.to(roomId).emit('participant_left', { count: room.participants.size });
-        break;
+        console.log(`[SOCKET DISCONNECTED] ${socket.id} from room ${roomId} (${room.participants.size} remaining)`);
       }
+      socketToRoom.delete(socket.id);
     }
+    console.log(`[SOCKET DISCONNECTED] ${socket.id}`);
   });
 });
 
@@ -245,7 +274,11 @@ function destroyRoom(roomId) {
   if (timer) clearTimeout(timer);
   roomTimers.delete(roomId);
 
+  // Notify all participants
+  io.to(roomId).emit('room_vanished');
+  
   rooms.delete(roomId);
+  console.log(`[ROOM DESTROYED] ${roomId}`);
 }
 
 // Periodic cleanup (optional safety net)
@@ -254,7 +287,6 @@ setInterval(() => {
   for (const [id, room] of rooms) {
     if (room.expiresAt <= now) {
       console.log(`[CLEANUP EXPIRED] ${id}`);
-      io.to(id).emit('room_vanished');
       destroyRoom(id);
     }
   }
@@ -272,8 +304,15 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 process.on('SIGTERM', () => {
   console.log('[SHUTDOWN] Cleaning up...');
   for (const [id] of rooms) {
-    io.to(id).emit('room_vanished');
     destroyRoom(id);
   }
   httpServer.close(() => process.exit(0));
+});
+
+socket.emit('join_room', { roomId, password });
+
+socket.on('join_success', (data) => {
+  expiresAt = data.expiresAt;
+  updateTimer();
+  // Update UI if needed
 });
