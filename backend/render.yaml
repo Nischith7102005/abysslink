@@ -12,6 +12,6 @@ services:
   - key: NODE_ENV
     value: production
   - key: FRONTEND_URL
-    value: "*"  # ← Vercel domain, NOT Render
+    value: "https://abysslink.vercel.app"  # ← Vercel domain, NOT Render
   healthCheckPath: /api/health
   autoDeploy: true
