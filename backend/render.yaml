@@ -1,3 +1,4 @@
+# backend/render.yaml
 services:
 - type: web
   name: abysslink-backend
@@ -12,6 +13,6 @@ services:
   - key: NODE_ENV
     value: production
   - key: FRONTEND_URL
-    value: "https://abysslink.vercel.app"  # ← Vercel domain, NOT Render
+    value: "https://abysslink.vercel.app"  # ← THIS MUST BE YOUR VERCEL URL
   healthCheckPath: /api/health
   autoDeploy: true
