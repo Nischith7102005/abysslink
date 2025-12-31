@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { createHash } from 'crypto';
+import bcrypt from 'bcrypt'; // ✅ Use bcrypt instead of SHA-256
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,10 +18,11 @@ const httpServer = createServer(app);
 
 // Environment config
 const PORT = process.env.PORT || 10000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.onrender.com';
+// ✅ Point to your Vercel frontend
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.vercel.app';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Security headers
+// ✅ Security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -29,9 +30,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS
+// ✅ Secure CORS — no '*'
 const corsOptions = {
-  origin: FRONTEND_URL === '*' ? '*' : FRONTEND_URL.split(','),
+  origin: FRONTEND_URL.split(','),
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
@@ -52,7 +53,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // In-memory storage
 const rooms = new Map();
-const roomTimers = new Map();
+// ❌ REMOVED: roomTimers (no per-room setTimeout)
+
 const socketToRoom = new Map();
 
 // Multer setup
@@ -66,14 +68,15 @@ const storage = multer.diskStorage({
     cb(null, `${uuidv4()}-${Date.now()}.bin`);
   }
 });
-const upload = multer({
-  storage,
-  limits: { fileSize: 50 * 1024 * 1000 }
-});
+const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1000 } });
 
-// 🔐 Hash password with SHA-256
-function hashPassword(password) {
-  return createHash('sha256').update(password).digest('hex');
+// ✅ Use bcrypt for passwords
+async function hashPassword(password) {
+  return await bcrypt.hash(password, 12);
+}
+
+async function verifyPassword(password, hash) {
+  return await bcrypt.compare(password, hash);
 }
 
 // ==================== API ENDPOINTS ====================
@@ -82,14 +85,14 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', activeRooms: rooms.size });
 });
 
-app.post('/api/rooms/create', (req, res) => {
+app.post('/api/rooms/create', async (req, res) => {
   try {
     const { topic, password } = req.body;
     if (!topic || !password || password.length < 8) {
       return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
     }
     const roomId = uuidv4();
-    const hashedPassword = hashPassword(password);
+    const hashedPassword = await hashPassword(password);
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
     rooms.set(roomId, {
@@ -102,8 +105,7 @@ app.post('/api/rooms/create', (req, res) => {
       participants: new Set()
     });
 
-    const timer = setTimeout(() => destroyRoom(roomId), 24 * 60 * 60 * 1000);
-    roomTimers.set(roomId, timer);
+    // ❌ NO setTimeout — rely on global cleanup
     console.log(`[ROOM CREATED] ${roomId}`);
     res.json({ roomId, expiresAt, topic });
   } catch (err) {
@@ -112,18 +114,21 @@ app.post('/api/rooms/create', (req, res) => {
   }
 });
 
-// 🔒 Always return 401 to hide room existence
-app.post('/api/rooms/validate', (req, res) => {
+// ✅ Always return 401 — hide room existence
+app.post('/api/rooms/validate', async (req, res) => {
   try {
     const { roomId, password } = req.body;
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    const hashedInput = hashPassword(password);
-
-    if (!room || room.password !== hashedInput) {
+    if (!room) {
+      // Delay to prevent timing attacks
+      await new Promise(r => setTimeout(r, 50));
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
-
+    const isValid = await verifyPassword(password, room.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid room key or password' });
+    }
     res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
   } catch (err) {
     console.error('[VALIDATE ERROR]', err);
@@ -131,17 +136,19 @@ app.post('/api/rooms/validate', (req, res) => {
   }
 });
 
-app.post('/api/rooms/vanish', (req, res) => {
+app.post('/api/rooms/vanish', async (req, res) => {
   try {
     const { roomId, password } = req.body;
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    const hashedInput = hashPassword(password);
-
-    if (!room || room.password !== hashedInput) {
+    if (!room) {
+      await new Promise(r => setTimeout(r, 50));
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
-
+    const isValid = await verifyPassword(password, room.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid room key or password' });
+    }
     console.log(`[ROOM VANISHED] ${cleanRoomId}`);
     io.to(cleanRoomId).emit('room_vanished');
     destroyRoom(cleanRoomId);
@@ -152,7 +159,6 @@ app.post('/api/rooms/vanish', (req, res) => {
   }
 });
 
-// ✅ Accept encrypted file + encrypted metadata
 app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res) => {
   try {
     const cleanRoomId = String(req.params.roomId).trim();
@@ -183,12 +189,15 @@ app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res)
 // ==================== SOCKET.IO ====================
 
 io.on('connection', (socket) => {
-  socket.on('join_room', ({ roomId, password }) => {
+  socket.on('join_room', async ({ roomId, password }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    const hashedInput = hashPassword(password);
-
-    if (!room || room.password !== hashedInput) {
+    if (!room) {
+      socket.emit('error', 'Invalid room key or password');
+      return;
+    }
+    const isValid = await verifyPassword(password, room.password);
+    if (!isValid) {
       socket.emit('error', 'Invalid room key or password');
       return;
     }
@@ -221,28 +230,16 @@ io.on('connection', (socket) => {
     });
   });
 
-  // ✅ Accept E2EE messages
-  socket.on('send_message', ({ roomId, encrypted, message }) => {
+  socket.on('send_message', ({ roomId, encrypted }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
     if (!room) return;
-
-    let payload = {};
-    if (encrypted && encrypted.iv && encrypted.ciphertext) {
-      payload = { encrypted };
-    } else if (message?.trim()) {
-      payload = { text: message.trim() }; // legacy fallback
-    } else {
-      return;
-    }
-
     const msg = {
       id: uuidv4(),
-      ...payload,
+      encrypted,
       timestamp: Date.now(),
       sender: socket.id
     };
-
     room.messages.push(msg);
     io.to(cleanRoomId).emit('new_message', msg);
   });
@@ -298,21 +295,20 @@ function destroyRoom(roomId) {
     }
   });
 
-  const timer = roomTimers.get(roomId);
-  if (timer) clearTimeout(timer);
-  roomTimers.delete(roomId);
   rooms.delete(roomId);
   console.log(`[ROOM DESTROYED] ${roomId}`);
 }
 
+// ✅ Global cleanup only (no per-room timers)
 setInterval(() => {
   const now = Date.now();
   for (const [id, room] of rooms) {
     if (room.expiresAt <= now) {
+      console.log(`[CLEANUP EXPIRED] ${id}`);
       destroyRoom(id);
     }
   }
-}, 60 * 60 * 1000);
+}, 60 * 1000); // ⏱️ Check every minute (not hourly)
 
 // ==================== START SERVER ====================
 
