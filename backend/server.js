@@ -1,27 +1,29 @@
-import express from 'express';
-import cors from 'cors';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import bcrypt from 'bcrypt';
+// backend/server.js
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Load environment variables
+dotenv.config();
 
 const app = express();
-const httpServer = createServer(app);
-
-// Environment config
+const server = http.createServer(app);
 const PORT = process.env.PORT || 10000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.vercel.app';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-// Security headers
+// In-memory storage
+const activeRooms = new Map(); // roomId → { hostId, participants: Set }
+
+// ========================
+// Security Middleware
+// ========================
+
+// Basic security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -29,311 +31,208 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS (strict)
+// Parse JSON bodies
+app.use(express.json({ limit: '100kb' }));
+
+// ========================
+// CORS Configuration
+// ========================
+
+// Safely parse and trim allowed origins
+const allowedOrigins = FRONTEND_URL.split(',').map(origin => origin.trim());
+
 const corsOptions = {
-  origin: FRONTEND_URL.split(','),
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
+
+// Apply CORS globally
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
 
-// Socket.IO
-const io = new Server(httpServer, {
-  cors: corsOptions,
-  transports: ['websocket', 'polling'],
-  pingTimeout: 60000,
-  pingInterval: 25000
+// Explicitly handle preflight requests for all routes
+app.options('*', cors(corsOptions));
+
+// ========================
+// Rate Limiting
+// ========================
+
+const createRoomLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 room creations per window
+  message: { error: 'Too many room creation attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// Serve uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// ========================
+// API Routes
+// ========================
 
-// In-memory storage
-const rooms = new Map();
-const socketToRoom = new Map();
-
-// Multer setup (encrypted files only)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${uuidv4()}-${Date.now()}.bin`);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1000 } });
-
-// 🔐 Hash password with bcrypt (async)
-async function hashPassword(password) {
-  return await bcrypt.hash(password, 12);
-}
-
-// 🔐 Verify password
-async function verifyPassword(password, hash) {
-  return await bcrypt.compare(password, hash);
-}
-
-// ==================== API ENDPOINTS ====================
-
+// Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', activeRooms: rooms.size });
+  res.json({
+    status: 'ok',
+    activeRooms: activeRooms.size
+  });
 });
 
 // Create room
-app.post('/api/rooms/create', async (req, res) => {
-  try {
-    const { topic, password } = req.body;
-    if (!topic || !password || password.length < 8) {
-      return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
-    }
-    const roomId = uuidv4();
-    const hashedPassword = await hashPassword(password);
-    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-
-    rooms.set(roomId, {
-      id: roomId,
-      topic,
-      password: hashedPassword,
-      expiresAt,
-      messages: [],
-      files: [],
-      participants: new Set()
-    });
-
-    res.json({ roomId, expiresAt, topic });
-  } catch (err) {
-    console.error('[CREATE ERROR]', err);
-    res.status(500).json({ error: 'Failed to create room' });
+app.post('/api/rooms/create', createRoomLimiter, (req, res) => {
+  const { hostId } = req.body;
+  
+  if (!hostIsString(hostId)) {
+    return res.status(400).json({ error: 'Valid hostId is required' });
   }
-});
 
-// Validate room — always return 401 (stealth)
-app.post('/api/rooms/validate', async (req, res) => {
-  try {
-    const { roomId, password } = req.body;
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
-
-    // Add artificial delay to prevent timing attacks
-    if (!room) {
-      await new Promise(r => setTimeout(r, 50));
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    const isValid = await verifyPassword(password, room.password);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
-  } catch (err) {
-    console.error('[VALIDATE ERROR]', err);
-    res.status(500).json({ error: 'Validation failed' });
-  }
-});
-
-// Vanish room
-app.post('/api/rooms/vanish', async (req, res) => {
-  try {
-    const { roomId, password } = req.body;
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
-
-    if (!room) {
-      await new Promise(r => setTimeout(r, 50));
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    const isValid = await verifyPassword(password, room.password);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    console.log(`[ROOM VANISHED] ${cleanRoomId}`);
-    io.to(cleanRoomId).emit('room_vanished');
-    destroyRoom(cleanRoomId);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[VANISH ERROR]', err);
-    res.status(500).json({ error: 'Failed to vanish room' });
-  }
-});
-
-// Encrypted file upload
-app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res) => {
-  try {
-    const cleanRoomId = String(req.params.roomId).trim();
-    const room = rooms.get(cleanRoomId);
-    if (!room) return res.status(401).json({ error: 'Room not found' });
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-
-    const encryptedName = JSON.parse(req.body.encryptedName);
-    const originalSize = parseInt(req.body.originalSize);
-
-    const fileData = {
-      id: uuidv4(),
-      encryptedName,
-      originalSize,
-      url: `/uploads/${req.file.filename}`,
-      uploadedAt: Date.now()
-    };
-
-    room.files.push(fileData);
-    io.to(cleanRoomId).emit('file_uploaded', fileData);
-    res.json(fileData);
-  } catch (err) {
-    console.error('[UPLOAD ERROR]', err);
-    res.status(500).json({ error: 'Upload failed' });
-  }
-});
-
-// ==================== SOCKET.IO ====================
-
-io.on('connection', (socket) => {
-  socket.on('join_room', async ({ roomId, password }) => {
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
-    if (!room) {
-      socket.emit('error', 'Invalid room key or password');
-      return;
-    }
-
-    const isValid = await verifyPassword(password, room.password);
-    if (!isValid) {
-      socket.emit('error', 'Invalid room key or password');
-      return;
-    }
-
-    socket.join(cleanRoomId);
-    room.participants.add(socket.id);
-    socketToRoom.set(socket.id, cleanRoomId);
-
-    socket.emit('join_success', {
-      expiresAt: room.expiresAt,
-      topic: room.topic,
-      participantCount: room.participants.size
-    });
-
-    socket.emit('chat_history', room.messages);
-    room.files.forEach(file => socket.emit('file_uploaded', file));
-
-    // System message: join
-    const joinMessage = {
-      id: uuidv4(),
-      text: 'A participant joined the room',
-      timestamp: Date.now(),
-      type: 'system',
-      sender: 'system'
-    };
-    room.messages.push(joinMessage);
-    socket.broadcast.to(cleanRoomId).emit('new_message', joinMessage);
-    io.to(cleanRoomId).emit('participant_joined', {
-      count: room.participants.size,
-      message: 'Participant joined'
-    });
+  const roomId = generateRoomId(6);
+  activeRooms.set(roomId, {
+    hostId,
+    participants: new Set([hostId])
   });
 
-  // Accept E2EE messages only
-  socket.on('send_message', ({ roomId, encrypted }) => {
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
-    if (!room || !encrypted) return;
+  console.log(`Room created: ${roomId} by ${hostId}`);
+  res.json({ roomId, hostId });
+});
 
-    const msg = {
-      id: uuidv4(),
-      encrypted,
-      timestamp: Date.now(),
-      sender: socket.id
-    };
-    room.messages.push(msg);
-    io.to(cleanRoomId).emit('new_message', msg);
+// Get room info
+app.get('/api/rooms/:roomId', (req, res) => {
+  const { roomId } = req.params;
+  const room = activeRooms.get(roomId);
+  
+  if (!room) {
+    return res.status(404).json({ error: 'Room not found' });
+  }
+
+  res.json({
+    roomId,
+    hostId: room.hostId,
+    participantCount: room.participants.size
+  });
+});
+
+// Delete room
+app.delete('/api/rooms/:roomId', (req, res) => {
+  const { roomId } = req.params;
+  if (activeRooms.has(roomId)) {
+    activeRooms.delete(roomId);
+    console.log(`Room deleted: ${roomId}`);
+    return res.json({ success: true });
+  }
+  res.status(404).json({ error: 'Room not found' });
+});
+
+function hostIsString(hostId) {
+  return typeof hostId === 'string' && hostId.trim().length > 0;
+}
+
+function generateRoomId(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  // Ensure uniqueness
+  if (activeRooms.has(result)) {
+    return generateRoomId(length);
+  }
+  return result;
+}
+
+// ========================
+// Serve Static Frontend (fallback)
+// ========================
+
+const frontendPath = path.join(__dirname, '..', 'frontend');
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+} else {
+  app.get('*', (req, res) => {
+    res.status(404).send('Frontend not found. Run `npm run build` in frontend/');
+  });
+}
+
+// ========================
+// Socket.IO
+// ========================
+
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  // Disable long polling if you only want WebSocket
+  transports: ['websocket']
+});
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  socket.on('join-room', (roomId) => {
+    const room = activeRooms.get(roomId);
+    if (!room) {
+      socket.emit('error', { message: 'Room does not exist' });
+      return;
+    }
+
+    socket.join(roomId);
+    room.participants.add(socket.id);
+    console.log(`User ${socket.id} joined room ${roomId}`);
+
+    // Notify others in room
+    socket.to(roomId).emit('user-joined', { userId: socket.id });
+  });
+
+  socket.on('offer', (data) => {
+    socket.to(data.roomId).emit('offer', data);
+  });
+
+  socket.on('answer', (data) => {
+    socket.to(data.roomId).emit('answer', data);
+  });
+
+  socket.on('ice-candidate', (data) => {
+    socket.to(data.roomId).emit('ice-candidate', data);
   });
 
   socket.on('disconnect', () => {
-    const roomId = socketToRoom.get(socket.id);
-    if (roomId) {
-      const room = rooms.get(roomId);
-      if (room) {
-        const leaveMessage = {
-          id: uuidv4(),
-          text: 'A participant left the room',
-          timestamp: Date.now(),
-          type: 'system',
-          sender: 'system'
-        };
-        room.messages.push(leaveMessage);
-        io.to(roomId).emit('new_message', leaveMessage);
+    // Clean up participant from any room
+    for (const [roomId, room] of activeRooms.entries()) {
+      if (room.participants.has(socket.id)) {
         room.participants.delete(socket.id);
-        io.to(roomId).emit('participant_left', {
-          count: room.participants.size,
-          message: 'Participant left'
-        });
+        socket.to(roomId).emit('user-left', { userId: socket.id });
+        console.log(`User ${socket.id} disconnected from room ${roomId}`);
+        
+        // Optional: delete empty rooms
+        // if (room.participants.size === 0) {
+        //   activeRooms.delete(roomId);
+        // }
+        break;
       }
-      socketToRoom.delete(socket.id);
     }
   });
 });
 
-// ==================== HELPERS ====================
+// ========================
+// Start Server
+// ========================
 
-function destroyRoom(roomId) {
-  const room = rooms.get(roomId);
-  if (!room) return;
-
-  // Notify all clients
-  io.to(roomId).emit('new_message', {
-    id: uuidv4(),
-    text: 'Room has been destroyed',
-    timestamp: Date.now(),
-    type: 'system',
-    sender: 'system'
-  });
-  io.to(roomId).emit('room_vanished');
-
-  // Cleanup files
-  room.files.forEach(file => {
-    try {
-      const fullPath = path.join(__dirname, file.url);
-      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-    } catch (e) {
-      console.error(`[FILE DELETE ERROR] ${file.url}`, e);
-    }
-  });
-
-  rooms.delete(roomId);
-  console.log(`[ROOM DESTROYED] ${roomId}`);
-}
-
-// Safety net: hourly cleanup
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, room] of rooms) {
-    if (room.expiresAt <= now) {
-      console.log(`[CLEANUP EXPIRED] ${id}`);
-      destroyRoom(id);
-    }
-  }
-}, 60 * 1000); // check every minute
-
-// ==================== START SERVER ====================
-
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log('=================================');
-  console.log(`🚀 AbyssLink Server`);
-  console.log(`📡 Port: ${PORT}`);
-  console.log(`🌐 Environment: ${NODE_ENV}`);
-  console.log('=================================');
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌐 Allowed origins: ${allowedOrigins.join(', ')}`);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('[SHUTDOWN] Cleaning up...');
-  for (const [id] of rooms) {
-    destroyRoom(id);
-  }
-  httpServer.close(() => process.exit(0));
-});
+module.exports = { app, server };
