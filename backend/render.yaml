@@ -1,10 +1,9 @@
-# backend/render.yaml
 services:
 - type: web
   name: abysslink-backend
   env: docker
   dockerfilePath: ./backend/Dockerfile
-dockerContext: .
+  dockerContext: .
   plan: free
   region: oregon
   envVars:
