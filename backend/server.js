@@ -1,339 +1,252 @@
-import express from 'express';
-import cors from 'cors';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import bcrypt from 'bcrypt';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const httpServer = createServer(app);
+const server = http.createServer(app);
 
 // Environment config
 const PORT = process.env.PORT || 10000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.onrender.com';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Security headers
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
-  next();
-});
+// CORS - Allow multiple origins
+const allowedOrigins = [
+  'https://abysslink.vercel.app',
+  'https://abysslink.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
 
-// CORS (strict)
 const corsOptions = {
-  origin: FRONTEND_URL.split(','),
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
+
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json());
 
-// Socket.IO
-const io = new Server(httpServer, {
-  cors: corsOptions,
-  transports: ['websocket', 'polling'],
-  pingTimeout: 60000,
-  pingInterval: 25000
-});
-
-// Serve uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// In-memory storage
-const rooms = new Map();
-const socketToRoom = new Map();
-
-// Multer setup (encrypted files only)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
+// Socket.IO setup
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
   },
-  filename: (req, file, cb) => {
-    cb(null, `${uuidv4()}-${Date.now()}.bin`);
-  }
+  transports: ['websocket', 'polling']
 });
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1000 } });
 
-// 🔐 Hash password with bcrypt (async)
-async function hashPassword(password) {
-  return await bcrypt.hash(password, 12);
+// Room storage
+const rooms = new Map();
+
+// Room class
+class Room {
+  constructor(id) {
+    this.id = id;
+    this.users = new Map();
+    this.createdAt = Date.now();
+  }
+
+  addUser(socketId, username) {
+    this.users.set(socketId, {
+      id: socketId,
+      username,
+      joinedAt: Date.now()
+    });
+  }
+
+  removeUser(socketId) {
+    this.users.delete(socketId);
+  }
+
+  getUsers() {
+    return Array.from(this.users.values());
+  }
+
+  getUserCount() {
+    return this.users.size;
+  }
+
+  isEmpty() {
+    return this.users.size === 0;
+  }
 }
 
-// 🔐 Verify password
-async function verifyPassword(password, hash) {
-  return await bcrypt.compare(password, hash);
-}
-
-// ==================== API ENDPOINTS ====================
-
+// API Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', activeRooms: rooms.size });
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    rooms: rooms.size,
+    uptime: process.uptime()
+  });
 });
 
-// Create room
-app.post('/api/rooms/create', async (req, res) => {
-  try {
-    const { topic, password } = req.body;
-    if (!topic || !password || password.length < 8) {
-      return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
-    }
-    const roomId = uuidv4();
-    const hashedPassword = await hashPassword(password);
-    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+app.post('/api/rooms', (req, res) => {
+  const roomId = uuidv4().substring(0, 8);
+  const room = new Room(roomId);
+  rooms.set(roomId, room);
+  
+  console.log(`Room created: ${roomId}`);
+  
+  res.status(201).json({
+    success: true,
+    roomId,
+    message: 'Room created successfully'
+  });
+});
 
-    rooms.set(roomId, {
-      id: roomId,
-      topic,
-      password: hashedPassword,
-      expiresAt,
-      messages: [],
-      files: [],
-      participants: new Set()
+app.get('/api/rooms/:roomId', (req, res) => {
+  const { roomId } = req.params;
+  const room = rooms.get(roomId);
+  
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: 'Room not found'
     });
-
-    res.json({ roomId, expiresAt, topic });
-  } catch (err) {
-    console.error('[CREATE ERROR]', err);
-    res.status(500).json({ error: 'Failed to create room' });
   }
+  
+  res.json({
+    success: true,
+    room: {
+      id: room.id,
+      userCount: room.getUserCount(),
+      users: room.getUsers(),
+      createdAt: room.createdAt
+    }
+  });
 });
 
-// Validate room — always return 401 (stealth)
-app.post('/api/rooms/validate', async (req, res) => {
-  try {
-    const { roomId, password } = req.body;
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
-
-    // Add artificial delay to prevent timing attacks
-    if (!room) {
-      await new Promise(r => setTimeout(r, 50));
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    const isValid = await verifyPassword(password, room.password);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
-  } catch (err) {
-    console.error('[VALIDATE ERROR]', err);
-    res.status(500).json({ error: 'Validation failed' });
-  }
-});
-
-// Vanish room
-app.post('/api/rooms/vanish', async (req, res) => {
-  try {
-    const { roomId, password } = req.body;
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
-
-    if (!room) {
-      await new Promise(r => setTimeout(r, 50));
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    const isValid = await verifyPassword(password, room.password);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid room key or password' });
-    }
-
-    console.log(`[ROOM VANISHED] ${cleanRoomId}`);
-    io.to(cleanRoomId).emit('room_vanished');
-    destroyRoom(cleanRoomId);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[VANISH ERROR]', err);
-    res.status(500).json({ error: 'Failed to vanish room' });
-  }
-});
-
-// Encrypted file upload
-app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res) => {
-  try {
-    const cleanRoomId = String(req.params.roomId).trim();
-    const room = rooms.get(cleanRoomId);
-    if (!room) return res.status(401).json({ error: 'Room not found' });
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-
-    const encryptedName = JSON.parse(req.body.encryptedName);
-    const originalSize = parseInt(req.body.originalSize);
-
-    const fileData = {
-      id: uuidv4(),
-      encryptedName,
-      originalSize,
-      url: `/uploads/${req.file.filename}`,
-      uploadedAt: Date.now()
-    };
-
-    room.files.push(fileData);
-    io.to(cleanRoomId).emit('file_uploaded', fileData);
-    res.json(fileData);
-  } catch (err) {
-    console.error('[UPLOAD ERROR]', err);
-    res.status(500).json({ error: 'Upload failed' });
-  }
-});
-
-// ==================== SOCKET.IO ====================
-
+// Socket.IO connection handling
 io.on('connection', (socket) => {
-  socket.on('join_room', async ({ roomId, password }) => {
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on('join-room', ({ roomId, username }) => {
+    const room = rooms.get(roomId);
+    
     if (!room) {
-      socket.emit('error', 'Invalid room key or password');
+      socket.emit('error', { message: 'Room not found' });
       return;
     }
 
-    const isValid = await verifyPassword(password, room.password);
-    if (!isValid) {
-      socket.emit('error', 'Invalid room key or password');
-      return;
-    }
-
-    socket.join(cleanRoomId);
-    room.participants.add(socket.id);
-    socketToRoom.set(socket.id, cleanRoomId);
-
-    socket.emit('join_success', {
-      expiresAt: room.expiresAt,
-      topic: room.topic,
-      participantCount: room.participants.size
+    // Leave any previous rooms
+    socket.rooms.forEach((r) => {
+      if (r !== socket.id) {
+        socket.leave(r);
+      }
     });
 
-    socket.emit('chat_history', room.messages);
-    room.files.forEach(file => socket.emit('file_uploaded', file));
+    socket.join(roomId);
+    room.addUser(socket.id, username);
+    socket.roomId = roomId;
+    socket.username = username;
 
-    // System message: join
-    const joinMessage = {
-      id: uuidv4(),
-      text: 'A participant joined the room',
-      timestamp: Date.now(),
-      type: 'system',
-      sender: 'system'
-    };
-    room.messages.push(joinMessage);
-    socket.broadcast.to(cleanRoomId).emit('new_message', joinMessage);
-    io.to(cleanRoomId).emit('participant_joined', {
-      count: room.participants.size,
-      message: 'Participant joined'
+    console.log(`${username} joined room ${roomId}`);
+
+    // Notify room
+    socket.to(roomId).emit('user-joined', {
+      userId: socket.id,
+      username,
+      users: room.getUsers()
+    });
+
+    // Send current users to the joining user
+    socket.emit('room-joined', {
+      roomId,
+      users: room.getUsers()
     });
   });
 
-  // Accept E2EE messages only
-  socket.on('send_message', ({ roomId, encrypted }) => {
-    const cleanRoomId = String(roomId).trim();
-    const room = rooms.get(cleanRoomId);
-    if (!room || !encrypted) return;
+  socket.on('offer', ({ offer, to }) => {
+    console.log(`Offer from ${socket.id} to ${to}`);
+    socket.to(to).emit('offer', {
+      offer,
+      from: socket.id,
+      username: socket.username
+    });
+  });
 
-    const msg = {
-      id: uuidv4(),
-      encrypted,
-      timestamp: Date.now(),
-      sender: socket.id
-    };
-    room.messages.push(msg);
-    io.to(cleanRoomId).emit('new_message', msg);
+  socket.on('answer', ({ answer, to }) => {
+    console.log(`Answer from ${socket.id} to ${to}`);
+    socket.to(to).emit('answer', {
+      answer,
+      from: socket.id
+    });
+  });
+
+  socket.on('ice-candidate', ({ candidate, to }) => {
+    socket.to(to).emit('ice-candidate', {
+      candidate,
+      from: socket.id
+    });
+  });
+
+  socket.on('chat-message', ({ roomId, message }) => {
+    const room = rooms.get(roomId);
+    if (room) {
+      io.to(roomId).emit('chat-message', {
+        userId: socket.id,
+        username: socket.username,
+        message,
+        timestamp: Date.now()
+      });
+    }
   });
 
   socket.on('disconnect', () => {
-    const roomId = socketToRoom.get(socket.id);
-    if (roomId) {
-      const room = rooms.get(roomId);
+    console.log(`User disconnected: ${socket.id}`);
+    
+    if (socket.roomId) {
+      const room = rooms.get(socket.roomId);
+      
       if (room) {
-        const leaveMessage = {
-          id: uuidv4(),
-          text: 'A participant left the room',
-          timestamp: Date.now(),
-          type: 'system',
-          sender: 'system'
-        };
-        room.messages.push(leaveMessage);
-        io.to(roomId).emit('new_message', leaveMessage);
-        room.participants.delete(socket.id);
-        io.to(roomId).emit('participant_left', {
-          count: room.participants.size,
-          message: 'Participant left'
+        room.removeUser(socket.id);
+        
+        socket.to(socket.roomId).emit('user-left', {
+          userId: socket.id,
+          username: socket.username,
+          users: room.getUsers()
         });
+
+        // Clean up empty rooms after a delay
+        if (room.isEmpty()) {
+          setTimeout(() => {
+            if (room.isEmpty()) {
+              rooms.delete(socket.roomId);
+              console.log(`Room ${socket.roomId} deleted (empty)`);
+            }
+          }, 60000); // 1 minute delay
+        }
       }
-      socketToRoom.delete(socket.id);
     }
   });
 });
 
-// ==================== HELPERS ====================
-
-function destroyRoom(roomId) {
-  const room = rooms.get(roomId);
-  if (!room) return;
-
-  // Notify all clients
-  io.to(roomId).emit('new_message', {
-    id: uuidv4(),
-    text: 'Room has been destroyed',
-    timestamp: Date.now(),
-    type: 'system',
-    sender: 'system'
-  });
-  io.to(roomId).emit('room_vanished');
-
-  // Cleanup files
-  room.files.forEach(file => {
-    try {
-      const fullPath = path.join(__dirname, file.url);
-      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-    } catch (e) {
-      console.error(`[FILE DELETE ERROR] ${file.url}`, e);
-    }
-  });
-
-  rooms.delete(roomId);
-  console.log(`[ROOM DESTROYED] ${roomId}`);
-}
-
-// Safety net: hourly cleanup
+// Clean up old empty rooms periodically
 setInterval(() => {
   const now = Date.now();
-  for (const [id, room] of rooms) {
-    if (room.expiresAt <= now) {
-      console.log(`[CLEANUP EXPIRED] ${id}`);
-      destroyRoom(id);
+  rooms.forEach((room, roomId) => {
+    if (room.isEmpty() && now - room.createdAt > 3600000) {
+      rooms.delete(roomId);
+      console.log(`Room ${roomId} deleted (old and empty)`);
     }
-  }
-}, 60 * 1000); // check every minute
+  });
+}, 300000); // Every 5 minutes
 
-// ==================== START SERVER ====================
-
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log('=================================');
-  console.log(`🚀 AbyssLink Server`);
-  console.log(`📡 Port: ${PORT}`);
-  console.log(`🌐 Environment: ${NODE_ENV}`);
-  console.log('=================================');
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('[SHUTDOWN] Cleaning up...');
-  for (const [id] of rooms) {
-    destroyRoom(id);
-  }
-  httpServer.close(() => process.exit(0));
+// Start server
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
+  console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
 });
