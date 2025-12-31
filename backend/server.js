@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { createHash } from 'crypto'; // ← ADD THIS
+import { createHash } from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,11 +18,19 @@ const httpServer = createServer(app);
 
 // Environment config
 const PORT = process.env.PORT || 10000;
-const FRONTEND_URL = process.env.FRONTEND_URL || '*';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.onrender.com';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 console.log('🔧 Environment:', NODE_ENV);
 console.log('🌐 Frontend URL:', FRONTEND_URL);
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  next();
+});
 
 // CORS
 const corsOptions = {
@@ -32,7 +40,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type']
 };
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Socket.IO
 const io = new Server(httpServer, {
@@ -66,7 +74,7 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1000 } // 50MB
 });
 
-// 🔐 HELPER: Hash password
+// 🔐 Hash password with SHA-256
 function hashPassword(password) {
   return createHash('sha256').update(password).digest('hex');
 }
@@ -84,18 +92,17 @@ app.post('/api/rooms/create', (req, res) => {
       return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
     }
     const roomId = uuidv4();
-    const hashedPassword = hashPassword(password); // ← HASHED
+    const hashedPassword = hashPassword(password);
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
     rooms.set(roomId, {
       id: roomId,
       topic,
-      password: hashedPassword, // ← STORE HASH
+      password: hashedPassword,
       expiresAt,
       messages: [],
       files: [],
-      participants: new Set(),
-      participantNames: new Map()
+      participants: new Set()
     });
 
     const timer = setTimeout(() => {
@@ -112,19 +119,23 @@ app.post('/api/rooms/create', (req, res) => {
   }
 });
 
+// 🔒 Always return 401 to hide room existence
 app.post('/api/rooms/validate', (req, res) => {
   try {
     const { roomId, password } = req.body;
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
-    const hashedInput = hashPassword(password); // ← HASH INPUT FOR COMPARISON
-    if (room.password !== hashedInput) {
+    const hashedInput = hashPassword(password);
+
+    if (!room || room.password !== hashedInput) {
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
-    res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
+
+    res.json({
+      roomId: room.id,
+      topic: room.topic,
+      expiresAt: room.expiresAt
+    });
   } catch (err) {
     console.error('[VALIDATE ERROR]', err);
     res.status(500).json({ error: 'Validation failed' });
@@ -136,13 +147,12 @@ app.post('/api/rooms/vanish', (req, res) => {
     const { roomId, password } = req.body;
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
     const hashedInput = hashPassword(password);
-    if (room.password !== hashedInput) {
-      return res.status(401).json({ error: 'Invalid password' });
+
+    if (!room || room.password !== hashedInput) {
+      return res.status(401).json({ error: 'Invalid room key or password' });
     }
+
     console.log(`[ROOM VANISHED] ${cleanRoomId}`);
     io.to(cleanRoomId).emit('room_vanished');
     destroyRoom(cleanRoomId);
@@ -159,6 +169,7 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
     const room = rooms.get(cleanRoomId);
     if (!room) return res.status(404).json({ error: 'Room not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
     const fileData = {
       id: uuidv4(),
       name: req.file.originalname,
@@ -166,6 +177,7 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
       size: req.file.size,
       uploadedAt: Date.now()
     };
+
     room.files.push(fileData);
     io.to(cleanRoomId).emit('file_uploaded', fileData);
     res.json(fileData);
@@ -183,12 +195,9 @@ io.on('connection', (socket) => {
   socket.on('join_room', ({ roomId, password }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    if (!room) {
-      socket.emit('error', 'Room not found');
-      return;
-    }
-    const hashedInput = hashPassword(password); // ← VALIDATE HASH
-    if (room.password !== hashedInput) {
+    const hashedInput = hashPassword(password);
+
+    if (!room || room.password !== hashedInput) {
       socket.emit('error', 'Invalid room key or password');
       return;
     }
@@ -221,16 +230,28 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('send_message', ({ roomId, message }) => {
+  socket.on('send_message', ({ roomId, encrypted, message }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    if (!room || !message?.trim()) return;
+    if (!room) return;
+
+    let payload = {};
+    if (encrypted && encrypted.iv && encrypted.ciphertext) {
+      payload = { encrypted };
+    } else if (message?.trim()) {
+      // Legacy fallback — will be removed in future
+      payload = { text: message.trim() };
+    } else {
+      return;
+    }
+
     const msg = {
       id: uuidv4(),
-      text: message.trim(),
+      ...payload,
       timestamp: Date.now(),
       sender: socket.id
     };
+
     room.messages.push(msg);
     io.to(cleanRoomId).emit('new_message', msg);
   });
@@ -294,6 +315,7 @@ function destroyRoom(roomId) {
   console.log(`[ROOM DESTROYED] ${roomId}`);
 }
 
+// Safety net cleanup
 setInterval(() => {
   const now = Date.now();
   for (const [id, room] of rooms) {
@@ -302,7 +324,7 @@ setInterval(() => {
       destroyRoom(id);
     }
   }
-}, 60 * 60 * 1000);
+}, 60 * 60 * 1000); // hourly
 
 // ==================== START SERVER ====================
 
