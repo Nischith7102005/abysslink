@@ -21,5 +21,5 @@ USER nodejs
 
 EXPOSE 10000
 
-# Use npm start to respect "type": "module"
+# ✅ CRITICAL: Use npm start to respect "type": "module"
 CMD ["npm", "start"]
