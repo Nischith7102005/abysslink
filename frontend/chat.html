@@ -383,19 +383,57 @@ function showError(message) {
   setTimeout(() => errorDiv.remove(), 5000);
 }
 
-// ✅ FIXED: event is passed correctly
 function copyFullKey(event) {
   navigator.clipboard.writeText(roomId).then(() => {
     const btn = event.target;
     const originalText = btn.textContent;
     btn.textContent = 'Copied!';
-    setTimeout(() => {
-      btn.textContent = originalText;
-    }, 2000);
+    setTimeout(() => { btn.textContent = originalText; }, 2000);
   }).catch(err => {
     console.error('Copy failed:', err);
     showError('Failed to copy key');
   });
+}
+
+// 🔐 E2EE: Derive key from room ID + password
+async function deriveEncryptionKey() {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(roomId + password);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return hash;
+}
+
+// 🔐 Encrypt message
+async function encryptMessage(plaintext) {
+  const key = await deriveEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(plaintext);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
+    encoded
+  );
+  const ivB64 = btoa(String.fromCharCode(...iv));
+  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return { iv: ivB64, ciphertext: ctB64 };
+}
+
+// 🔐 Decrypt message
+async function decryptMessage(ivB64, ciphertextB64) {
+  try {
+    const key = await deriveEncryptionKey();
+    const iv = new Uint8Array(atob(ivB64).split('').map(c => c.charCodeAt(0)));
+    const ciphertext = new Uint8Array(atob(ciphertextB64).split('').map(c => c.charCodeAt(0)));
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['decrypt']),
+      ciphertext
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (err) {
+    console.warn('Decryption failed:', err.message);
+    return '[Decryption failed]';
+  }
 }
 
 function initialize() {
@@ -435,19 +473,33 @@ function initialize() {
     }
   });
 
-  socket.on('new_message', (msg) => addMessage(msg));
+  socket.on('new_message', async (msg) => {
+    if (msg.type === 'system') {
+      addMessage(msg);
+      return;
+    }
+    let displayText = msg.text; // fallback (legacy)
+    if (msg.encrypted) {
+      displayText = await decryptMessage(msg.encrypted.iv, msg.encrypted.ciphertext);
+    }
+    addMessage({ ...msg, text: displayText });
+  });
+
   socket.on('participant_joined', (data) => {
     updateParticipants(data.count);
     if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
   });
+
   socket.on('participant_left', (data) => {
     updateParticipants(data.count);
     if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
   });
+
   socket.on('room_vanished', () => {
     showError('Room has been destroyed.');
     cleanupAndRedirect();
   });
+
   socket.on('file_uploaded', (fileData) => {
     addMessage({
       id: fileData.id,
@@ -478,12 +530,19 @@ function updateParticipants(count) {
   document.getElementById('sidebarParticipants').textContent = count;
 }
 
-function sendMessage() {
+// ✅ SEND ENCRYPTED MESSAGE
+async function sendMessage() {
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
-  if (text) {
-    socket.emit('send_message', { roomId, message: text });
+  if (!text) return;
+
+  try {
+    const encrypted = await encryptMessage(text);
+    socket.emit('send_message', { roomId, encrypted });
     input.value = '';
+  } catch (err) {
+    showError('Failed to encrypt message');
+    console.error(err);
   }
 }
 
