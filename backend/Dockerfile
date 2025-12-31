@@ -1,4 +1,3 @@
-# ✅ Corrected Dockerfile
 FROM node:18.20.0-alpine
 
 RUN addgroup -g 1001 -S nodejs && \
@@ -6,15 +5,15 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# ✅ Copy from backend/ subfolder
-COPY backend/package*.json ./
+# Copy package files first (for better layer caching)
+COPY package*.json ./
 
 RUN npm ci --only=production --no-audit --no-fund && \
     mkdir -p /app/uploads && \
     chown -R nodejs:nodejs /app
 
-# ✅ Copy entire backend code
-COPY backend/ .
+# Copy application code
+COPY . .
 
 USER nodejs
 
