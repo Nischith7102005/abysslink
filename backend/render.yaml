@@ -1,17 +1,18 @@
+# backend/render.yaml
 services:
-  - type: web
-    name: abysslink-backend
-    env: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    plan: free
-    region: oregon
-    envVars:
-      - key: PORT
-        value: 10000
-      - key: NODE_ENV
-        value: production
-      - key: FRONTEND_URL
-        value: "*"
-    healthCheckPath: /api/health
-    autoDeploy: true
+- type: web
+  name: abysslink-backend
+  env: docker
+  dockerfilePath: ./Dockerfile
+  dockerContext: .
+  plan: free
+  region: oregon
+  envVars:
+  - key: PORT
+    value: 10000
+  - key: NODE_ENV
+    value: production
+  - key: FRONTEND_URL
+    value: "https://abysslink.onrender.com"  # ← or your custom domain
+  healthCheckPath: /api/health
+  autoDeploy: true
