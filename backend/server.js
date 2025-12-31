@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { createHash } from 'crypto'; // ← ADD THIS
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,7 +31,6 @@ const corsOptions = {
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
-
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -61,34 +61,36 @@ const storage = multer.diskStorage({
     cb(null, `${uuidv4()}-${file.originalname}`);
   }
 });
-
 const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1000 } // 50MB
 });
 
+// 🔐 HELPER: Hash password
+function hashPassword(password) {
+  return createHash('sha256').update(password).digest('hex');
+}
+
 // ==================== API ENDPOINTS ====================
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', activeRooms: rooms.size });
 });
 
-// Create room
 app.post('/api/rooms/create', (req, res) => {
   try {
     const { topic, password } = req.body;
     if (!topic || !password || password.length < 8) {
       return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
     }
-
     const roomId = uuidv4();
-    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
+    const hashedPassword = hashPassword(password); // ← HASHED
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
     rooms.set(roomId, {
       id: roomId,
       topic,
-      password,
+      password: hashedPassword, // ← STORE HASH
       expiresAt,
       messages: [],
       files: [],
@@ -96,7 +98,6 @@ app.post('/api/rooms/create', (req, res) => {
       participantNames: new Map()
     });
 
-    // Auto-expire timer
     const timer = setTimeout(() => {
       console.log(`[AUTO-EXPIRE] Room ${roomId}`);
       destroyRoom(roomId);
@@ -104,61 +105,44 @@ app.post('/api/rooms/create', (req, res) => {
     roomTimers.set(roomId, timer);
 
     console.log(`[ROOM CREATED] ${roomId}`);
-    res.json({ 
-      roomId, 
-      expiresAt,
-      topic
-    });
+    res.json({ roomId, expiresAt, topic });
   } catch (err) {
     console.error('[CREATE ERROR]', err);
     res.status(500).json({ error: 'Failed to create room' });
   }
 });
 
-// Validate room (for joining) - FIXED
 app.post('/api/rooms/validate', (req, res) => {
   try {
     const { roomId, password } = req.body;
-    
-    // Clean the room ID - remove whitespace and ensure string
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-
     if (!room) {
-      console.log(`[VALIDATE] Room not found: ${cleanRoomId} (original: ${roomId})`);
       return res.status(404).json({ error: 'Room not found' });
     }
-    
-    if (room.password !== password) {
-      console.log(`[VALIDATE] Invalid password for room: ${cleanRoomId}`);
+    const hashedInput = hashPassword(password); // ← HASH INPUT FOR COMPARISON
+    if (room.password !== hashedInput) {
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
-
-    res.json({
-      roomId: room.id,
-      topic: room.topic,
-      expiresAt: room.expiresAt
-    });
+    res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
   } catch (err) {
     console.error('[VALIDATE ERROR]', err);
     res.status(500).json({ error: 'Validation failed' });
   }
 });
 
-// Vanish room (any participant with password can trigger)
 app.post('/api/rooms/vanish', (req, res) => {
   try {
     const { roomId, password } = req.body;
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }
-    if (room.password !== password) {
+    const hashedInput = hashPassword(password);
+    if (room.password !== hashedInput) {
       return res.status(401).json({ error: 'Invalid password' });
     }
-
     console.log(`[ROOM VANISHED] ${cleanRoomId}`);
     io.to(cleanRoomId).emit('room_vanished');
     destroyRoom(cleanRoomId);
@@ -169,14 +153,12 @@ app.post('/api/rooms/vanish', (req, res) => {
   }
 });
 
-// File upload
 app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
   try {
     const cleanRoomId = String(req.params.roomId).trim();
     const room = rooms.get(cleanRoomId);
     if (!room) return res.status(404).json({ error: 'Room not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-
     const fileData = {
       id: uuidv4(),
       name: req.file.originalname,
@@ -184,7 +166,6 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
       size: req.file.size,
       uploadedAt: Date.now()
     };
-
     room.files.push(fileData);
     io.to(cleanRoomId).emit('file_uploaded', fileData);
     res.json(fileData);
@@ -195,45 +176,36 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
 });
 
 // ==================== SOCKET.IO ====================
+
 io.on('connection', (socket) => {
   console.log(`[SOCKET CONNECTED] ${socket.id}`);
 
   socket.on('join_room', ({ roomId, password }) => {
-    // Clean the room ID
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    
     if (!room) {
-      console.log(`[JOIN FAILED] Room not found: ${cleanRoomId} (original: ${roomId})`);
       socket.emit('error', 'Room not found');
       return;
     }
-    
-    if (room.password !== password) {
-      console.log(`[JOIN FAILED] Invalid password for room: ${cleanRoomId}`);
+    const hashedInput = hashPassword(password); // ← VALIDATE HASH
+    if (room.password !== hashedInput) {
       socket.emit('error', 'Invalid room key or password');
       return;
     }
 
-    // Join room
     socket.join(cleanRoomId);
     room.participants.add(socket.id);
     socketToRoom.set(socket.id, cleanRoomId);
 
-    console.log(`[JOINED] Socket ${socket.id} joined room ${cleanRoomId} (${room.participants.size} users)`);
-    
-    // Send join confirmation
     socket.emit('join_success', {
       expiresAt: room.expiresAt,
       topic: room.topic,
       participantCount: room.participants.size
     });
-    
-    // Send history
+
     socket.emit('chat_history', room.messages);
     room.files.forEach(file => socket.emit('file_uploaded', file));
-    
-    // Send system message that user joined
+
     const joinMessage = {
       id: uuidv4(),
       text: 'A participant joined the room',
@@ -243,9 +215,7 @@ io.on('connection', (socket) => {
     };
     room.messages.push(joinMessage);
     socket.broadcast.to(cleanRoomId).emit('new_message', joinMessage);
-    
-    // Notify others
-    io.to(cleanRoomId).emit('participant_joined', { 
+    io.to(cleanRoomId).emit('participant_joined', {
       count: room.participants.size,
       message: 'Participant joined'
     });
@@ -255,7 +225,6 @@ io.on('connection', (socket) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
     if (!room || !message?.trim()) return;
-
     const msg = {
       id: uuidv4(),
       text: message.trim(),
@@ -271,7 +240,6 @@ io.on('connection', (socket) => {
     if (roomId) {
       const room = rooms.get(roomId);
       if (room) {
-        // Send system message that user left
         const leaveMessage = {
           id: uuidv4(),
           text: 'A participant left the room',
@@ -281,10 +249,8 @@ io.on('connection', (socket) => {
         };
         room.messages.push(leaveMessage);
         io.to(roomId).emit('new_message', leaveMessage);
-        
-        // Update participant count
         room.participants.delete(socket.id);
-        io.to(roomId).emit('participant_left', { 
+        io.to(roomId).emit('participant_left', {
           count: room.participants.size,
           message: 'Participant left'
         });
@@ -296,11 +262,11 @@ io.on('connection', (socket) => {
 });
 
 // ==================== HELPERS ====================
+
 function destroyRoom(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  // Send final system message
   const vanishMessage = {
     id: uuidv4(),
     text: 'Room has been destroyed',
@@ -312,7 +278,6 @@ function destroyRoom(roomId) {
   io.to(roomId).emit('new_message', vanishMessage);
   io.to(roomId).emit('room_vanished');
 
-  // Clean up files
   room.files.forEach(file => {
     try {
       const fullPath = path.join(__dirname, file.url);
@@ -322,17 +287,13 @@ function destroyRoom(roomId) {
     }
   });
 
-  // Clear timer
   const timer = roomTimers.get(roomId);
   if (timer) clearTimeout(timer);
   roomTimers.delete(roomId);
-
-  // Remove from storage
   rooms.delete(roomId);
   console.log(`[ROOM DESTROYED] ${roomId}`);
 }
 
-// Periodic cleanup (safety net)
 setInterval(() => {
   const now = Date.now();
   for (const [id, room] of rooms) {
@@ -341,9 +302,10 @@ setInterval(() => {
       destroyRoom(id);
     }
   }
-}, 60 * 60 * 1000); // hourly
+}, 60 * 60 * 1000);
 
 // ==================== START SERVER ====================
+
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
   console.log(`🚀 AbyssLink Server`);
@@ -352,7 +314,6 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('[SHUTDOWN] Cleaning up...');
   for (const [id] of rooms) {
