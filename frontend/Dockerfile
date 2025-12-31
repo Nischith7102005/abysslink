@@ -1,12 +1,18 @@
-FROM nginx:alpine
+FROM nginx:1.25.4-alpine
 
-# Copy HTML files
-COPY landing.html /usr/share/nginx/html/
-COPY rooms.html /usr/share/nginx/html/
-COPY chat.html /usr/share/nginx/html/
+# Remove default nginx files
+RUN rm -rf /usr/share/nginx/html/*
 
-# Copy nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy static files
+COPY --chown=nginx:nginx landing.html /usr/share/nginx/html/
+COPY --chown=nginx:nginx rooms.html /usr/share/nginx/html/
+COPY --chown=nginx:nginx chat.html /usr/share/nginx/html/
+
+# Copy hardened config
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
+
+# Run as unprivileged user
+USER nginx
 
 EXPOSE 80
 
