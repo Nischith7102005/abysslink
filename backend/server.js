@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import bcrypt from 'bcrypt'; // ✅ Use bcrypt instead of SHA-256
+import bcrypt from 'bcrypt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,11 +18,10 @@ const httpServer = createServer(app);
 
 // Environment config
 const PORT = process.env.PORT || 10000;
-// ✅ Point to your Vercel frontend
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.vercel.app';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://abysslink.onrender.com';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// ✅ Security headers
+// Security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -30,7 +29,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ Secure CORS — no '*'
+// CORS (strict)
 const corsOptions = {
   origin: FRONTEND_URL.split(','),
   credentials: true,
@@ -53,11 +52,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // In-memory storage
 const rooms = new Map();
-// ❌ REMOVED: roomTimers (no per-room setTimeout)
-
 const socketToRoom = new Map();
 
-// Multer setup
+// Multer setup (encrypted files only)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = path.join(__dirname, 'uploads');
@@ -70,11 +67,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1000 } });
 
-// ✅ Use bcrypt for passwords
+// 🔐 Hash password with bcrypt (async)
 async function hashPassword(password) {
   return await bcrypt.hash(password, 12);
 }
 
+// 🔐 Verify password
 async function verifyPassword(password, hash) {
   return await bcrypt.compare(password, hash);
 }
@@ -85,6 +83,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', activeRooms: rooms.size });
 });
 
+// Create room
 app.post('/api/rooms/create', async (req, res) => {
   try {
     const { topic, password } = req.body;
@@ -105,8 +104,6 @@ app.post('/api/rooms/create', async (req, res) => {
       participants: new Set()
     });
 
-    // ❌ NO setTimeout — rely on global cleanup
-    console.log(`[ROOM CREATED] ${roomId}`);
     res.json({ roomId, expiresAt, topic });
   } catch (err) {
     console.error('[CREATE ERROR]', err);
@@ -114,21 +111,24 @@ app.post('/api/rooms/create', async (req, res) => {
   }
 });
 
-// ✅ Always return 401 — hide room existence
+// Validate room — always return 401 (stealth)
 app.post('/api/rooms/validate', async (req, res) => {
   try {
     const { roomId, password } = req.body;
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
+
+    // Add artificial delay to prevent timing attacks
     if (!room) {
-      // Delay to prevent timing attacks
       await new Promise(r => setTimeout(r, 50));
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
+
     const isValid = await verifyPassword(password, room.password);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
+
     res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
   } catch (err) {
     console.error('[VALIDATE ERROR]', err);
@@ -136,19 +136,23 @@ app.post('/api/rooms/validate', async (req, res) => {
   }
 });
 
+// Vanish room
 app.post('/api/rooms/vanish', async (req, res) => {
   try {
     const { roomId, password } = req.body;
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
+
     if (!room) {
       await new Promise(r => setTimeout(r, 50));
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
+
     const isValid = await verifyPassword(password, room.password);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
+
     console.log(`[ROOM VANISHED] ${cleanRoomId}`);
     io.to(cleanRoomId).emit('room_vanished');
     destroyRoom(cleanRoomId);
@@ -159,6 +163,7 @@ app.post('/api/rooms/vanish', async (req, res) => {
   }
 });
 
+// Encrypted file upload
 app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res) => {
   try {
     const cleanRoomId = String(req.params.roomId).trim();
@@ -196,6 +201,7 @@ io.on('connection', (socket) => {
       socket.emit('error', 'Invalid room key or password');
       return;
     }
+
     const isValid = await verifyPassword(password, room.password);
     if (!isValid) {
       socket.emit('error', 'Invalid room key or password');
@@ -215,6 +221,7 @@ io.on('connection', (socket) => {
     socket.emit('chat_history', room.messages);
     room.files.forEach(file => socket.emit('file_uploaded', file));
 
+    // System message: join
     const joinMessage = {
       id: uuidv4(),
       text: 'A participant joined the room',
@@ -230,10 +237,12 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Accept E2EE messages only
   socket.on('send_message', ({ roomId, encrypted }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    if (!room) return;
+    if (!room || !encrypted) return;
+
     const msg = {
       id: uuidv4(),
       encrypted,
@@ -275,17 +284,17 @@ function destroyRoom(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  const vanishMessage = {
+  // Notify all clients
+  io.to(roomId).emit('new_message', {
     id: uuidv4(),
     text: 'Room has been destroyed',
     timestamp: Date.now(),
     type: 'system',
     sender: 'system'
-  };
-  room.messages.push(vanishMessage);
-  io.to(roomId).emit('new_message', vanishMessage);
+  });
   io.to(roomId).emit('room_vanished');
 
+  // Cleanup files
   room.files.forEach(file => {
     try {
       const fullPath = path.join(__dirname, file.url);
@@ -299,7 +308,7 @@ function destroyRoom(roomId) {
   console.log(`[ROOM DESTROYED] ${roomId}`);
 }
 
-// ✅ Global cleanup only (no per-room timers)
+// Safety net: hourly cleanup
 setInterval(() => {
   const now = Date.now();
   for (const [id, room] of rooms) {
@@ -308,7 +317,7 @@ setInterval(() => {
       destroyRoom(id);
     }
   }
-}, 60 * 1000); // ⏱️ Check every minute (not hourly)
+}, 60 * 1000); // check every minute
 
 // ==================== START SERVER ====================
 
@@ -320,6 +329,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
 });
 
+// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('[SHUTDOWN] Cleaning up...');
   for (const [id] of rooms) {
