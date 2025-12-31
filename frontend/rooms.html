@@ -443,98 +443,104 @@ nav { flex-direction: column; gap: 1rem; align-items: flex-start; }
 const API_URL = 'https://abysslink.onrender.com';
 
 function showLoading(show = true) {
-document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none';
+  document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none';
 }
 
 function openCreateModal() {
-document.getElementById('createModal').style.display = 'flex';
-document.getElementById('topicInput').focus();
-}
-function closeCreateModal() {
-document.getElementById('createModal').style.display = 'none';
-document.getElementById('topicInput').value = '';
-document.getElementById('passwordInput').value = '';
-}
-function openJoinModal() {
-document.getElementById('joinModal').style.display = 'flex';
-document.getElementById('joinRoomKey').focus();
-}
-function closeJoinModal() {
-document.getElementById('joinModal').style.display = 'none';
-document.getElementById('joinRoomKey').value = '';
-document.getElementById('joinPassword').value = '';
+  document.getElementById('createModal').style.display = 'flex';
+  document.getElementById('topicInput').focus();
 }
 
-async function handleCreateRoom(e) {
-e.preventDefault();
-const topic = document.getElementById('topicInput').value.trim();
-const password = document.getElementById('passwordInput').value;
-if (password.length < 8) {
-alert('Password must be at least 8 characters');
-return;
+function closeCreateModal() {
+  document.getElementById('createModal').style.display = 'none';
+  document.getElementById('topicInput').value = '';
+  document.getElementById('passwordInput').value = '';
 }
-showLoading(true);
-try {
-const res = await fetch(`${API_URL}/api/rooms/create`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ topic, password })
+
+function openJoinModal() {
+  document.getElementById('joinModal').style.display = 'flex';
+  document.getElementById('joinRoomKey').focus();
+}
+
+function closeJoinModal() {
+  document.getElementById('joinModal').style.display = 'none';
+  document.getElementById('joinRoomKey').value = '';
+  document.getElementById('joinPassword').value = '';
+}
+
+// Auto-trim room key input
+document.getElementById('joinRoomKey').addEventListener('input', function() {
+  this.value = this.value.trim();
 });
-const data = await res.json();
-if (!res.ok) throw new Error(data.error || 'Create failed');
-closeCreateModal();
-// Redirect with room key and password
-const url = new URL('chat.html', window.location.origin);
-url.searchParams.set('room', data.roomId);
-url.searchParams.set('password', password);
-if (topic) url.searchParams.set('topic', topic);
-window.location.href = url.toString();
-} catch (err) {
-alert('Failed to create room: ' + err.message);
-console.error(err);
-} finally {
-showLoading(false);
-}
+
+async function handleCreateRoom(e) {
+  e.preventDefault();
+  const topic = document.getElementById('topicInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  if (password.length < 8) {
+    alert('Password must be at least 8 characters');
+    return;
+  }
+  showLoading(true);
+  try {
+    const res = await fetch(`${API_URL}/api/rooms/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Create failed');
+    closeCreateModal();
+    const url = new URL('chat.html', window.location.origin);
+    url.searchParams.set('room', data.roomId);
+    url.searchParams.set('password', password);
+    if (topic) url.searchParams.set('topic', topic);
+    window.location.href = url.toString();
+  } catch (err) {
+    alert('Failed to create room: ' + err.message);
+    console.error(err);
+  } finally {
+    showLoading(false);
+  }
 }
 
 async function handleJoinRoom(e) {
-e.preventDefault();
-const roomKey = document.getElementById('joinRoomKey').value.trim();
-const password = document.getElementById('joinPassword').value;
-if (!roomKey || !password) {
-alert('Please enter both room key and password');
-return;
-}
-showLoading(true);
-try {
-const res = await fetch(`${API_URL}/api/rooms/validate`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ roomId: roomKey, password })
-});
-if (!res.ok) {
-const errorData = await res.json();
-throw new Error(errorData.error || 'Validation failed');
-}
-closeJoinModal();
-// Redirect to chat
-const url = new URL('chat.html', window.location.origin);
-url.searchParams.set('room', roomKey);
-url.searchParams.set('password', password);
-window.location.href = url.toString();
-} catch (err) {
-alert('Failed to join room: ' + err.message);
-console.error(err);
-} finally {
-showLoading(false);
-}
+  e.preventDefault();
+  const roomKey = document.getElementById('joinRoomKey').value.trim();
+  const password = document.getElementById('joinPassword').value;
+  if (!roomKey || !password) {
+    alert('Please enter both room key and password');
+    return;
+  }
+  showLoading(true);
+  try {
+    const res = await fetch(`${API_URL}/api/rooms/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId: roomKey, password })
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Validation failed');
+    }
+    closeJoinModal();
+    const url = new URL('chat.html', window.location.origin);
+    url.searchParams.set('room', roomKey);
+    url.searchParams.set('password', password);
+    window.location.href = url.toString();
+  } catch (err) {
+    alert('Failed to join room: ' + err.message);
+    console.error(err);
+  } finally {
+    showLoading(false);
+  }
 }
 
 document.addEventListener('keydown', (e) => {
-if (e.key === 'Escape') {
-closeCreateModal();
-closeJoinModal();
-}
+  if (e.key === 'Escape') {
+    closeCreateModal();
+    closeJoinModal();
+  }
 });
 </script>
 </body>
