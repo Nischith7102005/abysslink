@@ -319,6 +319,37 @@ background: rgba(255, 0, 0, 0.05);
 border: 1px solid rgba(255, 0, 0, 0.2);
 font-family: 'Space Mono', monospace;
 }
+.loading {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: var(--bg);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 9999;
+}
+.loading-spinner {
+width: 40px;
+height: 40px;
+border: 2px solid var(--border);
+border-top-color: var(--text-main);
+border-radius: 50%;
+animation: spin 1s linear infinite;
+margin: 0 auto 1rem;
+}
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+.loading-text {
+font-family: 'Space Mono', monospace;
+font-size: 0.9rem;
+text-transform: uppercase;
+color: var(--text-dim);
+letter-spacing: 0.1em;
+}
 @media (max-width: 768px) {
 .rooms-grid { grid-template-columns: 1fr; }
 .action-bar { flex-direction: column; }
@@ -332,6 +363,11 @@ nav { flex-direction: column; gap: 1rem; align-items: flex-start; }
 </style>
 </head>
 <body>
+<div class="loading" id="loadingScreen" style="display:none;">
+<div class="loading-spinner"></div>
+<div class="loading-text">Processing...</div>
+</div>
+
 <div class="container">
 <nav>
 <div class="brand">AbyssLink</div>
@@ -362,7 +398,7 @@ nav { flex-direction: column; gap: 1rem; align-items: flex-start; }
 <div class="modal-content">
 <h2>Create Session</h2>
 <div class="warning">
- Save the Room Key and Password. Share both with participants.
+⚠️ Save the Room Key and Password. Share both with participants.
 </div>
 <form onsubmit="handleCreateRoom(event)">
 <div class="form-group">
@@ -403,7 +439,11 @@ nav { flex-direction: column; gap: 1rem; align-items: flex-start; }
 </div>
 
 <script>
-const API_URL = 'https://abysslink.onrender.com';
+const API_URL = window.location.origin; // Use same origin as frontend
+
+function showLoading(show = true) {
+document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none';
+}
 
 function openCreateModal() {
 document.getElementById('createModal').style.display = 'flex';
@@ -432,6 +472,7 @@ if (password.length < 8) {
 alert('Password must be at least 8 characters');
 return;
 }
+showLoading(true);
 try {
 const res = await fetch(`${API_URL}/api/rooms/create`, {
 method: 'POST',
@@ -441,11 +482,17 @@ body: JSON.stringify({ topic, password })
 const data = await res.json();
 if (!res.ok) throw new Error(data.error || 'Create failed');
 closeCreateModal();
-// Redirect with room key
-window.location.href = `chat.html?room=${data.roomId}&password=${encodeURIComponent(password)}&topic=${encodeURIComponent(topic)}`;
+// Redirect with room key and password
+const url = new URL('chat.html', window.location.origin);
+url.searchParams.set('room', data.roomId);
+url.searchParams.set('password', password);
+if (topic) url.searchParams.set('topic', topic);
+window.location.href = url.toString();
 } catch (err) {
-alert('Failed to create room. Check backend.');
+alert('Failed to create room: ' + err.message);
 console.error(err);
+} finally {
+showLoading(false);
 }
 }
 
@@ -453,7 +500,11 @@ async function handleJoinRoom(e) {
 e.preventDefault();
 const roomKey = document.getElementById('joinRoomKey').value.trim();
 const password = document.getElementById('joinPassword').value;
-if (!roomKey || !password) return;
+if (!roomKey || !password) {
+alert('Please enter both room key and password');
+return;
+}
+showLoading(true);
 try {
 const res = await fetch(`${API_URL}/api/rooms/validate`, {
 method: 'POST',
@@ -461,14 +512,20 @@ headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ roomId: roomKey, password })
 });
 if (!res.ok) {
-alert('Invalid room key or password');
-return;
+const errorData = await res.json();
+throw new Error(errorData.error || 'Validation failed');
 }
 closeJoinModal();
-window.location.href = `chat.html?room=${roomKey}&password=${encodeURIComponent(password)}`;
+// Redirect to chat
+const url = new URL('chat.html', window.location.origin);
+url.searchParams.set('room', roomKey);
+url.searchParams.set('password', password);
+window.location.href = url.toString();
 } catch (err) {
-alert('Connection error');
+alert('Failed to join room: ' + err.message);
 console.error(err);
+} finally {
+showLoading(false);
 }
 }
 
