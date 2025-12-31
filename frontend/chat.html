@@ -358,7 +358,6 @@ Key: <span id="roomKeyDisplay"></span>
 </div>
 <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
 <script>
-// Hardcoded backend URLs for Render deployment
 const API_URL = 'https://abysslink.onrender.com';
 const SOCKET_URL = 'https://abysslink.onrender.com';
 const urlParams = new URLSearchParams(window.location.search);
@@ -384,7 +383,7 @@ function showError(message) {
   setTimeout(() => errorDiv.remove(), 5000);
 }
 
-// ✅ FIXED: Properly receives 'event' parameter
+// ✅ FIXED: event is passed correctly
 function copyFullKey(event) {
   navigator.clipboard.writeText(roomId).then(() => {
     const btn = event.target;
@@ -403,7 +402,6 @@ function initialize() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('chatApp').style.display = 'flex';
   document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
-  // ✅ Use roomKeyDisplay instead of roomKey
   document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase();
 
   socket = io(SOCKET_URL, {
@@ -414,7 +412,6 @@ function initialize() {
   });
 
   socket.on('connect', () => {
-    console.log('Connected to server');
     myId = socket.id;
     socket.emit('join_room', { roomId, password });
   });
@@ -425,7 +422,6 @@ function initialize() {
   });
 
   socket.on('join_success', (data) => {
-    console.log('Successfully joined room:', data);
     expiresAt = data.expiresAt;
     updateParticipants(data.participantCount || 1);
     updateTimer();
@@ -439,50 +435,27 @@ function initialize() {
     }
   });
 
-  socket.on('new_message', (msg) => {
-    addMessage(msg);
-  });
-
+  socket.on('new_message', (msg) => addMessage(msg));
   socket.on('participant_joined', (data) => {
     updateParticipants(data.count);
-    if (data.message) {
-      const systemMsg = {
-        id: Date.now().toString(),
-        text: data.message,
-        timestamp: Date.now(),
-        type: 'system'
-      };
-      addMessage(systemMsg);
-    }
+    if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
   });
-
   socket.on('participant_left', (data) => {
     updateParticipants(data.count);
-    if (data.message) {
-      const systemMsg = {
-        id: Date.now().toString(),
-        text: data.message,
-        timestamp: Date.now(),
-        type: 'system'
-      };
-      addMessage(systemMsg);
-    }
+    if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
   });
-
   socket.on('room_vanished', () => {
     showError('Room has been destroyed.');
     cleanupAndRedirect();
   });
-
   socket.on('file_uploaded', (fileData) => {
-    const msg = {
+    addMessage({
       id: fileData.id,
       text: `📎 ${fileData.name} (${formatFileSize(fileData.size)})`,
       timestamp: fileData.uploadedAt,
       sender: 'system',
       isFile: true
-    };
-    addMessage(msg);
+    });
   });
 }
 
@@ -592,9 +565,7 @@ function escape(str) {
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && expiresAt) {
-    updateTimer();
-  }
+  if (!document.hidden && expiresAt) updateTimer();
 });
 
 window.addEventListener('beforeunload', () => {
