@@ -12,6 +12,6 @@ services:
   - key: NODE_ENV
     value: production
   - key: FRONTEND_URL
-    value: "https://abysslink.onrender.com"
+    value: "https://abysslink.vercel.app"  # ✅ Your Vercel domain
   healthCheckPath: /api/health
   autoDeploy: true
