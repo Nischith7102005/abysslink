@@ -15,3 +15,4 @@ services:
     value: "https://abysslink.vercel.app"
   healthCheckPath: /api/health
   autoDeploy: true
+
