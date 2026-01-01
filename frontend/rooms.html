@@ -438,17 +438,61 @@ h1 {
   </div>
 </div>
 
-<script>
+<script type="module">
 // Configuration
 const API_URL = 'https://abysslink.onrender.com';
+const PBKDF2_ITERATIONS = 310000;
 
 // State
 let createdRoomData = null;
 let storedPassword = null;
+let derivedAuthToken = null;
+
+// ============================================
+// CRYPTOGRAPHY
+// ============================================
+
+async function deriveAuthToken(password, authSalt) {
+  const encoder = new TextEncoder();
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+  
+  const authKey = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode(authSalt),
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'HMAC', hash: 'SHA-256', length: 256 },
+    true,
+    ['sign']
+  );
+  
+  const authKeyData = await crypto.subtle.exportKey('raw', authKey);
+  return arrayBufferToBase64(authKeyData);
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
+
 function showLoading(show, text = 'Processing...') {
   const overlay = document.getElementById('loadingOverlay');
   const loadingText = document.getElementById('loadingText');
@@ -478,7 +522,6 @@ function updatePasswordStrength(password) {
   }
   
   let strength = 0;
-  
   if (password.length >= 8) strength++;
   if (password.length >= 12) strength++;
   if (password.length >= 16) strength++;
@@ -496,30 +539,34 @@ function updatePasswordStrength(password) {
   }
 }
 
+// Make available globally
+window.updatePasswordStrength = updatePasswordStrength;
+
 // ============================================
 // MODAL FUNCTIONS
 // ============================================
-function openCreateModal() {
+
+window.openCreateModal = function() {
   document.getElementById('createModal').style.display = 'flex';
   document.getElementById('topicInput').focus();
-}
+};
 
-function closeCreateModal() {
+window.closeCreateModal = function() {
   document.getElementById('createModal').style.display = 'none';
   document.getElementById('createForm').reset();
   document.getElementById('passwordStrengthBar').className = 'password-strength-bar';
   document.getElementById('passwordStrengthBar').style.width = '0%';
-}
+};
 
-function openJoinModal() {
+window.openJoinModal = function() {
   document.getElementById('joinModal').style.display = 'flex';
   document.getElementById('joinRoomKey').focus();
-}
+};
 
-function closeJoinModal() {
+window.closeJoinModal = function() {
   document.getElementById('joinModal').style.display = 'none';
   document.getElementById('joinForm').reset();
-}
+};
 
 function showSuccessModal(roomId) {
   document.getElementById('createModal').style.display = 'none';
@@ -527,16 +574,18 @@ function showSuccessModal(roomId) {
   document.getElementById('successModal').style.display = 'flex';
 }
 
-function closeSuccessModal() {
+window.closeSuccessModal = function() {
   document.getElementById('successModal').style.display = 'none';
   createdRoomData = null;
   storedPassword = null;
-}
+  derivedAuthToken = null;
+};
 
 // ============================================
-// ROOM CREATION
+// ROOM CREATION - ZERO KNOWLEDGE
 // ============================================
-async function handleCreateRoom(e) {
+
+window.handleCreateRoom = async function(e) {
   e.preventDefault();
   
   const topic = document.getElementById('topicInput').value.trim();
@@ -558,13 +607,24 @@ async function handleCreateRoom(e) {
     return;
   }
   
-  showLoading(true, 'Creating encrypted room...');
+  showLoading(true, 'Generating room parameters...');
   
   try {
+    // Step 1: Generate temporary auth salt for initial key derivation
+    const tempAuthSalt = arrayBufferToBase64(crypto.getRandomValues(new Uint8Array(32)));
+    
+    showLoading(true, 'Deriving authentication token (this may take a moment)...');
+    
+    // Step 2: Derive auth token from password (password NEVER sent to server)
+    const authToken = await deriveAuthToken(password, tempAuthSalt);
+    
+    showLoading(true, 'Creating encrypted room...');
+    
+    // Step 3: Create room with authToken (NOT password)
     const res = await fetch(`${API_URL}/api/rooms/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic, password })
+      body: JSON.stringify({ topic, authToken })
     });
     
     const data = await res.json();
@@ -573,8 +633,9 @@ async function handleCreateRoom(e) {
       throw new Error(data.error || 'Failed to create room');
     }
     
+    // Store for entering room
     createdRoomData = data;
-    storedPassword = password;
+    storedPassword = password; // Only kept temporarily in memory
     
     showLoading(false);
     showSuccessModal(data.roomId);
@@ -584,43 +645,44 @@ async function handleCreateRoom(e) {
     showNotification(err.message, 'error');
     console.error('[CREATE ERROR]', err);
   }
-}
+};
 
-function copyRoomKey() {
+window.copyRoomKey = function() {
   const roomKey = document.getElementById('createdRoomKey').value;
   navigator.clipboard.writeText(roomKey).then(() => {
     showNotification('Room key copied to clipboard', 'success');
   }).catch(() => {
     showNotification('Failed to copy', 'error');
   });
-}
+};
 
-function enterCreatedRoom() {
+window.enterCreatedRoom = function() {
   if (!createdRoomData || !storedPassword) {
     showNotification('Session data lost. Please create a new room.', 'error');
-    closeSuccessModal();
+    window.closeSuccessModal();
     return;
   }
   
-  const roomId = createdRoomData.roomId;
-  
+  // Store auth data for chat.html
   sessionStorage.setItem('abysslink_auth', JSON.stringify({
-    roomId: roomId,
+    roomId: createdRoomData.roomId,
     password: storedPassword,
     topic: createdRoomData.topic,
-    encryptionSalt: createdRoomData.encryptionSalt
+    cryptoParams: createdRoomData.cryptoParams
   }));
   
+  // Clear sensitive data
   storedPassword = null;
   createdRoomData = null;
   
-  window.location.href = `chat.html?room=${roomId}`;
-}
+  window.location.href = `chat.html?room=${sessionStorage.getItem('abysslink_auth') ? JSON.parse(sessionStorage.getItem('abysslink_auth')).roomId : ''}`;
+};
 
 // ============================================
-// ROOM JOINING
+// ROOM JOINING - ZERO KNOWLEDGE
 // ============================================
-async function handleJoinRoom(e) {
+
+window.handleJoinRoom = async function(e) {
   e.preventDefault();
   
   const roomKey = document.getElementById('joinRoomKey').value.trim();
@@ -631,13 +693,31 @@ async function handleJoinRoom(e) {
     return;
   }
   
-  showLoading(true, 'Validating credentials...');
+  showLoading(true, 'Fetching room parameters...');
   
   try {
+    // Step 1: Get room's crypto params
+    const paramsRes = await fetch(`${API_URL}/api/rooms/${roomKey}/params`);
+    
+    if (!paramsRes.ok) {
+      const error = await paramsRes.json();
+      throw new Error(error.error || 'Room not found');
+    }
+    
+    const paramsData = await paramsRes.json();
+    
+    showLoading(true, 'Deriving authentication token (this may take a moment)...');
+    
+    // Step 2: Derive auth token from password + room's authSalt
+    const authToken = await deriveAuthToken(password, paramsData.cryptoParams.authSalt);
+    
+    showLoading(true, 'Validating credentials...');
+    
+    // Step 3: Validate with server using authToken
     const res = await fetch(`${API_URL}/api/rooms/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId: roomKey, password })
+      body: JSON.stringify({ roomId: roomKey, authToken })
     });
     
     const data = await res.json();
@@ -646,15 +726,16 @@ async function handleJoinRoom(e) {
       throw new Error(data.error || 'Invalid room key or password');
     }
     
+    // Store for chat.html
     sessionStorage.setItem('abysslink_auth', JSON.stringify({
       roomId: data.roomId,
-      password: password,
+      password: password, // Needed for encryption key derivation
       topic: data.topic,
-      encryptionSalt: data.encryptionSalt
+      cryptoParams: data.cryptoParams
     }));
     
     showLoading(false);
-    closeJoinModal();
+    window.closeJoinModal();
     
     window.location.href = `chat.html?room=${data.roomId}`;
     
@@ -663,16 +744,17 @@ async function handleJoinRoom(e) {
     showNotification(err.message, 'error');
     console.error('[JOIN ERROR]', err);
   }
-}
+};
 
 // ============================================
 // EVENT LISTENERS
 // ============================================
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    closeCreateModal();
-    closeJoinModal();
-    closeSuccessModal();
+    window.closeCreateModal();
+    window.closeJoinModal();
+    window.closeSuccessModal();
   }
 });
 
@@ -680,6 +762,7 @@ document.getElementById('joinRoomKey')?.addEventListener('input', function() {
   this.value = this.value.trim();
 });
 
+// Clear any stale auth data
 sessionStorage.removeItem('abysslink_auth');
 </script>
 </body>
