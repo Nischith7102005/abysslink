@@ -4,448 +4,547 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Active Rooms — AbyssLink</title>
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
---bg: #050505;
---surface: #0a0a0a;
---text-main: #ffffff;
---text-dim: #888888;
---border: #222222;
---grid-line: rgba(255, 255, 255, 0.03);
---ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --bg: #050505;
+  --surface: #0a0a0a;
+  --text-main: #ffffff;
+  --text-dim: #888888;
+  --border: #222222;
+  --success: #44ff88;
+  --danger: #ff4444;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 * {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 body {
-background-color: var(--bg);
-color: var(--text-main);
-font-family: 'Manrope', sans-serif;
-overflow-x: hidden;
--webkit-font-smoothing: antialiased;
-cursor: default;
-min-height: 100vh;
-padding: 2rem;
+  background-color: var(--bg);
+  color: var(--text-main);
+  font-family: 'Manrope', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 2rem;
 }
 .container {
-max-width: 1400px;
-margin: 0 auto;
-position: relative;
-z-index: 10;
+  max-width: 900px;
+  margin: 0 auto;
 }
 nav {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 2rem 0;
-margin-bottom: 3rem;
-border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 0;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--border);
 }
 .brand {
-font-family: 'Space Mono', monospace;
-font-weight: 700;
-letter-spacing: -0.05em;
-text-transform: uppercase;
-font-size: 1.2rem;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  font-size: 1.2rem;
 }
 .nav-items a {
-font-family: 'Space Mono', monospace;
-font-size: 0.8rem;
-color: var(--text-main);
-text-decoration: none;
-margin-left: 2rem;
-text-transform: uppercase;
-opacity: 0.6;
-transition: opacity 0.3s;
-cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  text-decoration: none;
+  margin-left: 2rem;
+  text-transform: uppercase;
+  opacity: 0.6;
+  transition: opacity 0.3s;
 }
 .nav-items a:hover { opacity: 1; }
 header {
-margin-bottom: 3rem;
-animation: fadeInDown 0.6s ease;
+  margin-bottom: 3rem;
+  animation: fadeInDown 0.6s ease;
 }
 @keyframes fadeInDown {
-from { opacity: 0; transform: translateY(-30px); }
-to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 h1 {
-font-size: clamp(2.5rem, 5vw, 4rem);
-font-weight: 200;
-line-height: 0.9;
-letter-spacing: -0.04em;
-margin-bottom: 0.5rem;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 200;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.5rem;
 }
 .subtitle {
-color: var(--text-dim);
-font-size: clamp(1rem, 2vw, 1.2rem);
-font-weight: 300;
+  color: var(--text-dim);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 300;
 }
-.action-bar {
-display: flex;
-gap: 1rem;
-margin-bottom: 3rem;
-flex-wrap: wrap;
-justify-content: space-between;
-}
-.action-left {
-display: flex;
-gap: 1rem;
-flex-wrap: wrap;
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
 }
 .btn {
-padding: 1rem 2rem;
-border: none;
-cursor: pointer;
-font-family: 'Space Mono', monospace;
-font-size: 0.8rem;
-text-transform: uppercase;
-font-weight: 700;
-transition: all 0.3s var(--ease-out);
-text-decoration: none;
-display: inline-flex;
-align-items: center;
+  padding: 1rem 2rem;
+  border: none;
+  cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: all 0.3s var(--ease-out);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .btn-primary {
-background: var(--text-main);
-color: var(--bg);
+  background: var(--text-main);
+  color: var(--bg);
 }
-.btn-primary:hover {
-transform: translateX(5px);
+.btn-primary:hover:not(:disabled) {
+  transform: translateX(5px);
 }
 .btn-secondary {
-background: transparent;
-color: var(--text-main);
-border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border);
 }
-.btn-secondary:hover {
-background: var(--text-main);
-color: var(--bg);
-transform: scale(1.05);
+.btn-secondary:hover:not(:disabled) {
+  background: var(--text-main);
+  color: var(--bg);
 }
-.btn-danger {
-background: transparent;
-color: #ff6b6b;
-border: 1px solid #ff6b6b;
+.security-notice {
+  background: rgba(68, 255, 136, 0.05);
+  border: 1px solid rgba(68, 255, 136, 0.2);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
 }
-.btn-danger:hover {
-background: #ff6b6b;
-color: var(--bg);
-transform: scale(1.05);
+.security-notice h4 {
+  color: var(--success);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-.rooms-grid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-gap: 2rem;
-animation: fadeIn 0.6s ease;
-}
-@keyframes fadeIn {
-from { opacity: 0; }
-to { opacity: 1; }
-}
-.room-card {
-background: var(--surface);
-border: 1px solid var(--border);
-padding: 2rem;
-transition: all 0.4s var(--ease-out);
-position: relative;
-overflow: hidden;
-}
-.room-card::before {
-content: '';
-position: absolute;
-top: 0;
-left: -100%;
-width: 100%;
-height: 100%;
-background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
-transition: left 0.5s;
-}
-.room-card:hover::before {
-left: 100%;
-}
-.room-card:hover {
-border-color: var(--text-main);
-transform: translateY(-5px);
-}
-.room-header {
-margin-bottom: 1.5rem;
-padding-bottom: 1rem;
-border-bottom: 1px solid var(--border);
-}
-.room-topic {
-font-size: 1.5rem;
-font-weight: 600;
-color: var(--text-main);
-margin-bottom: 0.5rem;
-letter-spacing: -0.02em;
-}
-.room-meta {
-display: flex;
-flex-direction: column;
-gap: 0.8rem;
-margin-bottom: 1.5rem;
-}
-.timer {
-display: inline-flex;
-align-items: center;
-gap: 0.5rem;
-padding: 0.5rem 1rem;
-border: 1px solid var(--border);
-font-weight: 600;
-color: var(--text-dim);
-font-size: 0.8rem;
-font-family: 'Space Mono', monospace;
-text-transform: uppercase;
-}
-.timer.critical {
-border-color: #ff6b6b;
-color: #ff6b6b;
-}
-.room-actions {
-display: flex;
-gap: 1rem;
-}
-.btn-enter {
-flex: 1;
-background: var(--text-main);
-color: var(--bg);
-padding: 0.8rem;
-text-align: center;
-justify-content: center;
+.security-notice p {
+  color: var(--text-dim);
+  line-height: 1.6;
 }
 .empty-state {
-text-align: center;
-padding: 5rem 2rem;
-animation: fadeIn 0.6s ease;
+  text-align: center;
+  padding: 5rem 2rem;
+  animation: fadeIn 0.6s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .empty-icon {
-font-size: 6rem;
-margin-bottom: 2rem;
-opacity: 0.2;
-animation: float 3s ease-in-out infinite;
-}
-@keyframes float {
-0%, 100% { transform: translateY(0); }
-50% { transform: translateY(-20px); }
+  font-size: 5rem;
+  margin-bottom: 2rem;
+  opacity: 0.3;
 }
 .empty-state h2 {
-font-size: 2rem;
-margin-bottom: 1rem;
-color: var(--text-dim);
-font-weight: 200;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--text-dim);
+  font-weight: 200;
 }
 .empty-state p {
-color: var(--text-dim);
-margin-bottom: 2rem;
-font-size: 1.1rem;
+  color: var(--text-dim);
+  margin-bottom: 2rem;
 }
 .modal {
-display: none;
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background: rgba(0, 0, 0, 0.95);
-justify-content: center;
-align-items: center;
-z-index: 1000;
-animation: fadeIn 0.3s ease;
-backdrop-filter: blur(10px);
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
 }
 .modal-content {
-background: var(--surface);
-padding: 3rem;
-max-width: 500px;
-width: 90%;
-border: 1px solid var(--border);
-animation: slideUp 0.4s ease;
+  background: var(--surface);
+  padding: 3rem;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid var(--border);
+  animation: slideUp 0.4s ease;
 }
 @keyframes slideUp {
-from { transform: translateY(50px); opacity: 0; }
-to { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 .modal h2 {
-color: var(--text-main);
-margin-bottom: 2rem;
-font-size: 2rem;
-font-weight: 200;
-font-family: 'Space Mono', monospace;
-text-transform: uppercase;
-letter-spacing: -0.02em;
+  color: var(--text-main);
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 200;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
 }
 .form-group {
-margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 .form-group label {
-display: block;
-margin-bottom: 0.5rem;
-color: var(--text-dim);
-font-size: 0.8rem;
-font-family: 'Space Mono', monospace;
-text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
 }
 .form-group input {
-width: 100%;
-padding: 1rem;
-border: 1px solid var(--border);
-background: var(--bg);
-color: var(--text-main);
-font-size: 1rem;
-font-family: 'Manrope', sans-serif;
-transition: all 0.3s ease;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-main);
+  font-size: 1rem;
+  font-family: 'Manrope', sans-serif;
+  transition: all 0.3s ease;
 }
 .form-group input:focus {
-outline: none;
-border-color: var(--text-main);
-background: var(--surface);
+  outline: none;
+  border-color: var(--text-main);
+  background: var(--surface);
 }
+.form-group input::placeholder {
+  color: var(--text-dim);
+}
+.form-hint {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 0.3rem;
+  font-family: 'Space Mono', monospace;
+}
+.password-strength {
+  margin-top: 0.5rem;
+  height: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+.password-strength-bar {
+  height: 100%;
+  width: 0%;
+  transition: all 0.3s ease;
+}
+.password-strength-bar.weak { background: var(--danger); width: 33%; }
+.password-strength-bar.medium { background: #ffaa44; width: 66%; }
+.password-strength-bar.strong { background: var(--success); width: 100%; }
 .modal-actions {
-display: flex;
-gap: 1rem;
-margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
 }
-.warning {
-color: #ff6b6b;
-margin-bottom: 2rem;
-font-size: 0.85rem;
-padding: 1rem;
-background: rgba(255, 0, 0, 0.05);
-border: 1px solid rgba(255, 0, 0, 0.2);
-font-family: 'Space Mono', monospace;
+.warning-box {
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+  font-family: 'Space Mono', monospace;
+  color: var(--danger);
 }
-.loading {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background: var(--bg);
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 9999;
+.info-box {
+  background: rgba(68, 255, 136, 0.05);
+  border: 1px solid rgba(68, 255, 136, 0.2);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+  font-family: 'Space Mono', monospace;
+  color: var(--success);
+}
+.loading-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 5, 5, 0.95);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 2000;
 }
 .loading-spinner {
-width: 40px;
-height: 40px;
-border: 2px solid var(--border);
-border-top-color: var(--text-main);
-border-radius: 50%;
-animation: spin 1s linear infinite;
-margin: 0 auto 1rem;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--text-main);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
 }
 @keyframes spin {
-to { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 .loading-text {
-font-family: 'Space Mono', monospace;
-font-size: 0.9rem;
-text-transform: uppercase;
-color: var(--text-dim);
-letter-spacing: 0.1em;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
-@media (max-width: 768px) {
-.rooms-grid { grid-template-columns: 1fr; }
-.action-bar { flex-direction: column; }
-.action-left { width: 100%; }
-.room-actions { flex-direction: column; }
-.modal-actions { flex-direction: column; }
-nav { flex-direction: column; gap: 1rem; align-items: flex-start; }
-.nav-items { display: flex; flex-wrap: wrap; }
-.nav-items a { margin-left: 0; margin-right: 1rem; }
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  z-index: 3000;
+  animation: slideInRight 0.3s ease;
+  cursor: pointer;
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.notification.error {
+  background: var(--danger);
+  color: white;
+}
+.notification.success {
+  background: var(--success);
+  color: var(--bg);
+}
+.notification.info {
+  background: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+@media (max-width: 600px) {
+  .action-buttons { flex-direction: column; }
+  .modal-actions { flex-direction: column; }
+  nav { flex-direction: column; gap: 1rem; }
+  .nav-items { display: flex; flex-wrap: wrap; }
+  .nav-items a { margin-left: 0; margin-right: 1rem; }
 }
 </style>
 </head>
 <body>
-<div class="loading" id="loadingScreen" style="display:none;">
-<div class="loading-spinner"></div>
-<div class="loading-text">Processing...</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Processing...</div>
 </div>
 
 <div class="container">
-<nav>
-<div class="brand">AbyssLink</div>
-<div class="nav-items">
-<a href="landing.html">Home</a>
-</div>
-</nav>
-<header>
-<h1>Active Rooms</h1>
-<p class="subtitle">Your temporary conversations</p>
-</header>
-<div class="action-bar">
-<div class="action-left">
-<a href="landing.html" class="btn btn-secondary">← Back</a>
-<button class="btn btn-primary" onclick="openCreateModal()">+ Create Room</button>
-<button class="btn btn-secondary" onclick="openJoinModal()">Join Room</button>
-</div>
-</div>
-<div id="roomsContainer" class="empty-state">
-<div class="empty-icon">👻</div>
-<h2>No Rooms Yet</h2>
-<p>Create or join a room to begin.</p>
-</div>
+  <nav>
+    <div class="brand">AbyssLink</div>
+    <div class="nav-items">
+      <a href="landing.html">Home</a>
+    </div>
+  </nav>
+  
+  <header>
+    <h1>Secure Sessions</h1>
+    <p class="subtitle">Create or join an encrypted room</p>
+  </header>
+  
+  <div class="security-notice">
+    <h4>🔒 End-to-End Encrypted</h4>
+    <p>All messages are encrypted on your device before transmission. 
+    The server never sees your plaintext messages. Keys are derived using 
+    PBKDF2 with 100,000 iterations.</p>
+  </div>
+  
+  <div class="action-buttons">
+    <a href="landing.html" class="btn btn-secondary">← Back</a>
+    <button class="btn btn-primary" onclick="openCreateModal()">+ Create Room</button>
+    <button class="btn btn-secondary" onclick="openJoinModal()">Join Room</button>
+  </div>
+  
+  <div class="empty-state">
+    <div class="empty-icon">🔐</div>
+    <h2>Ready to Connect Securely</h2>
+    <p>Create a new encrypted room or join an existing one with a room key.</p>
+  </div>
 </div>
 
 <!-- Create Modal -->
 <div id="createModal" class="modal">
-<div class="modal-content">
-<h2>Create Session</h2>
-<div class="warning">
-⚠️ Save the Room Key and Password. Share both with participants.
-</div>
-<form onsubmit="handleCreateRoom(event)">
-<div class="form-group">
-<label>Room Topic</label>
-<input type="text" id="topicInput" required placeholder="e.g. Project Alpha">
-</div>
-<div class="form-group">
-<label>Password (min 8 chars)</label>
-<input type="password" id="passwordInput" required minlength="8" placeholder="Access passphrase">
-</div>
-<div class="modal-actions">
-<button type="submit" class="btn btn-primary" style="flex: 1;">Create & Enter</button>
-<button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
-</div>
-</form>
-</div>
+  <div class="modal-content">
+    <h2>Create Session</h2>
+    
+    <div class="warning-box">
+      ⚠️ Save the Room Key and Password securely. You'll need both to share with participants. 
+      There is no recovery option.
+    </div>
+    
+    <form onsubmit="handleCreateRoom(event)" id="createForm">
+      <div class="form-group">
+        <label>Room Topic</label>
+        <input type="text" id="topicInput" required placeholder="e.g. Project Discussion" maxlength="100" autocomplete="off">
+        <div class="form-hint">Visible to participants (max 100 characters)</div>
+      </div>
+      
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="passwordInput" required placeholder="Strong passphrase" 
+               minlength="8" maxlength="128" autocomplete="new-password"
+               oninput="updatePasswordStrength(this.value)">
+        <div class="password-strength">
+          <div class="password-strength-bar" id="passwordStrengthBar"></div>
+        </div>
+        <div class="form-hint">Minimum 8 characters. Used for encryption.</div>
+      </div>
+      
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="confirmPasswordInput" required placeholder="Repeat password" 
+               minlength="8" maxlength="128" autocomplete="new-password">
+      </div>
+      
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary" style="flex: 1;" id="createBtn">Create & Enter</button>
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeCreateModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Join Modal -->
 <div id="joinModal" class="modal">
-<div class="modal-content">
-<h2>Join Session</h2>
-<form onsubmit="handleJoinRoom(event)">
-<div class="form-group">
-<label>Room Key</label>
-<input type="text" id="joinRoomKey" required placeholder="Paste room key">
+  <div class="modal-content">
+    <h2>Join Session</h2>
+    
+    <div class="info-box">
+      🔐 Your password never leaves your device. It's used locally to derive encryption keys.
+    </div>
+    
+    <form onsubmit="handleJoinRoom(event)" id="joinForm">
+      <div class="form-group">
+        <label>Room Key</label>
+        <input type="text" id="joinRoomKey" required placeholder="Paste room key" autocomplete="off">
+        <div class="form-hint">Provided by room creator</div>
+      </div>
+      
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="joinPassword" required placeholder="Room password" autocomplete="off">
+        <div class="form-hint">Shared by room creator</div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary" style="flex: 1;" id="joinBtn">Join Room</button>
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeJoinModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
 </div>
-<div class="form-group">
-<label>Password</label>
-<input type="password" id="joinPassword" required placeholder="Access passphrase">
-</div>
-<div class="modal-actions">
-<button type="submit" class="btn btn-primary" style="flex: 1;">Join Room</button>
-<button type="button" class="btn btn-secondary" onclick="closeJoinModal()" style="flex: 1;">Cancel</button>
-</div>
-</form>
-</div>
+
+<!-- Room Created Success Modal -->
+<div id="successModal" class="modal">
+  <div class="modal-content">
+    <h2>Room Created!</h2>
+    
+    <div class="warning-box">
+      ⚠️ Save these credentials NOW. They will not be shown again!
+    </div>
+    
+    <div class="form-group">
+      <label>Room Key</label>
+      <input type="text" id="createdRoomKey" readonly style="font-family: 'Space Mono', monospace; background: var(--bg);">
+      <button type="button" class="btn btn-secondary" style="margin-top: 0.5rem; width: 100%;" onclick="copyRoomKey()">
+        Copy Room Key
+      </button>
+    </div>
+    
+    <div class="info-box" style="margin-top: 1rem;">
+      Share the Room Key AND Password with participants through a secure channel.
+    </div>
+    
+    <div class="modal-actions">
+      <button type="button" class="btn btn-primary" style="flex: 1;" onclick="enterCreatedRoom()">Enter Room</button>
+    </div>
+  </div>
 </div>
 
 <script>
-// Hardcoded backend URL for Render deployment
+// Configuration
 const API_URL = 'https://abysslink.onrender.com';
 
-function showLoading(show = true) {
-  document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none';
+// State
+let createdRoomData = null;
+let storedPassword = null;
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function showLoading(show, text = 'Processing...') {
+  const overlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+  overlay.style.display = show ? 'flex' : 'none';
+  loadingText.textContent = text;
 }
 
+function showNotification(message, type = 'info') {
+  document.querySelectorAll('.notification').forEach(n => n.remove());
+  
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  notification.onclick = () => notification.remove();
+  document.body.appendChild(notification);
+  
+  setTimeout(() => notification.remove(), 5000);
+}
+
+function updatePasswordStrength(password) {
+  const bar = document.getElementById('passwordStrengthBar');
+  bar.className = 'password-strength-bar';
+  
+  if (password.length === 0) {
+    bar.style.width = '0%';
+    return;
+  }
+  
+  let strength = 0;
+  
+  // Length checks
+  if (password.length >= 8) strength++;
+  if (password.length >= 12) strength++;
+  if (password.length >= 16) strength++;
+  
+  // Character variety
+  if (/[a-z]/.test(password)) strength++;
+  if (/[A-Z]/.test(password)) strength++;
+  if (/[0-9]/.test(password)) strength++;
+  if (/[^a-zA-Z0-9]/.test(password)) strength++;
+  
+  if (strength <= 3) {
+    bar.classList.add('weak');
+  } else if (strength <= 5) {
+    bar.classList.add('medium');
+  } else {
+    bar.classList.add('strong');
+  }
+}
+
+// ============================================
+// MODAL FUNCTIONS
+// ============================================
 function openCreateModal() {
   document.getElementById('createModal').style.display = 'flex';
   document.getElementById('topicInput').focus();
@@ -453,8 +552,9 @@ function openCreateModal() {
 
 function closeCreateModal() {
   document.getElementById('createModal').style.display = 'none';
-  document.getElementById('topicInput').value = '';
-  document.getElementById('passwordInput').value = '';
+  document.getElementById('createForm').reset();
+  document.getElementById('passwordStrengthBar').className = 'password-strength-bar';
+  document.getElementById('passwordStrengthBar').style.width = '0%';
 }
 
 function openJoinModal() {
@@ -464,84 +564,202 @@ function openJoinModal() {
 
 function closeJoinModal() {
   document.getElementById('joinModal').style.display = 'none';
-  document.getElementById('joinRoomKey').value = '';
-  document.getElementById('joinPassword').value = '';
+  document.getElementById('joinForm').reset();
 }
 
-// Auto-trim room key input
-document.getElementById('joinRoomKey').addEventListener('input', function() {
-  this.value = this.value.trim();
-});
+function showSuccessModal(roomId) {
+  document.getElementById('createModal').style.display = 'none';
+  document.getElementById('createdRoomKey').value = roomId;
+  document.getElementById('successModal').style.display = 'flex';
+}
 
+function closeSuccessModal() {
+  document.getElementById('successModal').style.display = 'none';
+  createdRoomData = null;
+  storedPassword = null;
+}
+
+// ============================================
+// ROOM CREATION
+// ============================================
 async function handleCreateRoom(e) {
   e.preventDefault();
+  
   const topic = document.getElementById('topicInput').value.trim();
   const password = document.getElementById('passwordInput').value;
-  if (password.length < 8) {
-    alert('Password must be at least 8 characters');
+  const confirmPassword = document.getElementById('confirmPasswordInput').value;
+  
+  // Validation
+  if (password !== confirmPassword) {
+    showNotification('Passwords do not match', 'error');
     return;
   }
-  showLoading(true);
+  
+  if (password.length < 8) {
+    showNotification('Password must be at least 8 characters', 'error');
+    return;
+  }
+  
+  if (topic.length < 1 || topic.length > 100) {
+    showNotification('Topic must be 1-100 characters', 'error');
+    return;
+  }
+  
+  showLoading(true, 'Creating encrypted room...');
+  
   try {
     const res = await fetch(`${API_URL}/api/rooms/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topic, password })
     });
+    
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Create failed');
-    closeCreateModal();
-    const url = new URL('chat.html', window.location.origin);
-    url.searchParams.set('room', data.roomId);
-    url.searchParams.set('password', password);
-    if (topic) url.searchParams.set('topic', topic);
-    window.location.href = url.toString();
-  } catch (err) {
-    alert('Failed to create room: ' + err.message);
-    console.error(err);
-  } finally {
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to create room');
+    }
+    
+    // Store data for entering room
+    createdRoomData = data;
+    storedPassword = password;
+    
     showLoading(false);
+    showSuccessModal(data.roomId);
+    
+  } catch (err) {
+    showLoading(false);
+    showNotification(err.message, 'error');
+    console.error('[CREATE ERROR]', err);
   }
 }
 
-async function handleJoinRoom(e) {
-  e.preventDefault();
-  const roomKey = document.getElementById('joinRoomKey').value.trim();
-  const password = document.getElementById('joinPassword').value;
-  if (!roomKey || !password) {
-    alert('Please enter both room key and password');
+function copyRoomKey() {
+  const roomKey = document.getElementById('createdRoomKey').value;
+  navigator.clipboard.writeText(roomKey).then(() => {
+    showNotification('Room key copied to clipboard', 'success');
+  }).catch(() => {
+    showNotification('Failed to copy', 'error');
+  });
+}
+
+function enterCreatedRoom() {
+  if (!createdRoomData || !storedPassword) {
+    showNotification('Session data lost. Please create a new room.', 'error');
+    closeSuccessModal();
     return;
   }
-  showLoading(true);
+  
+  // Store auth in sessionStorage (not URL!)
+  sessionStorage.setItem('abysslink_auth', JSON.stringify({
+    roomId: createdRoomData.roomId,
+    password: storedPassword,
+    topic: createdRoomData.topic,
+    encryptionSalt: createdRoomData.encryptionSalt
+  }));
+  
+  // Clear sensitive data
+  storedPassword = null;
+  createdRoomData = null;
+  
+  // Navigate (password not in URL)
+  window.location.href = `chat.html?room=${createdRoomData?.roomId || sessionStorage.getItem('abysslink_auth') && JSON.parse(sessionStorage.getItem('abysslink_auth')).roomId}`;
+}
+
+// Fix: store before clearing
+function enterCreatedRoom() {
+  if (!createdRoomData || !storedPassword) {
+    showNotification('Session data lost. Please create a new room.', 'error');
+    closeSuccessModal();
+    return;
+  }
+  
+  const roomId = createdRoomData.roomId;
+  
+  // Store auth in sessionStorage (not URL!)
+  sessionStorage.setItem('abysslink_auth', JSON.stringify({
+    roomId: roomId,
+    password: storedPassword,
+    topic: createdRoomData.topic,
+    encryptionSalt: createdRoomData.encryptionSalt
+  }));
+  
+  // Clear sensitive data
+  storedPassword = null;
+  createdRoomData = null;
+  
+  // Navigate (password not in URL)
+  window.location.href = `chat.html?room=${roomId}`;
+}
+
+// ============================================
+// ROOM JOINING
+// ============================================
+async function handleJoinRoom(e) {
+  e.preventDefault();
+  
+  const roomKey = document.getElementById('joinRoomKey').value.trim();
+  const password = document.getElementById('joinPassword').value;
+  
+  if (!roomKey || !password) {
+    showNotification('Please enter room key and password', 'error');
+    return;
+  }
+  
+  showLoading(true, 'Validating credentials...');
+  
   try {
     const res = await fetch(`${API_URL}/api/rooms/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roomId: roomKey, password })
     });
+    
+    const data = await res.json();
+    
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || 'Validation failed');
+      throw new Error(data.error || 'Invalid room key or password');
     }
-    closeJoinModal();
-    const url = new URL('chat.html', window.location.origin);
-    url.searchParams.set('room', roomKey);
-    url.searchParams.set('password', password);
-    window.location.href = url.toString();
-  } catch (err) {
-    alert('Failed to join room: ' + err.message);
-    console.error(err);
-  } finally {
+    
+    // Store auth in sessionStorage
+    sessionStorage.setItem('abysslink_auth', JSON.stringify({
+      roomId: data.roomId,
+      password: password,
+      topic: data.topic,
+      encryptionSalt: data.encryptionSalt
+    }));
+    
     showLoading(false);
+    closeJoinModal();
+    
+    // Navigate
+    window.location.href = `chat.html?room=${data.roomId}`;
+    
+  } catch (err) {
+    showLoading(false);
+    showNotification(err.message, 'error');
+    console.error('[JOIN ERROR]', err);
   }
 }
 
+// ============================================
+// EVENT LISTENERS
+// ============================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeCreateModal();
     closeJoinModal();
+    closeSuccessModal();
   }
 });
+
+// Auto-trim room key input
+document.getElementById('joinRoomKey')?.addEventListener('input', function() {
+  this.value = this.value.trim();
+});
+
+// Clear any leftover auth data on page load
+sessionStorage.removeItem('abysslink_auth');
 </script>
 </body>
 </html>
