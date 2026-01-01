@@ -1,69 +1,1678 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>AbyssLink Chat</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session Active — AbyssLink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg: #050505;
+--surface: #0a0a0a;
+--text-main: #ffffff;
+--text-dim: #888888;
+--border: #222222;
+--accent: #ffffff;
+--danger: #ff4444;
+--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+body {
+background-color: var(--bg);
+color: var(--text-main);
+font-family: 'Manrope', sans-serif;
+overflow: hidden;
+-webkit-font-smoothing: antialiased;
+height: 100vh;
+display: flex;
+flex-direction: column;
+}
+.loading {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: var(--bg);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 9999;
+}
+.loading-spinner {
+width: 40px;
+height: 40px;
+border: 2px solid var(--border);
+border-top-color: var(--text-main);
+border-radius: 50%;
+animation: spin 1s linear infinite;
+margin: 0 auto 1rem;
+}
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+.loading-text {
+font-family: 'Space Mono', monospace;
+font-size: 0.9rem;
+text-transform: uppercase;
+color: var(--text-dim);
+letter-spacing: 0.1em;
+}
+.chat-header {
+background: var(--surface);
+border-bottom: 1px solid var(--border);
+padding: 1.5rem 2rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+gap: 1rem;
+}
+.room-info h2 {
+font-family: 'Space Mono', monospace;
+font-size: clamp(1rem, 2vw, 1.3rem);
+font-weight: 700;
+letter-spacing: -0.02em;
+text-transform: uppercase;
+margin-bottom: 0.3rem;
+}
+.room-meta {
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+color: var(--text-dim);
+text-transform: uppercase;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+.copy-btn {
+font-family: 'Space Mono', monospace;
+font-size: 0.7rem;
+padding: 0.2rem 0.5rem;
+background: transparent;
+color: var(--text-dim);
+border: 1px solid var(--border);
+cursor: pointer;
+transition: all 0.2s ease;
+}
+.copy-btn:hover {
+color: var(--text-main);
+border-color: var(--text-main);
+}
+.header-right {
+display: flex;
+align-items: center;
+gap: 1rem;
+}
+.status-badge {
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+padding: 0.5rem 1rem;
+border: 1px solid var(--border);
+background: var(--bg);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.status-badge.timer {
+color: var(--danger);
+border-color: rgba(255, 68, 68, 0.3);
+}
+.status-badge.participants {
+color: var(--text-main);
+}
+.chat-container {
+flex: 1;
+display: flex;
+overflow: hidden;
+}
+.messages {
+flex: 1;
+overflow-y: auto;
+padding: 2rem;
+display: flex;
+flex-direction: column;
+gap: 1rem;
+}
+.message {
+max-width: 65%;
+padding: 1rem 1.5rem;
+animation: slideIn 0.4s var(--ease-out);
+word-wrap: break-word;
+}
+@keyframes slideIn {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
+.message.own {
+align-self: flex-end;
+background: var(--text-main);
+color: var(--bg);
+}
+.message.other {
+align-self: flex-start;
+background: var(--surface);
+border: 1px solid var(--border);
+}
+.message-text {
+margin-bottom: 0.5rem;
+line-height: 1.6;
+font-size: 0.95rem;
+}
+.message-time {
+font-family: 'Space Mono', monospace;
+font-size: 0.65rem;
+opacity: 0.5;
+text-transform: uppercase;
+}
+.system-message {
+align-self: center;
+background: transparent;
+border-top: 1px solid var(--border);
+border-bottom: 1px solid var(--border);
+padding: 0.75rem 1.5rem;
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+color: var(--text-dim);
+text-transform: uppercase;
+letter-spacing: 0.1em;
+max-width: 100%;
+text-align: center;
+}
+.input-area {
+padding: 1.5rem 2rem;
+background: var(--surface);
+border-top: 1px solid var(--border);
+display: flex;
+gap: 1rem;
+align-items: center;
+}
+.input-area input[type="text"] {
+flex: 1;
+padding: 1rem 1.5rem;
+border: 1px solid var(--border);
+background: var(--bg);
+color: var(--text-main);
+font-family: 'Manrope', sans-serif;
+font-size: 0.95rem;
+outline: none;
+}
+.input-area input[type="text"]:focus {
+border-color: var(--text-main);
+background: var(--surface);
+}
+.input-area input[type="text"]::placeholder {
+color: var(--text-dim);
+}
+.btn {
+font-family: 'Space Mono', monospace;
+font-size: 0.8rem;
+text-transform: uppercase;
+font-weight: 700;
+padding: 1rem 1.5rem;
+border: 1px solid var(--border);
+background: transparent;
+color: var(--text-main);
+cursor: pointer;
+transition: all 0.3s var(--ease-out);
+white-space: nowrap;
+}
+.btn:hover {
+background: var(--text-main);
+color: var(--bg);
+transform: translateY(-2px);
+}
+.btn-primary {
+background: var(--text-main);
+color: var(--bg);
+}
+.btn-danger {
+border-color: var(--danger);
+color: var(--danger);
+}
+.btn-danger:hover {
+background: var(--danger);
+color: var(--text-main);
+}
+.sidebar {
+width: 300px;
+background: var(--surface);
+border-left: 1px solid var(--border);
+padding: 2rem;
+display: flex;
+flex-direction: column;
+gap: 2rem;
+}
+.sidebar h3 {
+font-family: 'Space Mono', monospace;
+font-size: 0.85rem;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+margin-bottom: 1rem;
+color: var(--text-dim);
+border-bottom: 1px solid var(--border);
+padding-bottom: 0.5rem;
+}
+.info-box {
+background: var(--bg);
+padding: 1.5rem;
+border: 1px solid var(--border);
+}
+.info-box p {
+font-family: 'Space Mono', monospace;
+color: var(--text-dim);
+font-size: 0.75rem;
+margin-bottom: 0.5rem;
+text-transform: uppercase;
+}
+.info-box strong {
+font-family: 'Space Mono', monospace;
+color: var(--text-main);
+font-size: 1.5rem;
+font-weight: 700;
+}
+.action-buttons {
+margin-top: auto;
+padding-top: 2rem;
+border-top: 1px solid var(--border);
+}
+.error-message {
+position: fixed;
+top: 20px;
+right: 20px;
+background: var(--danger);
+color: white;
+padding: 1rem 2rem;
+border-radius: 4px;
+font-family: 'Space Mono', monospace;
+z-index: 1000;
+animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+from { transform: translateX(100%); opacity: 0; }
+to { transform: translateX(0); opacity: 1; }
+}
+@media (max-width: 968px) {
+.sidebar { display: none; }
+.message { max-width: 80%; }
+}
+@media (max-width: 600px) {
+.chat-header { padding: 1rem; }
+.input-area { padding: 1rem; flex-wrap: wrap; }
+.input-area input[type="text"] { width: 100%; }
+.btn { padding: 0.75rem 1rem; font-size: 0.75rem; }
+.message { max-width: 90%; }
+}
+</style>
 </head>
 <body>
-<h1>AbyssLink</h1>
-
-<div>
-  <input id="msg" placeholder="Type message…">
-  <button id="send">Send</button>
+<div id="loadingScreen" class="loading">
+<div class="loading-content">
+<div class="loading-spinner"></div>
+<div class="loading-text">Joining Session...</div>
 </div>
-
-<div id="chat"></div>
-
-<h2>Upload File</h2>
-<input type="file" id="fileInput">
-<button id="up">Upload</button>
-
-<h2>Files</h2>
-<ul id="fileList"></ul>
-
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</div>
+<div id="chatApp" style="display:none; height:100%; flex-direction:column;">
+<div class="chat-header">
+<div class="room-info">
+<h2 id="roomTopic">Untitled Session</h2>
+<div class="room-meta">
+Key: <span id="roomKeyDisplay"></span>
+<button class="copy-btn" onclick="copyFullKey(event)">Copy Full</button>
+</div>
+</div>
+<div class="header-right">
+<div class="status-badge participants"><span id="participantCount">0</span> Active</div>
+<div class="status-badge timer" id="timerBadge"><span id="timeRemaining">24:00:00</span></div>
+</div>
+</div>
+<div class="chat-container">
+<div style="flex:1; display:flex; flex-direction:column;">
+<div class="messages" id="messages"></div>
+<div class="input-area">
+<input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
+<button class="btn" onclick="document.getElementById('fileInput').click()">Attach</button>
+<input type="text" id="messageInput" placeholder="Compose message..." onkeypress="handleKeyPress(event)">
+<button class="btn btn-primary" onclick="sendMessage()">Send</button>
+</div>
+</div>
+<div class="sidebar">
+<div>
+<h3>Session Status</h3>
+<div class="info-box">
+<p>Active Participants</p>
+<strong><span id="sidebarParticipants">0</span></strong>
+</div>
+</div>
+<div class="action-buttons">
+<button class="btn" onclick="leaveRoom()">Exit Session</button>
+<button class="btn btn-danger" onclick="confirmVanish()">Destroy Room</button>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
 <script>
-const roomId = new URL(location.href).searchParams.get("room");
-if (!roomId) location.href = "rooms.html";
+const API_URL = 'https://abysslink.onrender.com';
+const SOCKET_URL = 'https://abysslink.onrender.com';
+const urlParams = new URLSearchParams(window.location.search);
+const roomId = urlParams.get('room');
+const password = urlParams.get('password');
+const topic = urlParams.get('topic');
+if (!roomId || !password) {
+  alert('Missing room key or password');
+  window.location.href = 'rooms.html';
+}
 
-const socket = io("/", { auth: { roomId } });
+let socket = null;
+let myId = null;
+let expiresAt = null;
+let timer = null;
 
-socket.on("msg", (m) => {
-  const c = document.getElementById("chat");
-  c.innerText += "\\n" + m;
-});
+function showError(message) {
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
+  errorDiv.textContent = message;
+  errorDiv.onclick = () => errorDiv.remove();
+  document.body.appendChild(errorDiv);
+  setTimeout(() => errorDiv.remove(), 5000);
+}
 
-document.getElementById("send").onclick = () => {
-  const v = document.getElementById("msg").value.trim();
-  if (v) socket.emit("msg", v);
-};
+// ✅ FIXED: event is passed correctly
+function copyFullKey(event) {
+  navigator.clipboard.writeText(roomId).then(() => {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = originalText; }, 2000);
+  }).catch(err => {
+    console.error('Copy failed:', err);
+    showError('Failed to copy key');
+  });
+}
 
-document.getElementById("up").onclick = async () => {
-  const f = document.getElementById("fileInput").files[0];
-  if (!f) return;
+// 🔐 E2EE: Derive key from room ID + password
+async function deriveEncryptionKey() {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(roomId + password);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return hash;
+}
 
-  const form = new FormData();
-  form.append("file", f);
+// 🔐 Encrypt message
+async function encryptMessage(plaintext) {
+  const key = await deriveEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(plaintext);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
+    encoded
+  );
+  const ivB64 = btoa(String.fromCharCode(...iv));
+  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return { iv: ivB64, ciphertext: ctB64 };
+}
 
-  const res = await fetch("/api/upload/" + roomId, {
-    method: "POST",
-    body: form
+// 🔐 Decrypt message
+async function decryptMessage(ivB64, ciphertextB64) {
+  try {
+    const key = await deriveEncryptionKey();
+    const iv = new Uint8Array(atob(ivB64).split('').map(c => c.charCodeAt(0)));
+    const ciphertext = new Uint8Array(atob(ciphertextB64).split('').map(c => c.charCodeAt(0)));
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['decrypt']),
+      ciphertext
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (err) {
+    console.warn('Decryption failed:', err.message);
+    return '[Decryption failed]';
+  }
+}
+
+// Encrypt metadata (e.g. file name)
+async function encryptMetadata(plaintext) {
+  const key = await deriveEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(plaintext);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
+    encoded
+  );
+  const ivB64 = btoa(String.fromCharCode(...iv));
+  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return { iv: ivB64, ciphertext: ctB64 };
+}
+
+// Encrypt file content
+async function encryptFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const key = await deriveEncryptionKey();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv },
+          await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
+          e.target.result
+        );
+        const ivB64 = btoa(String.fromCharCode(...iv));
+        const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+        resolve({ iv: ivB64, ciphertext: ctB64, originalSize: file.size });
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function handleFileSelect() {
+  const input = document.getElementById('fileInput');
+  const file = input.files[0];
+  if (!file) return;
+
+  if (file.size > 50 * 1024 * 1000) {
+    showError('File too large (max 50MB)');
+    return;
+  }
+
+  try {
+    const encryptedName = await encryptMetadata(file.name);
+    const encryptedFile = await encryptFile(file);
+    
+    const binary = atob(encryptedFile.ciphertext);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+    const encryptedBlob = new Blob([array], { type: 'application/octet-stream' });
+
+    const formData = new FormData();
+    formData.append('encryptedFile', encryptedBlob, 'encrypted.bin');
+    formData.append('encryptedName', JSON.stringify(encryptedName));
+    formData.append('originalSize', encryptedFile.originalSize);
+
+    const res = await fetch(`${API_URL}/api/rooms/${roomId}/upload`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error('Upload failed');
+
+    const fileData = await res.json();
+    addMessage({
+      id: fileData.id,
+      text: `📎 File shared (${formatFileSize(fileData.originalSize)})`,
+      timestamp: Date.now(),
+      sender: 'system',
+      isFile: true,
+      fileData
+    });
+
+    input.value = '';
+  } catch (err) {
+    console.error('File upload error:', err);
+    showError('Failed to upload file');
+    input.value = '';
+  }
+}
+
+function initialize() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('chatApp').style.display = 'flex';
+  document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
+  document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase();
+
+  socket = io(SOCKET_URL, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
   });
 
-  const data = await res.json();
-  console.log("Uploaded:", data);
-};
-
-socket.emit("requestFiles");
-socket.on("files", (files) => {
-  const ul = document.getElementById("fileList");
-  ul.innerHTML = "";
-  files.forEach(f => {
-    const li = document.createElement("li");
-    li.innerText = f;
-    ul.appendChild(li);
+  socket.on('connect', () => {
+    myId = socket.id;
+    socket.emit('join_room', { roomId, password });
   });
+
+  socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    showError('Failed to connect to chat server');
+  });
+
+  socket.on('join_success', (data) => {
+    expiresAt = data.expiresAt;
+    updateParticipants(data.participantCount || 1);
+    updateTimer();
+  });
+
+  socket.on('error', (message) => {
+    console.error('Socket error:', message);
+    showError(message);
+    if (message.includes('password') || message.includes('found')) {
+      cleanupAndRedirect();
+    }
+  });
+
+  socket.on('new_message', async (msg) => {
+    if (msg.type === 'system') {
+      addMessage(msg);
+      return;
+    }
+    let displayText = msg.text;
+    if (msg.encrypted) {
+      displayText = await decryptMessage(msg.encrypted.iv, msg.encrypted.ciphertext);
+    }
+    addMessage({ ...msg, text: displayText });
+  });
+
+  socket.on('participant_joined', (data) => {
+    updateParticipants(data.count);
+    if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
+  });
+
+  socket.on('participant_left', (data) => {
+    updateParticipants(data.count);
+    if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
+  });
+
+  socket.on('room_vanished', () => {
+    showError('Room has been destroyed.');
+    cleanupAndRedirect();
+  });
+
+  socket.on('file_uploaded', async (fileData) => {
+    let displayName = '📎 File shared';
+    if (fileData.encryptedName) {
+      try {
+        const name = await decryptMessage(
+          fileData.encryptedName.iv,
+          fileData.encryptedName.ciphertext
+        );
+        displayName = `📎 ${name} (${formatFileSize(fileData.originalSize)})`;
+      } catch (e) {
+        displayName = `📎 Encrypted file (${formatFileSize(fileData.originalSize)})`;
+      }
+    }
+    addMessage({
+      id: fileData.id,
+      text: displayName,
+      timestamp: fileData.uploadedAt,
+      sender: 'system',
+      isFile: true
+    });
+  });
+}
+
+function addMessage(msg) {
+  const el = document.createElement('div');
+  el.className = msg.type === 'system' ? 'system-message' :
+    (msg.sender === myId ? 'message own' : 'message other');
+  if (msg.type === 'system') {
+    el.textContent = msg.text;
+  } else {
+    const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    el.innerHTML = `<div class="message-text">${escape(msg.text)}</div><div class="message-time">${time}</div>`;
+  }
+  document.getElementById('messages').appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateParticipants(count) {
+  document.getElementById('participantCount').textContent = count;
+  document.getElementById('sidebarParticipants').textContent = count;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  try {
+    const encrypted = await encryptMessage(text);
+    socket.emit('send_message', { roomId, encrypted });
+    input.value = '';
+  } catch (err) {
+    showError('Failed to encrypt message');
+    console.error(err);
+  }
+}
+
+function handleKeyPress(e) {
+  if (e.key === 'Enter') sendMessage();
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function updateTimer() {
+  if (!expiresAt) return;
+  const now = Date.now();
+  const remaining = expiresAt - now;
+  if (remaining <= 0) {
+    showError('Session expired.');
+    cleanupAndRedirect();
+    return;
+  }
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  document.getElementById('timeRemaining').textContent =
+    `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  if (remaining < 300000) {
+    document.getElementById('timerBadge').style.borderColor = 'var(--danger)';
+    document.getElementById('timerBadge').style.color = 'var(--danger)';
+  }
+  timer = setTimeout(updateTimer, 1000);
+}
+
+function confirmVanish() {
+  if (confirm('Destroy this room for everyone? This cannot be undone.')) {
+    fetch(`${API_URL}/api/rooms/vanish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showError('Room destruction initiated.');
+        cleanupAndRedirect();
+      } else {
+        showError('Failed to vanish room');
+      }
+    })
+    .catch(err => {
+      console.error('Vanish error:', err);
+      showError('Failed to vanish room');
+    });
+  }
+}
+
+function leaveRoom() {
+  if (confirm('Leave this session?')) {
+    cleanupAndRedirect();
+  }
+}
+
+function cleanupAndRedirect() {
+  if (timer) clearTimeout(timer);
+  if (socket) socket.disconnect();
+  window.location.href = 'rooms.html';
+}
+
+function escape(str) {
+  return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && expiresAt) updateTimer();
 });
+
+window.addEventListener('beforeunload', () => {
+  if (socket) socket.disconnect();
+});
+
+initialize();
+</script>
+</body>
+</html>
+
+
+Filename: Dockerfile
+Path: frontend/Dockerfile
+Content:
+FROM nginx:1.25.4-alpine
+
+# Remove default nginx files
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy static files
+COPY --chown=nginx:nginx landing.html /usr/share/nginx/html/
+COPY --chown=nginx:nginx rooms.html /usr/share/nginx/html/
+COPY --chown=nginx:nginx chat.html /usr/share/nginx/html/
+
+# Copy hardened config
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
+
+# Run as unprivileged user
+USER nginx
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
+
+Filename: landing.html
+Path: frontend/landing.html
+Content:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AbyssLink | Secure Transmission Layer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg: #050505;
+--surface: #0a0a0a;
+--text-main: #ffffff;
+--text-dim: #888888;
+--border: #222222;
+--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+html {
+scroll-behavior: smooth;
+}
+body {
+background-color: var(--bg);
+color: var(--text-main);
+font-family: 'Manrope', sans-serif;
+overflow-x: hidden;
+-webkit-font-smoothing: antialiased;
+will-change: scroll-position;
+}
+.background-wrapper {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: -3;
+overflow: hidden;
+}
+#bg-image {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: url('https://i.ibb.co/TMkPJDsN/1.jpg') center/cover no-repeat;
+filter: blur(12px) brightness(0.6);
+transform: scale(1.1);
+z-index: -2;
+will-change: filter, transform;
+transform: translate3d(0, 0, 0) scale(1.1);
+backface-visibility: hidden;
+perspective: 1000px;
+}
+#warrior-container {
+position: fixed;
+bottom: -15vh;
+left: 0;
+width: 100%;
+height: 100vh;
+display: flex;
+align-items: flex-end;
+justify-content: center;
+z-index: 1;
+pointer-events: none;
+overflow: hidden;
+background: transparent;
+will-change: transform, opacity;
+}
+#warrior-img {
+position: relative;
+height: 100vh;
+width: auto;
+max-width: 100%;
+object-fit: contain;
+object-position: bottom center;
+display: block;
+background: transparent;
+mix-blend-mode: screen;
+border: none !important;
+outline: none !important;
+box-shadow: none !important;
+filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+mask-image: linear-gradient(to bottom,
+black 0%,
+black 85%,
+transparent 100%);
+-webkit-mask-image: linear-gradient(to bottom,
+black 0%,
+black 85%,
+transparent 100%);
+will-change: opacity, transform;
+transform-origin: bottom center;
+transform: translate3d(0, 0, 0);
+backface-visibility: hidden;
+perspective: 1000px;
+}
+#sword-container {
+position: fixed;
+bottom: -18vh;
+left: -8%;
+width: 100%;
+height: 115vh;
+display: flex;
+align-items: flex-end;
+justify-content: flex-start;
+padding-left: 0;
+z-index: 5;
+pointer-events: none;
+overflow: hidden;
+will-change: transform, opacity;
+}
+#sword-img {
+position: relative;
+height: 100vh;
+width: auto;
+max-height: none;
+object-fit: contain;
+object-position: bottom left;
+display: block;
+opacity: 0;
+filter: drop-shadow(0 0 25px rgba(255,255,255,0.3));
+will-change: opacity, transform;
+transform: translate3d(0, 0, 0);
+backface-visibility: hidden;
+perspective: 1000px;
+mix-blend-mode: normal;
+mask-image: linear-gradient(to bottom,
+transparent 0%,
+black 5%,
+black 100%);
+-webkit-mask-image: linear-gradient(to bottom,
+transparent 0%,
+black 5%,
+black 100%);
+}
+.vignette {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: radial-gradient(circle at center, transparent 30%, rgba(5,5,5,0.7) 100%);
+z-index: 2;
+pointer-events: none;
+}
+.menu-toggle {
+position: fixed;
+top: 2rem;
+left: 4rem;
+width: 32px;
+height: 24px;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+cursor: pointer;
+z-index: 1001;
+}
+.menu-toggle span {
+width: 100%;
+height: 2px;
+background: var(--text-main);
+transition: all 0.3s ease;
+}
+.menu-toggle.active span:nth-child(1) {
+transform: translateY(11px) rotate(45deg);
+}
+.menu-toggle.active span:nth-child(2) {
+opacity: 0;
+}
+.menu-toggle.active span:nth-child(3) {
+transform: translateY(-11px) rotate(-45deg);
+}
+.menu-overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(5, 5, 5, 0.98);
+backdrop-filter: blur(20px);
+z-index: 1000;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+gap: 3rem;
+opacity: 0;
+visibility: hidden;
+transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.menu-overlay.active {
+opacity: 1;
+visibility: visible;
+}
+.menu-overlay a {
+color: var(--text-main);
+text-decoration: none;
+font-family: 'Space Mono', monospace;
+font-size: clamp(1.5rem, 4vw, 2.5rem);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+opacity: 0.7;
+transition: opacity 0.3s ease;
+cursor: pointer;
+}
+.menu-overlay a:hover {
+opacity: 1;
+}
+.sticky-nav {
+position: fixed;
+top: 2rem;
+right: 4rem;
+z-index: 500;
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.sticky-nav a {
+color: var(--text-dim);
+text-decoration: none;
+opacity: 0.5;
+transition: all 0.3s ease;
+padding-right: 1rem;
+border-right: 2px solid transparent;
+}
+.sticky-nav a.active {
+color: var(--text-main);
+opacity: 1;
+border-right-color: var(--text-main);
+}
+section {
+position: relative;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: 0 8rem;
+z-index: 10;
+background: transparent;
+will-change: transform, opacity;
+}
+#hero {
+background: transparent;
+}
+#hero .content-wrapper {
+text-align: center;
+margin: 0 auto;
+z-index: 20;
+margin-top: 5vh;
+}
+.content-wrapper {
+max-width: 900px;
+opacity: 0;
+transform: translateY(20px);
+margin: 0 auto;
+position: relative;
+z-index: 15;
+will-change: transform, opacity;
+backface-visibility: hidden;
+}
+h1, h2, h3 {
+font-family: 'Space Mono', monospace;
+font-weight: 200;
+letter-spacing: -0.04em;
+text-transform: uppercase;
+}
+h1 {
+font-size: clamp(3.5rem, 10vw, 7rem);
+line-height: 0.9;
+margin-bottom: 1.5rem;
+text-shadow: 0 0 30px rgba(0,0,0,1);
+}
+h2 {
+font-size: clamp(2rem, 4vw, 3.5rem);
+margin-bottom: 2rem;
+text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+}
+p.lead {
+font-size: 1.25rem;
+color: #ddd;
+line-height: 1.6;
+margin-bottom: 3rem;
+font-weight: 300;
+text-shadow: 0 2px 10px rgba(0,0,0,1);
+}
+.glitch-text {
+position: relative;
+}
+.glitch-char {
+display: inline-block;
+position: relative;
+will-change: opacity, transform;
+}
+.button-group {
+display: flex;
+gap: 2rem;
+justify-content: center;
+flex-wrap: wrap;
+margin-top: 2rem;
+}
+.glass-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 2rem;
+margin-top: 3rem;
+}
+.glass-pane {
+background: rgba(0, 0, 0, 0.6);
+border: 1px solid rgba(255, 255, 255, 0.1);
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+padding: 2.5rem;
+border-radius: 4px;
+transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+position: relative;
+will-change: transform, background, border-color;
+backface-visibility: hidden;
+}
+.glass-pane:hover {
+background: rgba(0, 0, 0, 0.75);
+border-color: rgba(255, 255, 255, 0.25);
+transform: translateY(-5px);
+}
+.glass-pane h3 {
+font-size: 1rem;
+margin-bottom: 1rem;
+color: var(--text-main);
+border-bottom: 1px solid rgba(255,255,255,0.1);
+padding-bottom: 0.5rem;
+display: inline-block;
+}
+.glass-pane p {
+font-size: 0.95rem;
+color: var(--text-dim);
+line-height: 1.6;
+}
+.grid-3 {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 2rem;
+margin-top: 4rem;
+}
+.card {
+border-top: 1px solid var(--border);
+padding-top: 1.5rem;
+transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+background: rgba(0, 0, 0, 0.5);
+padding: 1.5rem;
+backdrop-filter: blur(5px);
+will-change: transform, background, border-color;
+backface-visibility: hidden;
+}
+.card:hover {
+border-color: var(--text-main);
+background: rgba(0, 0, 0, 0.7);
+transform: translateY(-3px);
+}
+.card h3 {
+font-size: 0.9rem;
+margin-bottom: 1rem;
+}
+.card p {
+font-size: 1rem;
+color: var(--text-dim);
+line-height: 1.5;
+}
+.btn {
+display: inline-flex;
+align-items: center;
+background: var(--text-main);
+color: var(--bg);
+padding: 1rem 2.5rem;
+font-family: 'Space Mono', monospace;
+font-size: 0.8rem;
+text-transform: uppercase;
+font-weight: 700;
+border: none;
+cursor: pointer;
+transition: transform 0.3s var(--ease-out);
+z-index: 30;
+text-decoration: none;
+will-change: transform;
+}
+.btn:hover {
+transform: translateX(10px);
+}
+.btn-secondary {
+background: rgba(0,0,0,0.6);
+color: var(--text-main);
+border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+background: var(--text-main);
+color: var(--bg);
+transform: translateX(0) scale(1.05);
+}
+.about-section {
+min-height: 60vh;
+background: rgba(5, 5, 5, 0.9);
+border-top: 1px solid var(--border);
+padding: 4rem 8rem;
+display: flex;
+justify-content: space-between;
+align-items: flex-start;
+flex-wrap: wrap;
+z-index: 20;
+backdrop-filter: blur(10px);
+}
+.footer-brand {
+width: 100%;
+margin-bottom: 3rem;
+}
+.footer-grid {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 2rem;
+width: 100%;
+}
+.footer-col h4 {
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+text-transform: uppercase;
+color: var(--text-dim);
+margin-bottom: 1rem;
+}
+.footer-col p, .footer-col a {
+font-size: 0.9rem;
+color: var(--text-main);
+line-height: 1.8;
+text-decoration: none;
+display: block;
+}
+.footer-col a:hover {
+color: var(--text-dim);
+}
+@media (max-width: 1024px) {
+section { padding: 0 4rem; }
+.about-section { padding: 3rem 2rem; }
+.footer-grid { grid-template-columns: 1fr 1fr; }
+#warrior-container { bottom: -12vh; }
+#warrior-img { height: 95vh; }
+#sword-container {
+bottom: -15vh;
+left: -5%;
+}
+#sword-img {
+height: 95vh;
+}
+.menu-toggle { left: 2rem; }
+.sticky-nav { right: 2rem; }
+.glass-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+#warrior-container { bottom: -8vh; }
+#warrior-img { height: 90vh; }
+#sword-container {
+bottom: -12vh;
+left: -3%;
+}
+#sword-img {
+height: 85vh;
+}
+.button-group { gap: 1rem; }
+.sticky-nav { display: none; }
+.glass-grid { grid-template-columns: 1fr; }
+section { padding: 0 2rem; }
+}
+@media (max-width: 600px) {
+h1 { font-size: 2rem; }
+.about-section { padding: 2rem 1.5rem; }
+.footer-grid { grid-template-columns: 1fr; }
+#warrior-container { bottom: -5vh; }
+#warrior-img { height: 85vh; }
+#sword-container {
+bottom: -8vh;
+left: 0;
+}
+#sword-img { height: 75vh; }
+.menu-toggle { left: 1rem; top: 1rem; }
+}
+</style>
+</head>
+<body>
+<script>
+if (history.scrollRestoration) {
+history.scrollRestoration = 'manual';
+}
+window.addEventListener('beforeunload', () => {
+window.scrollTo(0, 0);
+});
+</script>
+<div class="background-wrapper">
+<div id="bg-image"></div>
+</div>
+<div id="warrior-container">
+<img id="warrior-img" src="https://i.ibb.co/fzj7K3BN/warrior.png" alt="Warrior">
+</div>
+<div id="sword-container">
+<img id="sword-img" src="https://i.ibb.co/Z6Fq164h/berserk.png" alt="Berserk Sword">
+</div>
+<div class="vignette"></div>
+<div class="menu-toggle" id="menuToggle">
+<span></span>
+<span></span>
+<span></span>
+</div>
+<div class="sticky-nav">
+<a href="#hero" class="nav-item active" data-section="hero">Overview</a>
+<a href="#infrastructure" class="nav-item" data-section="infrastructure">Infrastructure</a>
+<a href="#security" class="nav-item" data-section="security">Security</a>
+<a href="#implementation" class="nav-item" data-section="implementation">Implementation</a>
+<a href="#contact" class="nav-item" data-section="contact">Contact</a>
+</div>
+<div class="menu-overlay" id="menuOverlay">
+<a href="rooms.html">Get Into The Abyss</a>
+<a href="#infrastructure" onclick="closeMenu();">Features</a>
+</div>
+<section id="hero">
+<div class="content-wrapper">
+<h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
+<p class="lead">
+An ephemeral communication layer designed for professionals who require absolute stealth.<br>
+No persistent storage. No logs. Just silence.
+</p>
+<div class="button-group">
+<a href="rooms.html" class="btn">Get Into The Abyss</a>
+</div>
+</div>
+</section>
+<section id="infrastructure">
+<div class="content-wrapper">
+<h2>STRUCTURED ANONYMITY.</h2>
+<p style="color: var(--text-dim); margin-bottom: 2rem;">
+Our architecture prioritizes complete anonymity through distributed protocols and zero-knowledge proof systems.
+</p>
+<div class="glass-grid">
+<div class="glass-pane">
+<h3>01 // Zero-Persistence</h3>
+<p>Messages never stored - real-time broadcast only. 24-hour automatic expiration with instant destruction capability.</p>
+</div>
+<div class="glass-pane">
+<h3>02 // Complete Anonymity</h3>
+<p>No accounts, no usernames, no identity tracking. All participants appear as encrypted nodes in the network.</p>
+</div>
+<div class="glass-pane">
+<h3>03 // Room Keys</h3>
+<p>Join via a Room Key + Password. No invites. No tracking. Just direct access.</p>
+</div>
+<div class="glass-pane">
+<h3>04 // Real-Time Encryption</h3>
+<p>End-to-end encrypted messaging with ephemeral file sharing. All secrets hashed with SHA-256.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="security">
+<div class="content-wrapper">
+<h2 id="absolute-privacy-trigger">ABSOLUTE PRIVACY.</h2>
+<p class="lead">
+In the modern digital landscape, surveillance is the default. We have built a system where privacy is the baseline.
+</p>
+<div class="grid-3">
+<div class="card">
+<h3>Hashed Secrets</h3>
+<p>All passwords and keys hashed with SHA-256. No plain-text storage. Rate-limited authentication.</p>
+</div>
+<div class="card">
+<h3>No User Accounts</h3>
+<p>Registration is surveillance. Session tokens only - scoped to room lifetime.</p>
+</div>
+<div class="card">
+<h3>No Message Storage</h3>
+<p>Messages broadcast in real-time only. Zero persistence. Once delivered, vanished.</p>
+</div>
+<div class="card">
+<h3>No Analytics</h3>
+<p>We don't track usage patterns, behaviors, or metadata. Your existence leaves no digital footprint.</p>
+</div>
+<div class="card">
+<h3>Rate Limiting</h3>
+<p>Brute-force protection: 5 attempts per 15 minutes. IP-based throttling.</p>
+</div>
+<div class="card">
+<h3>Complete Destruction</h3>
+<p>Room expiration purges all sessions, invites, messages, and files. Irrecoverable.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="implementation">
+<div class="content-wrapper">
+<h2>HOW IT WORKS.</h2>
+<p class="lead">
+AbyssLink operates on a simple principle: communication should be ephemeral.
+</p>
+<div class="glass-grid">
+<div class="glass-pane">
+<h3>Step 1: Create Room</h3>
+<p>Generate a random Room Key. Set a password. Enter chat.</p>
+</div>
+<div class="glass-pane">
+<h3>Step 2: Share Key + Password</h3>
+<p>Send both to trusted participants via secure external channels.</p>
+</div>
+<div class="glass-pane">
+<h3>Step 3: Communicate</h3>
+<p>Messages and files are real-time only. Never stored. Never logged.</p>
+</div>
+<div class="glass-pane">
+<h3>Step 4: Vanish</h3>
+<p>Anyone can trigger full room destruction. Everything dissolves instantly.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="contact" style="text-align: center; align-items: center;">
+<div class="content-wrapper" style="max-width: 100%; text-align: center;">
+<h2>READY TO VANISH?</h2>
+<p class="lead">Join the network that forgets.</p>
+<div class="button-group" style="justify-content: center;">
+<a href="rooms.html" class="btn">Get Into The Abyss</a>
+</div>
+</div>
+</section>
+<footer class="about-section">
+<div class="footer-brand">
+<h3>ABYSSLINK</h3>
+<p style="margin-top: 1rem; color: var(--text-dim); max-width: 400px; font-size: 0.9rem;">
+Founded on the principle that digital communication should mirror the transience of physical conversation. We build for the shadows.
+</p>
+</div>
+<div class="footer-grid">
+<div class="footer-col">
+<h4>Protocol</h4>
+<p>E2E Encryption</p>
+<p>Volatile Nodes</p>
+<p>Room Key + Password</p>
+<p>24hr Auto-Destruct</p>
+</div>
+<div class="footer-col">
+<h4>Features</h4>
+<p>Anonymous Chat</p>
+<p>File Sharing</p>
+<p>Instant Vanish</p>
+<p>Zero Logs</p>
+</div>
+<div class="footer-col">
+<h4>Legal</h4>
+<p>Terms of Service</p>
+<p>Privacy Policy</p>
+<p>Security Report</p>
+<p>Transparency</p>
+</div>
+<div class="footer-col">
+<h4>Access</h4>
+<a href="rooms.html">Get Started</a>
+<p>Documentation</p>
+<p>API Access</p>
+</div>
+</div>
+<div style="width: 100%; margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
+&copy; 2025 AbyssLink Systems. All rights reserved. No data stored.
+</div>
+</footer>
+<script>
+const API_URL = 'https://abysslink.onrender.com';
+gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({
+autoRefreshEvents: "visibilitychange,DOMContentLoaded,load",
+syncInterval: 8,
+anticipatePin: 1
+});
+window.addEventListener("load", () => {
+window.scrollTo(0, 0);
+setTimeout(() => {
+ScrollTrigger.refresh();
+initializeAnimations();
+}, 200);
+});
+function initializeAnimations() {
+gsap.fromTo("#warrior-img",
+{
+opacity: 0,
+y: 250,
+scale: 0.85
+},
+{
+opacity: 1,
+y: 0,
+scale: 1,
+duration: 2,
+ease: "power3.out",
+delay: 0.3,
+force3D: true
+}
+);
+gsap.to("#warrior-img", {
+scrollTrigger: {
+trigger: "#hero",
+start: "top top",
+end: "bottom top",
+scrub: 1.5,
+invalidateOnRefresh: true,
+fastScrollEnd: true
+},
+opacity: 0,
+y: -100,
+scale: 1.15,
+ease: "none",
+force3D: true
+});
+gsap.fromTo("#sword-img",
+{
+opacity: 0,
+y: 80
+},
+{
+scrollTrigger: {
+trigger: "#infrastructure",
+start: "top 80%",
+end: "top 20%",
+scrub: 2.5,
+invalidateOnRefresh: true,
+fastScrollEnd: true
+},
+opacity: 0.95,
+y: 0,
+ease: "power1.inOut",
+force3D: true
+}
+);
+gsap.to("#sword-img", {
+scrollTrigger: {
+trigger: "#absolute-privacy-trigger",
+start: "top center",
+end: "top top",
+scrub: 1.5,
+invalidateOnRefresh: true,
+fastScrollEnd: true
+},
+opacity: 0,
+y: -60,
+ease: "power2.in",
+force3D: true
+});
+gsap.to("#bg-image", {
+scrollTrigger: {
+trigger: "#hero",
+start: "top top",
+end: "bottom top",
+scrub: 1.5,
+fastScrollEnd: true
+},
+filter: "blur(0px) brightness(0.8)",
+ease: "none",
+force3D: true
+});
+document.querySelectorAll('.content-wrapper').forEach((content, index) => {
+gsap.to(content, {
+scrollTrigger: {
+trigger: content,
+start: "top 85%",
+toggleActions: "play none none reverse",
+fastScrollEnd: true
+},
+opacity: 1,
+y: 0,
+duration: 1,
+ease: "power3.out",
+delay: index * 0.05,
+force3D: true
+});
+});
+gsap.utils.toArray('.glass-pane').forEach((pane, i) => {
+gsap.from(pane, {
+scrollTrigger: {
+trigger: pane,
+start: "top 90%",
+toggleActions: "play none none reverse",
+fastScrollEnd: true
+},
+opacity: 0,
+y: 30,
+duration: 0.8,
+delay: i * 0.1,
+ease: "power2.out",
+force3D: true
+});
+});
+gsap.utils.toArray('.card').forEach((card, i) => {
+gsap.from(card, {
+scrollTrigger: {
+trigger: card,
+start: "top 90%",
+toggleActions: "play none none reverse",
+fastScrollEnd: true
+},
+opacity: 0,
+y: 30,
+duration: 0.8,
+delay: i * 0.08,
+ease: "power2.out",
+force3D: true
+});
+});
+}
+function pulsingWaveGlitch(element) {
+const text = element.dataset.text || element.textContent;
+const chars = '█▓▒░/\\|_-<>[]{}';
+element.innerHTML = '';
+const spans = text.split('').map(char => {
+const span = document.createElement('span');
+span.className = 'glitch-char';
+span.textContent = char;
+span.dataset.original = char;
+element.appendChild(span);
+return span;
+});
+let waveIndex = 0;
+let lastTime = 0;
+const interval = 120;
+function animate(currentTime) {
+if (currentTime - lastTime >= interval) {
+spans.forEach((span, i) => {
+const distance = Math.abs(i - waveIndex);
+const isInWave = distance < 4;
+if (isInWave && Math.random() > 0.3) {
+span.textContent = chars[Math.floor(Math.random() * chars.length)];
+span.style.opacity = 0.6 + Math.random() * 0.4;
+} else if (!isInWave) {
+span.textContent = span.dataset.original;
+span.style.opacity = '1';
+}
+});
+waveIndex = (waveIndex + 1) % (spans.length + 5);
+lastTime = currentTime;
+}
+requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+}
+document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
+let scrollTimeout;
+const navItems = document.querySelectorAll('.sticky-nav .nav-item');
+const sections = document.querySelectorAll('section[id]');
+function updateActiveNav() {
+let current = '';
+sections.forEach(section => {
+const sectionTop = section.offsetTop;
+if (window.pageYOffset >= sectionTop - 300) {
+current = section.getAttribute('id');
+}
+});
+navItems.forEach(item => {
+item.classList.remove('active');
+if (item.getAttribute('data-section') === current) {
+item.classList.add('active');
+}
+});
+}
+window.addEventListener('scroll', () => {
+if (scrollTimeout) {
+window.cancelAnimationFrame(scrollTimeout);
+}
+scrollTimeout = window.requestAnimationFrame(updateActiveNav);
+}, { passive: true });
+const menuToggle = document.getElementById('menuToggle');
+const menuOverlay = document.getElementById('menuOverlay');
+menuToggle.addEventListener('click', () => {
+menuToggle.classList.toggle('active');
+menuOverlay.classList.toggle('active');
+});
+function closeMenu() {
+menuToggle.classList.remove('active');
+menuOverlay.classList.remove('active');
+}
+document.addEventListener('keydown', (e) => {
+if (e.key === 'Escape') {
+closeMenu();
+}
+});
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+anchor.addEventListener('click', function (e) {
+e.preventDefault();
+const target = document.querySelector(this.getAttribute('href'));
+if (target) {
+target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+closeMenu();
+}
+});
+});
+let resizeTimeout;
+window.addEventListener('resize', () => {
+clearTimeout(resizeTimeout);
+resizeTimeout = setTimeout(() => {
+ScrollTrigger.refresh();
+}, 250);
+}, { passive: true });
 </script>
 </body>
 </html>
