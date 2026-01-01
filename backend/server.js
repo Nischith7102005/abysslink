@@ -42,6 +42,9 @@ const allowedOrigins = [
 // 2. SECURITY MIDDLEWARE
 // ============================================
 
+// Trust proxy - MUST be before rate limiters (Render uses reverse proxy)
+app.set('trust proxy', 1);
+
 // Helmet for security headers
 app.use(helmet({
   contentSecurityPolicy: {
