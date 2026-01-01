@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # 🔒 Backend: Ephemeral chat server (Node.js)
   backend:
     build:
       context: ./backend
@@ -15,19 +14,32 @@ services:
       - PORT=10000
       - FRONTEND_URL=https://abysslink.vercel.app
     volumes:
-      - abysslink_uploads:/app/uploads  # Persistent uploads (optional)
+      - abysslink_uploads:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:10000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     networks:
       - abyssnet
-    # Run as non-root (enforced by Dockerfile)
     user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
-  # 🛡️ Frontend: Static files (Nginx)
   frontend:
     build:
       context: ./frontend
@@ -41,15 +53,24 @@ services:
         condition: service_healthy
     networks:
       - abyssnet
-    # Run as nginx user (enforced by Dockerfile)
     user: "101:101"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:noexec,nosuid,size=50m
+      - /var/run:noexec,nosuid,size=10m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
 
-# Volumes for uploads (ephemeral by design, but persistent across restarts)
 volumes:
   abysslink_uploads:
     driver: local
 
-# Isolated network
 networks:
   abyssnet:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
