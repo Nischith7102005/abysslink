@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   backend:
     build:
@@ -13,7 +14,7 @@ services:
       - PORT=10000
       - FRONTEND_URL=https://abysslink.vercel.app
     volumes:
-      - abysslink_uploads:/app/uploads:ro
+      - abysslink_uploads:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:10000/api/health"]
       interval: 30s
@@ -25,27 +26,19 @@ services:
     user: "1001:1001"
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid,nodev,size=100m
-      - /app/uploads:rw,noexec,nosuid,nodev,size=200m
+      - /tmp:noexec,nosuid,size=100m
     security_opt:
       - no-new-privileges:true
-      - apparmor=abysslink-profile
-      - seccomp=seccomp.json
     cap_drop:
       - ALL
     deploy:
       resources:
         limits:
-          cpus: '0.75'
-          memory: 384M
+          cpus: '1'
+          memory: 512M
         reservations:
-          cpus: '0.2'
-          memory: 96M
-    sysctls:
-      - net.ipv4.tcp_syncookies=1
-      - kernel.dmesg_restrict=1
-      - kernel.perf_event_paranoid=3
-      - fs.protected_regular=2
+          cpus: '0.25'
+          memory: 128M
 
   frontend:
     build:
@@ -63,8 +56,8 @@ services:
     user: "101:101"
     read_only: true
     tmpfs:
-      - /var/cache/nginx:rw,noexec,nosuid,nodev,size=30m
-      - /var/run:rw,noexec,nosuid,nodev,size=5m
+      - /var/cache/nginx:noexec,nosuid,size=50m
+      - /var/run:noexec,nosuid,size=10m
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -79,6 +72,5 @@ volumes:
 networks:
   abyssnet:
     driver: bridge
-    internal: true
     driver_opts:
-      com.docker.network.bridge.enable_ip_masquerade: "false"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
