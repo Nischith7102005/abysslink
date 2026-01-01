@@ -1,9 +1,9 @@
 version: '3.8'
 services:
-  abysslink-backend:
+  backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.hardened
+      dockerfile: Dockerfile
     container_name: abysslink-backend
     restart: unless-stopped
     ports:
@@ -13,20 +13,20 @@ services:
       - PORT=10000
       - FRONTEND_URL=https://abysslink.vercel.app
     volumes:
-      - abysslink_uploads:/app/uploads:ro  # Mount read-only in backend; write only via tmpfs during upload
+      - abysslink_uploads:/app/uploads:ro
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:10000/api/health"]
       interval: 30s
-      timeout: 5s
-      retries: 2
-      start_period: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - abyssnet
     user: "1001:1001"
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,size=100m
-      - /app/uploads:rw,noexec,nosuid,nodev,size=200m  # ephemeral upload buffer
+      - /app/uploads:rw,noexec,nosuid,nodev,size=200m
     security_opt:
       - no-new-privileges:true
       - apparmor=abysslink-profile
@@ -41,23 +41,22 @@ services:
         reservations:
           cpus: '0.2'
           memory: 96M
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     sysctls:
       - net.ipv4.tcp_syncookies=1
       - kernel.dmesg_restrict=1
       - kernel.perf_event_paranoid=3
+      - fs.protected_regular=2
 
-  abysslink-frontend:
+  frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.hardened
+      dockerfile: Dockerfile
     container_name: abysslink-frontend
     restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
-      abysslink-backend:
+      backend:
         condition: service_healthy
     networks:
       - abyssnet
@@ -80,6 +79,6 @@ volumes:
 networks:
   abyssnet:
     driver: bridge
-    internal: true  # no external egress except backend port
+    internal: true
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
