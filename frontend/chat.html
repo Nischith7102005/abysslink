@@ -487,13 +487,14 @@ body {
 </div>
 
 <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
-<script type="module">
+<script>
 // ============================================
 // CONFIGURATION
 // ============================================
 const API_URL = 'https://abysslink.onrender.com';
 const SOCKET_URL = 'https://abysslink.onrender.com';
-const PBKDF2_ITERATIONS = 310000; // OWASP 2023 recommendation
+const PBKDF2_ITERATIONS = 100000;
+const KEY_LENGTH = 256;
 
 // ============================================
 // STATE
@@ -504,10 +505,9 @@ let expiresAt = null;
 let timerInterval = null;
 let encryptionKey = null;
 let macKey = null;
-let authToken = null;
-let keyFingerprint = null;
-let cryptoParams = null;
+let encryptionSalt = null;
 let roomId = null;
+let password = null;
 let topic = null;
 let isTyping = false;
 let typingTimeout = null;
@@ -515,14 +515,100 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
 // ============================================
-// CRYPTOGRAPHY FUNCTIONS
+// INITIALIZATION
 // ============================================
+async function initialize() {
+  try {
+    updateLoadingText('Validating session...');
+    
+    const storedAuth = sessionStorage.getItem('abysslink_auth');
+    
+    if (storedAuth) {
+      const auth = JSON.parse(storedAuth);
+      roomId = auth.roomId;
+      password = auth.password;
+      topic = auth.topic;
+      encryptionSalt = auth.encryptionSalt;
+      sessionStorage.removeItem('abysslink_auth');
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      roomId = urlParams.get('room');
+      password = urlParams.get('password');
+      topic = urlParams.get('topic');
+      
+      if (password) {
+        const cleanUrl = new URL(window.location);
+        cleanUrl.searchParams.delete('password');
+        window.history.replaceState({}, '', cleanUrl);
+      }
+    }
+    
+    if (!roomId || !password) {
+      showNotification('Missing credentials. Redirecting...', 'error');
+      setTimeout(() => window.location.href = 'rooms.html', 2000);
+      return;
+    }
+    
+    updateLoadingText('Authenticating...');
+    
+    if (!encryptionSalt) {
+      const validateRes = await fetch(`${API_URL}/api/rooms/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, password })
+      });
+      
+      if (!validateRes.ok) {
+        const error = await validateRes.json();
+        throw new Error(error.error || 'Authentication failed');
+      }
+      
+      const data = await validateRes.json();
+      encryptionSalt = data.encryptionSalt;
+      topic = data.topic || topic;
+      expiresAt = data.expiresAt;
+    }
+    
+    updateLoadingText('Deriving encryption keys...');
+    
+    // Derive encryption key from password + salt
+    const keys = await deriveEncryptionKeys(password, encryptionSalt);
+    encryptionKey = keys.encryptionKey;
+    macKey = keys.macKey;
+    
+    // Store password temporarily for socket auth, then clear
+    sessionStorage.setItem('abysslink_temp_pwd', password);
+    password = null;
+    
+    updateLoadingText('Establishing secure connection...');
+    initializeUI();
+    
+    await connectSocket();
+    
+  } catch (err) {
+    console.error('[INIT ERROR]', err);
+    showNotification(err.message || 'Failed to initialize session', 'error');
+    setTimeout(() => window.location.href = 'rooms.html', 3000);
+  }
+}
 
-/**
- * Derive all keys from password - CRITICAL SECURITY
- * Auth token and encryption key are SEPARATE
- */
-async function deriveKeys(password, params) {
+function updateLoadingText(text) {
+  const el = document.getElementById('loadingSubtext');
+  if (el) el.textContent = text;
+}
+
+function initializeUI() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('chatApp').style.display = 'flex';
+  document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
+  document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase() + '...';
+  document.getElementById('messageInput').focus();
+}
+
+// ============================================
+// ENCRYPTION (PBKDF2 + AES-GCM + HMAC)
+// ============================================
+async function deriveEncryptionKeys(password, salt) {
   const encoder = new TextEncoder();
   
   const keyMaterial = await crypto.subtle.importKey(
@@ -533,121 +619,61 @@ async function deriveKeys(password, params) {
     ['deriveBits', 'deriveKey']
   );
   
-  // Auth token - derived with authSalt (this goes to server)
-  const authKey = await crypto.subtle.deriveKey(
+  // Derive encryption key
+  const encKey = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: encoder.encode(params.authSalt),
+      salt: encoder.encode(salt + roomId + '_encrypt'),
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256'
     },
     keyMaterial,
-    { name: 'HMAC', hash: 'SHA-256', length: 256 },
-    true,
-    ['sign']
-  );
-  
-  const authKeyData = await crypto.subtle.exportKey('raw', authKey);
-  const derivedAuthToken = arrayBufferToBase64(authKeyData);
-  
-  // Encryption key - derived with encryptionSalt (NEVER sent to server)
-  const derivedEncryptionKey = await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: encoder.encode(params.encryptionSalt),
-      iterations: PBKDF2_ITERATIONS,
-      hash: 'SHA-256'
-    },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
+    { name: 'AES-GCM', length: KEY_LENGTH },
     false,
     ['encrypt', 'decrypt']
   );
   
-  // MAC key for message authentication
-  const derivedMacKey = await crypto.subtle.deriveKey(
+  // Derive MAC key (separate from encryption key)
+  const macK = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: encoder.encode(params.macSalt),
+      salt: encoder.encode(salt + roomId + '_mac'),
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256'
     },
     keyMaterial,
-    { name: 'HMAC', hash: 'SHA-256', length: 256 },
+    { name: 'HMAC', hash: 'SHA-256', length: KEY_LENGTH },
     false,
     ['sign', 'verify']
   );
   
-  // Key fingerprint for verification
-  const fingerprintKey = await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: encoder.encode(params.roomFingerprint),
-      iterations: 1000,
-      hash: 'SHA-256'
-    },
-    keyMaterial,
-    { name: 'HMAC', hash: 'SHA-256', length: 128 },
-    true,
-    ['sign']
-  );
-  
-  const fingerprintData = await crypto.subtle.exportKey('raw', fingerprintKey);
-  const fingerprint = arrayBufferToBase64(fingerprintData).substring(0, 16);
-  
-  return {
-    authToken: derivedAuthToken,
-    encryptionKey: derivedEncryptionKey,
-    macKey: derivedMacKey,
-    fingerprint
-  };
+  return { encryptionKey: encKey, macKey: macK };
 }
 
 async function encryptMessage(plaintext) {
-  if (!encryptionKey || !macKey) throw new Error('Keys not initialized');
+  if (!encryptionKey) throw new Error('Encryption key not initialized');
   
   const encoder = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   
-  const ciphertext = await crypto.subtle.encrypt(
+  const encrypted = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     encryptionKey,
     encoder.encode(plaintext)
   );
   
-  // MAC over IV + ciphertext
-  const macData = new Uint8Array(iv.length + ciphertext.byteLength);
-  macData.set(iv, 0);
-  macData.set(new Uint8Array(ciphertext), iv.length);
-  
-  const mac = await crypto.subtle.sign('HMAC', macKey, macData);
-  
   return {
     iv: arrayBufferToBase64(iv),
-    ciphertext: arrayBufferToBase64(ciphertext),
-    mac: arrayBufferToBase64(mac)
+    ciphertext: arrayBufferToBase64(encrypted)
   };
 }
 
-async function decryptMessage(encrypted) {
-  if (!encryptionKey || !macKey) throw new Error('Keys not initialized');
+async function decryptMessage(ivBase64, ciphertextBase64) {
+  if (!encryptionKey) throw new Error('Encryption key not initialized');
   
   try {
-    const iv = base64ToArrayBuffer(encrypted.iv);
-    const ciphertext = base64ToArrayBuffer(encrypted.ciphertext);
-    const mac = base64ToArrayBuffer(encrypted.mac);
-    
-    // Verify MAC first
-    const macData = new Uint8Array(iv.byteLength + ciphertext.byteLength);
-    macData.set(new Uint8Array(iv), 0);
-    macData.set(new Uint8Array(ciphertext), iv.byteLength);
-    
-    const isValid = await crypto.subtle.verify('HMAC', macKey, mac, macData);
-    
-    if (!isValid) {
-      console.warn('[CRYPTO] MAC verification failed');
-      return '[⚠️ Message authentication failed]';
-    }
+    const iv = base64ToArrayBuffer(ivBase64);
+    const ciphertext = base64ToArrayBuffer(ciphertextBase64);
     
     const decrypted = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
@@ -657,7 +683,7 @@ async function decryptMessage(encrypted) {
     
     return new TextDecoder().decode(decrypted);
   } catch (err) {
-    console.warn('[CRYPTO] Decryption failed:', err.message);
+    console.warn('[DECRYPT ERROR]', err.message);
     return '[Unable to decrypt message]';
   }
 }
@@ -670,22 +696,15 @@ async function encryptFile(file) {
       try {
         const iv = crypto.getRandomValues(new Uint8Array(12));
         
-        const ciphertext = await crypto.subtle.encrypt(
+        const encrypted = await crypto.subtle.encrypt(
           { name: 'AES-GCM', iv },
           encryptionKey,
           e.target.result
         );
         
-        const macData = new Uint8Array(iv.length + ciphertext.byteLength);
-        macData.set(iv, 0);
-        macData.set(new Uint8Array(ciphertext), iv.length);
-        
-        const mac = await crypto.subtle.sign('HMAC', macKey, macData);
-        
         resolve({
           iv: arrayBufferToBase64(iv),
-          ciphertext: arrayBufferToBase64(ciphertext),
-          mac: arrayBufferToBase64(mac),
+          ciphertext: arrayBufferToBase64(encrypted),
           originalSize: file.size
         });
       } catch (err) {
@@ -698,10 +717,13 @@ async function encryptFile(file) {
   });
 }
 
+async function encryptMetadata(plaintext) {
+  return encryptMessage(plaintext);
+}
+
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
-
 function arrayBufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -741,6 +763,9 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// ============================================
+// NOTIFICATIONS
+// ============================================
 function showNotification(message, type = 'info') {
   document.querySelectorAll('.notification').forEach(n => n.remove());
   
@@ -753,129 +778,9 @@ function showNotification(message, type = 'info') {
   setTimeout(() => notification.remove(), 5000);
 }
 
-function updateLoadingText(text) {
-  const el = document.getElementById('loadingSubtext');
-  if (el) el.textContent = text;
-}
-
-// ============================================
-// INITIALIZATION
-// ============================================
-
-async function initialize() {
-  try {
-    updateLoadingText('Validating session...');
-    
-    // Get credentials from sessionStorage (set by rooms.html)
-    const storedAuth = sessionStorage.getItem('abysslink_auth');
-    let password = null;
-    
-    if (storedAuth) {
-      const auth = JSON.parse(storedAuth);
-      roomId = auth.roomId;
-      password = auth.password;
-      topic = auth.topic;
-      cryptoParams = auth.cryptoParams;
-      sessionStorage.removeItem('abysslink_auth');
-    } else {
-      // Fallback to URL params (less secure, but functional)
-      const urlParams = new URLSearchParams(window.location.search);
-      roomId = urlParams.get('room');
-      
-      // Clear URL immediately
-      const cleanUrl = new URL(window.location);
-      cleanUrl.search = '';
-      window.history.replaceState({}, '', cleanUrl);
-    }
-    
-    if (!roomId) {
-      showNotification('Missing room key. Redirecting...', 'error');
-      setTimeout(() => window.location.href = 'rooms.html', 2000);
-      return;
-    }
-    
-    // If we don't have cryptoParams, fetch them
-    if (!cryptoParams) {
-      updateLoadingText('Fetching room parameters...');
-      
-      const paramsRes = await fetch(`${API_URL}/api/rooms/${roomId}/params`);
-      
-      if (!paramsRes.ok) {
-        const error = await paramsRes.json();
-        throw new Error(error.error || 'Room not found');
-      }
-      
-      const paramsData = await paramsRes.json();
-      cryptoParams = paramsData.cryptoParams;
-      topic = paramsData.topic;
-      expiresAt = paramsData.expiresAt;
-    }
-    
-    // If no password, prompt for it
-    if (!password) {
-      password = prompt('Enter room password:');
-      if (!password) {
-        window.location.href = 'rooms.html';
-        return;
-      }
-    }
-    
-    updateLoadingText('Deriving encryption keys (this may take a moment)...');
-    
-    // Derive all keys from password
-    const keys = await deriveKeys(password, cryptoParams);
-    authToken = keys.authToken;
-    encryptionKey = keys.encryptionKey;
-    macKey = keys.macKey;
-    keyFingerprint = keys.fingerprint;
-    
-    // CRITICAL: Clear password from memory immediately
-    password = null;
-    
-    updateLoadingText('Validating credentials...');
-    
-    // Validate with server using authToken (NOT password)
-    const validateRes = await fetch(`${API_URL}/api/rooms/validate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, authToken })
-    });
-    
-    if (!validateRes.ok) {
-      const error = await validateRes.json();
-      throw new Error(error.error || 'Authentication failed');
-    }
-    
-    const validateData = await validateRes.json();
-    expiresAt = validateData.expiresAt;
-    topic = validateData.topic || topic;
-    
-    updateLoadingText('Establishing secure connection...');
-    initializeUI();
-    
-    await connectSocket();
-    
-  } catch (err) {
-    console.error('[INIT ERROR]', err);
-    showNotification(err.message || 'Failed to initialize session', 'error');
-    setTimeout(() => window.location.href = 'rooms.html', 3000);
-  }
-}
-
-function initializeUI() {
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('chatApp').style.display = 'flex';
-  document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
-  document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase() + '...';
-  document.getElementById('keyFingerprint').textContent = '🔐 ' + keyFingerprint;
-  document.getElementById('sidebarFingerprint').textContent = keyFingerprint;
-  document.getElementById('messageInput').focus();
-}
-
 // ============================================
 // SOCKET CONNECTION
 // ============================================
-
 async function connectSocket() {
   return new Promise((resolve, reject) => {
     socket = io(SOCKET_URL, {
@@ -891,12 +796,17 @@ async function connectSocket() {
       myId = socket.id;
       reconnectAttempts = 0;
       
-      // Join with authToken (NOT password)
-      socket.emit('join_room', { roomId, authToken });
+      const tempPwd = sessionStorage.getItem('abysslink_temp_pwd');
+      
+      socket.emit('join_room', { 
+        roomId, 
+        password: tempPwd
+      });
     });
     
     socket.on('connect_error', (error) => {
       console.error('[CONNECTION ERROR]', error);
+      
       if (reconnectAttempts === 0) {
         showNotification('Connection failed. Retrying...', 'error');
       }
@@ -907,11 +817,16 @@ async function connectSocket() {
     });
     
     socket.on('reconnect_failed', () => {
-      showNotification('Unable to reconnect. Please refresh.', 'error');
+      showNotification('Unable to reconnect. Please refresh the page.', 'error');
     });
     
     socket.on('join_success', (data) => {
+      sessionStorage.removeItem('abysslink_temp_pwd');
+      
       expiresAt = data.expiresAt;
+      if (data.encryptionSalt && !encryptionSalt) {
+        encryptionSalt = data.encryptionSalt;
+      }
       updateParticipants(data.participantCount || 1);
       startTimer();
       resolve();
@@ -961,7 +876,7 @@ async function connectSocket() {
     });
     
     socket.on('server_shutdown', () => {
-      showNotification('Server restarting. Please rejoin shortly.', 'info');
+      showNotification('Server is restarting. Please rejoin shortly.', 'info');
     });
     
     socket.on('disconnect', (reason) => {
@@ -981,14 +896,13 @@ async function connectSocket() {
 // ============================================
 // MESSAGE HANDLING
 // ============================================
-
 async function handleIncomingMessage(msg) {
   showTypingIndicator(false);
   
   let displayText = msg.text;
   
   if (msg.encrypted) {
-    displayText = await decryptMessage(msg.encrypted);
+    displayText = await decryptMessage(msg.encrypted.iv, msg.encrypted.ciphertext);
   }
   
   addMessage({
@@ -1045,20 +959,17 @@ async function sendMessage() {
   }
 }
 
-// Make functions available globally
-window.sendMessage = sendMessage;
-window.handleKeyPress = function(e) {
+function handleKeyPress(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
   }
-};
+}
 
 // ============================================
 // TYPING INDICATOR
 // ============================================
-
-window.handleTyping = function() {
+function handleTyping() {
   if (!socket?.connected) return;
   
   if (!isTyping) {
@@ -1074,17 +985,17 @@ window.handleTyping = function() {
       isTyping = false;
     }
   }, 2000);
-};
+}
 
 function showTypingIndicator(show) {
-  document.getElementById('typingIndicator').style.display = show ? 'block' : 'none';
+  const indicator = document.getElementById('typingIndicator');
+  indicator.style.display = show ? 'block' : 'none';
 }
 
 // ============================================
 // FILE HANDLING
 // ============================================
-
-window.handleFileSelect = async function() {
+async function handleFileSelect() {
   const input = document.getElementById('fileInput');
   const file = input.files[0];
   
@@ -1099,7 +1010,7 @@ window.handleFileSelect = async function() {
   try {
     showNotification('Encrypting file...', 'info');
     
-    const encryptedName = await encryptMessage(file.name);
+    const encryptedName = await encryptMetadata(file.name);
     const encryptedFile = await encryptFile(file);
     
     const binaryString = atob(encryptedFile.ciphertext);
@@ -1131,20 +1042,23 @@ window.handleFileSelect = async function() {
     
   } catch (err) {
     console.error('[UPLOAD ERROR]', err);
-    showNotification('Upload failed: ' + err.message, 'error');
+    showNotification('File upload failed: ' + err.message, 'error');
     input.value = '';
   }
-};
+}
 
 async function handleFileUploaded(fileData) {
   let displayName = '📎 Encrypted file';
   
   if (fileData.encryptedName) {
     try {
-      const name = await decryptMessage(fileData.encryptedName);
+      const name = await decryptMessage(
+        fileData.encryptedName.iv,
+        fileData.encryptedName.ciphertext
+      );
       displayName = `📎 ${name}`;
     } catch (e) {
-      // Keep default
+      // Keep default name
     }
   }
   
@@ -1155,7 +1069,6 @@ async function handleFileUploaded(fileData) {
 // ============================================
 // TIMER
 // ============================================
-
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval);
   updateTimer();
@@ -1192,7 +1105,6 @@ function updateTimer() {
 // ============================================
 // PARTICIPANTS
 // ============================================
-
 function updateParticipants(count) {
   document.getElementById('participantCount').textContent = count;
   document.getElementById('sidebarParticipants').textContent = count;
@@ -1201,23 +1113,22 @@ function updateParticipants(count) {
 // ============================================
 // ROOM ACTIONS
 // ============================================
-
-window.copyRoomKey = function() {
+function copyRoomKey() {
   navigator.clipboard.writeText(roomId).then(() => {
-    showNotification('Room key copied', 'success');
+    showNotification('Room key copied to clipboard', 'success');
   }).catch(() => {
     showNotification('Failed to copy', 'error');
   });
-};
+}
 
-window.leaveRoom = function() {
-  if (confirm('Leave this session?')) {
+function leaveRoom() {
+  if (confirm('Leave this session? You can rejoin with the room key and password.')) {
     cleanupAndRedirect();
   }
-};
+}
 
-window.confirmVanish = async function() {
-  const confirmText = prompt('Type "DESTROY" to permanently delete this room:');
+async function confirmVanish() {
+  const confirmText = prompt('Type "DESTROY" to permanently delete this room for everyone:');
   
   if (confirmText !== 'DESTROY') {
     if (confirmText !== null) {
@@ -1226,11 +1137,14 @@ window.confirmVanish = async function() {
     return;
   }
   
+  const pwd = prompt('Enter room password to confirm destruction:');
+  if (!pwd) return;
+  
   try {
     const res = await fetch(`${API_URL}/api/rooms/vanish`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, authToken })
+      body: JSON.stringify({ roomId, password: pwd })
     });
     
     const data = await res.json();
@@ -1245,12 +1159,11 @@ window.confirmVanish = async function() {
   } catch (err) {
     showNotification(err.message, 'error');
   }
-};
+}
 
 // ============================================
 // CLEANUP
 // ============================================
-
 function cleanupAndRedirect() {
   if (timerInterval) clearInterval(timerInterval);
   if (typingTimeout) clearTimeout(typingTimeout);
@@ -1260,14 +1173,13 @@ function cleanupAndRedirect() {
     socket = null;
   }
   
-  // Securely clear keys
   encryptionKey = null;
   macKey = null;
-  authToken = null;
-  keyFingerprint = null;
-  cryptoParams = null;
+  encryptionSalt = null;
+  password = null;
   
-  sessionStorage.clear();
+  sessionStorage.removeItem('abysslink_auth');
+  sessionStorage.removeItem('abysslink_temp_pwd');
   
   window.location.href = 'rooms.html';
 }
@@ -1275,7 +1187,6 @@ function cleanupAndRedirect() {
 // ============================================
 // EVENT LISTENERS
 // ============================================
-
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && expiresAt) {
     updateTimer();
@@ -1284,6 +1195,13 @@ document.addEventListener('visibilitychange', () => {
 
 window.addEventListener('beforeunload', () => {
   if (socket) socket.disconnect();
+});
+
+window.addEventListener('beforeunload', (e) => {
+  if (socket?.connected) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
 });
 
 // ============================================
