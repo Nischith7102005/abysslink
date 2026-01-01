@@ -11,20 +11,21 @@ import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 
-// Load environment
+// Load environment variables
 dotenv.config();
 
-// ES __dirname
+// Resolve __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 const httpServer = http.createServer(app);
 
+// Environment
 const PORT = process.env.PORT || 10000;
 const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://abysslink.vercel.app')
   .split(',')
-  .map(origin => origin.trim())
+  .map(origin => origin.trim()) // ✅ TRIM WHITESPACE
   .filter(origin => origin.length > 0);
 
 // Security headers
@@ -35,12 +36,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// JSON body parser
 app.use(express.json({ limit: '50mb' }));
 
-// CORS
+// ========================
+// CORS — FIXED
+// ========================
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // allow curl, etc.
     if (FRONTEND_URL.includes(origin)) {
       callback(null, true);
     } else {
@@ -53,9 +57,11 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Preflight support
+app.options('*', cors(corsOptions)); // ✅ Handle preflight
 
+// ========================
 // Uploads
+// ========================
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -70,18 +76,26 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1000 } });
 app.use('/uploads', express.static(uploadDir));
 
-// In-memory rooms
+// ========================
+// In-Memory Storage
+// ========================
 const rooms = new Map();
+const socketToRoom = new Map();
 
+// ========================
 // Helpers
+// ========================
 async function hashPassword(password) {
   return await bcrypt.hash(password, 12);
 }
 
-// ====================
-// API Routes
-// ====================
+async function verifyPassword(password, hash) {
+  return await bcrypt.compare(password, hash);
+}
 
+// ========================
+// API Routes
+// ========================
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', activeRooms: rooms.size });
 });
@@ -93,12 +107,12 @@ app.post('/api/rooms/create', async (req, res) => {
       return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
     }
     const roomId = uuidv4();
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(password); // ✅ correct variable
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
     rooms.set(roomId, {
       id: roomId,
       topic,
-      password: <PASSWORD>,
+      password: <PASSWORD>, // ✅ NO angle brackets
       expiresAt,
       messages: [],
       files: [],
@@ -120,7 +134,7 @@ app.post('/api/rooms/validate', async (req, res) => {
       await new Promise(r => setTimeout(r, 50));
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
-    const isValid = await bcrypt.compare(password, room.password);
+    const isValid = await verifyPassword(password, room.password);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
@@ -140,10 +154,12 @@ app.post('/api/rooms/vanish', async (req, res) => {
       await new Promise(r => setTimeout(r, 50));
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
-    const isValid = await bcrypt.compare(password, room.password);
+    const isValid = await verifyPassword(password, room.password);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid room key or password' });
     }
+    console.log(`[ROOM VANISHED] ${cleanRoomId}`);
+    // Emit vanish event if needed
     rooms.delete(cleanRoomId);
     res.json({ success: true });
   } catch (err) {
@@ -171,36 +187,42 @@ app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res)
   }
 });
 
-// ====================
+// ========================
 // Socket.IO
-// ====================
-
+// ========================
 const io = new Server(httpServer, {
   cors: corsOptions,
   transports: ['websocket']
 });
 
-const socketToRoom = new Map();
-
 io.on('connection', (socket) => {
   socket.on('join_room', async ({ roomId, password }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
-    if (!room || !(await bcrypt.compare(password, room.password))) {
+    if (!room || !(await verifyPassword(password, room.password))) {
       socket.emit('error', 'Invalid room key or password');
       return;
     }
     socket.join(cleanRoomId);
     room.participants.add(socket.id);
     socketToRoom.set(socket.id, cleanRoomId);
-    socket.emit('join_success', { expiresAt: room.expiresAt, topic: room.topic, participantCount: room.participants.size });
+    socket.emit('join_success', {
+      expiresAt: room.expiresAt,
+      topic: room.topic,
+      participantCount: room.participants.size
+    });
   });
 
   socket.on('send_message', ({ roomId, encrypted }) => {
     const cleanRoomId = String(roomId).trim();
     const room = rooms.get(cleanRoomId);
     if (!room || !encrypted) return;
-    const msg = { id: uuidv4(), encrypted, timestamp: Date.now(), sender: socket.id };
+    const msg = {
+      id: uuidv4(),
+      encrypted,
+      timestamp: Date.now(),
+      sender: socket.id
+    };
     room.messages.push(msg);
     io.to(cleanRoomId).emit('new_message', msg);
   });
@@ -218,7 +240,7 @@ io.on('connection', (socket) => {
 // Cleanup expired rooms
 setInterval(() => {
   const now = Date.now();
-  for (const [id, room] of rooms) {
+  for (const [id, room] of rooms.entries()) {
     if (room.expiresAt <= now) {
       rooms.delete(id);
     }
