@@ -77,22 +77,6 @@ body {
   opacity: 0.5;
   margin-top: 0.5rem;
 }
-.security-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
-  color: var(--success);
-  text-transform: uppercase;
-  margin-top: 2rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(68, 255, 136, 0.3);
-  background: rgba(68, 255, 136, 0.05);
-}
-.security-indicator::before {
-  content: '🔒';
-}
 .chat-header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -164,14 +148,15 @@ body {
 .status-badge.participants {
   color: var(--text-main);
 }
-.status-badge.encrypted {
-  color: var(--success);
-  border-color: rgba(68, 255, 136, 0.3);
-}
 .chat-container {
   flex: 1;
   display: flex;
   overflow: hidden;
+}
+.messages-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .messages {
   flex: 1;
@@ -213,11 +198,6 @@ body {
   opacity: 0.5;
   text-transform: uppercase;
 }
-.message-encrypted-badge {
-  font-size: 0.6rem;
-  opacity: 0.4;
-  margin-left: 0.5rem;
-}
 .system-message {
   align-self: center;
   background: transparent;
@@ -231,16 +211,6 @@ body {
   letter-spacing: 0.1em;
   max-width: 100%;
   text-align: center;
-}
-.file-message {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-.file-message:hover {
-  border-color: var(--text-main);
 }
 .typing-indicator {
   align-self: flex-start;
@@ -335,7 +305,7 @@ body {
   color: var(--text-main);
 }
 .sidebar {
-  width: 300px;
+  width: 280px;
   background: var(--surface);
   border-left: 1px solid var(--border);
   padding: 2rem;
@@ -370,25 +340,6 @@ body {
   color: var(--text-main);
   font-size: 1.5rem;
   font-weight: 700;
-}
-.security-info {
-  background: rgba(68, 255, 136, 0.05);
-  border: 1px solid rgba(68, 255, 136, 0.2);
-  padding: 1rem;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--success);
-}
-.security-info ul {
-  list-style: none;
-  margin-top: 0.5rem;
-}
-.security-info li {
-  padding: 0.25rem 0;
-  opacity: 0.8;
-}
-.security-info li::before {
-  content: '✓ ';
 }
 .action-buttons {
   margin-top: auto;
@@ -427,35 +378,6 @@ body {
   color: var(--text-main);
   border: 1px solid var(--border);
 }
-.connection-status {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-dim);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  z-index: 100;
-}
-.connection-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--success);
-}
-.connection-dot.disconnected {
-  background: var(--danger);
-  animation: pulse 1s ease-in-out infinite;
-}
-.connection-dot.connecting {
-  background: #ffaa44;
-  animation: pulse 0.5s ease-in-out infinite;
-}
 @media (max-width: 968px) {
   .sidebar { display: none; }
   .message { max-width: 80%; }
@@ -476,7 +398,6 @@ body {
   <div class="loading-spinner"></div>
   <div class="loading-text">Initializing Secure Session...</div>
   <div class="loading-subtext" id="loadingSubtext">Deriving encryption keys</div>
-  <div class="security-indicator">End-to-End Encrypted</div>
 </div>
 
 <div id="chatApp" style="display:none; height:100%; flex-direction:column;">
@@ -489,14 +410,13 @@ body {
       </div>
     </div>
     <div class="header-right">
-      <div class="status-badge encrypted">🔒 E2EE</div>
       <div class="status-badge participants"><span id="participantCount">0</span> Active</div>
       <div class="status-badge timer" id="timerBadge"><span id="timeRemaining">24:00:00</span></div>
     </div>
   </div>
   
   <div class="chat-container">
-    <div style="flex:1; display:flex; flex-direction:column;">
+    <div class="messages-wrapper">
       <div class="messages" id="messages"></div>
       <div id="typingIndicator" class="typing-indicator" style="display:none; margin: 0 2rem 1rem;">
         Someone is typing <span class="typing-dots"><span></span><span></span><span></span></span>
@@ -504,7 +424,7 @@ body {
       <div class="input-area">
         <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
         <button class="btn" onclick="document.getElementById('fileInput').click()" id="attachBtn">Attach</button>
-        <input type="text" id="messageInput" placeholder="Compose encrypted message..." onkeypress="handleKeyPress(event)" oninput="handleTyping()">
+        <input type="text" id="messageInput" placeholder="Compose message..." onkeypress="handleKeyPress(event)" oninput="handleTyping()">
         <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn">Send</button>
       </div>
     </div>
@@ -518,27 +438,12 @@ body {
         </div>
       </div>
       
-      <div class="security-info">
-        <strong>Security Active</strong>
-        <ul>
-          <li>AES-256-GCM Encryption</li>
-          <li>PBKDF2 Key Derivation</li>
-          <li>No Server Storage</li>
-          <li>Perfect Forward Secrecy</li>
-        </ul>
-      </div>
-      
       <div class="action-buttons">
         <button class="btn" onclick="leaveRoom()">Exit Session</button>
         <button class="btn btn-danger" onclick="confirmVanish()">Destroy Room</button>
       </div>
     </div>
   </div>
-</div>
-
-<div class="connection-status" id="connectionStatus">
-  <span class="connection-dot" id="connectionDot"></span>
-  <span id="connectionText">Connecting...</span>
 </div>
 
 <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
@@ -575,7 +480,6 @@ async function initialize() {
   try {
     updateLoadingText('Validating session...');
     
-    // Get credentials from sessionStorage (secure) or URL params (fallback)
     const storedAuth = sessionStorage.getItem('abysslink_auth');
     
     if (storedAuth) {
@@ -584,16 +488,13 @@ async function initialize() {
       password = auth.password;
       topic = auth.topic;
       encryptionSalt = auth.encryptionSalt;
-      // Clear immediately after reading
       sessionStorage.removeItem('abysslink_auth');
     } else {
-      // Fallback to URL params (less secure, for backwards compatibility)
       const urlParams = new URLSearchParams(window.location.search);
       roomId = urlParams.get('room');
       password = urlParams.get('password');
       topic = urlParams.get('topic');
       
-      // Clean URL immediately
       if (password) {
         const cleanUrl = new URL(window.location);
         cleanUrl.searchParams.delete('password');
@@ -607,7 +508,6 @@ async function initialize() {
       return;
     }
     
-    // Validate with server and get encryption salt if not present
     updateLoadingText('Authenticating...');
     
     if (!encryptionSalt) {
@@ -628,21 +528,15 @@ async function initialize() {
       expiresAt = data.expiresAt;
     }
     
-    // Derive encryption key using PBKDF2
     updateLoadingText('Deriving encryption keys...');
     encryptionKey = await deriveEncryptionKey(password, encryptionSalt);
     
-    // Store password temporarily for socket auth (will be cleared after successful join)
     sessionStorage.setItem('abysslink_temp_pwd', password);
-    
-    // Clear password from memory variable
     password = null;
     
-    // Initialize UI
     updateLoadingText('Establishing secure connection...');
     initializeUI();
     
-    // Connect to socket
     await connectSocket();
     
   } catch (err) {
@@ -662,8 +556,6 @@ function initializeUI() {
   document.getElementById('chatApp').style.display = 'flex';
   document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
   document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase() + '...';
-  
-  // Focus input
   document.getElementById('messageInput').focus();
 }
 
@@ -673,7 +565,6 @@ function initializeUI() {
 async function deriveEncryptionKey(password, salt) {
   const encoder = new TextEncoder();
   
-  // Import password as key material
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     encoder.encode(password),
@@ -682,11 +573,10 @@ async function deriveEncryptionKey(password, salt) {
     ['deriveBits', 'deriveKey']
   );
   
-  // Derive key using PBKDF2 with high iteration count
   const key = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: encoder.encode(salt + roomId), // Combine salt with roomId
+      salt: encoder.encode(salt + roomId),
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256'
     },
@@ -703,7 +593,7 @@ async function encryptMessage(plaintext) {
   if (!encryptionKey) throw new Error('Encryption key not initialized');
   
   const encoder = new TextEncoder();
-  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+  const iv = crypto.getRandomValues(new Uint8Array(12));
   
   const encrypted = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
@@ -816,7 +706,6 @@ function formatFileSize(bytes) {
 // NOTIFICATIONS
 // ============================================
 function showNotification(message, type = 'info') {
-  // Remove existing notifications
   document.querySelectorAll('.notification').forEach(n => n.remove());
   
   const notification = document.createElement('div');
@@ -829,41 +718,10 @@ function showNotification(message, type = 'info') {
 }
 
 // ============================================
-// CONNECTION STATUS
-// ============================================
-function updateConnectionStatus(status) {
-  const dot = document.getElementById('connectionDot');
-  const text = document.getElementById('connectionText');
-  
-  dot.className = 'connection-dot';
-  
-  switch (status) {
-    case 'connected':
-      dot.classList.remove('disconnected', 'connecting');
-      text.textContent = 'Connected (E2EE)';
-      break;
-    case 'connecting':
-      dot.classList.add('connecting');
-      text.textContent = 'Connecting...';
-      break;
-    case 'disconnected':
-      dot.classList.add('disconnected');
-      text.textContent = 'Disconnected';
-      break;
-    case 'reconnecting':
-      dot.classList.add('connecting');
-      text.textContent = `Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`;
-      break;
-  }
-}
-
-// ============================================
 // SOCKET CONNECTION
 // ============================================
 async function connectSocket() {
   return new Promise((resolve, reject) => {
-    updateConnectionStatus('connecting');
-    
     socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -876,12 +734,9 @@ async function connectSocket() {
     socket.on('connect', () => {
       myId = socket.id;
       reconnectAttempts = 0;
-      updateConnectionStatus('connected');
       
-      // Get password from temp storage for authentication
       const tempPwd = sessionStorage.getItem('abysslink_temp_pwd');
       
-      // Re-authenticate on reconnect
       socket.emit('join_room', { 
         roomId, 
         password: tempPwd
@@ -890,7 +745,6 @@ async function connectSocket() {
     
     socket.on('connect_error', (error) => {
       console.error('[CONNECTION ERROR]', error);
-      updateConnectionStatus('disconnected');
       
       if (reconnectAttempts === 0) {
         showNotification('Connection failed. Retrying...', 'error');
@@ -899,16 +753,13 @@ async function connectSocket() {
     
     socket.on('reconnect_attempt', (attempt) => {
       reconnectAttempts = attempt;
-      updateConnectionStatus('reconnecting');
     });
     
     socket.on('reconnect_failed', () => {
       showNotification('Unable to reconnect. Please refresh the page.', 'error');
-      updateConnectionStatus('disconnected');
     });
     
     socket.on('join_success', (data) => {
-      // Clear temporary password after successful join
       sessionStorage.removeItem('abysslink_temp_pwd');
       
       expiresAt = data.expiresAt;
@@ -968,13 +819,11 @@ async function connectSocket() {
     });
     
     socket.on('disconnect', (reason) => {
-      updateConnectionStatus('disconnected');
       if (reason === 'io server disconnect') {
         showNotification('Disconnected by server', 'error');
       }
     });
     
-    // Timeout for initial connection
     setTimeout(() => {
       if (!socket.connected) {
         reject(new Error('Connection timeout'));
@@ -987,7 +836,6 @@ async function connectSocket() {
 // MESSAGE HANDLING
 // ============================================
 async function handleIncomingMessage(msg) {
-  // Hide typing indicator
   showTypingIndicator(false);
   
   let displayText = msg.text;
@@ -1013,10 +861,7 @@ function addMessage(msg) {
   
   el.innerHTML = `
     <div class="message-text">${escapeHtml(msg.text)}</div>
-    <div class="message-time">
-      ${time}
-      <span class="message-encrypted-badge">🔒</span>
-    </div>
+    <div class="message-time">${time}</div>
   `;
   
   messagesContainer.appendChild(el);
@@ -1043,7 +888,6 @@ async function sendMessage() {
     socket.emit('send_message', { roomId, encrypted });
     input.value = '';
     
-    // Stop typing indicator
     if (isTyping) {
       socket.emit('typing_stop', { roomId });
       isTyping = false;
@@ -1072,10 +916,8 @@ function handleTyping() {
     socket.emit('typing_start', { roomId });
   }
   
-  // Clear existing timeout
   if (typingTimeout) clearTimeout(typingTimeout);
   
-  // Set new timeout
   typingTimeout = setTimeout(() => {
     if (isTyping) {
       socket.emit('typing_stop', { roomId });
@@ -1098,7 +940,6 @@ async function handleFileSelect() {
   
   if (!file) return;
   
-  // Size limit
   if (file.size > 50 * 1024 * 1024) {
     showNotification('File too large (max 50MB)', 'error');
     input.value = '';
@@ -1111,7 +952,6 @@ async function handleFileSelect() {
     const encryptedName = await encryptMetadata(file.name);
     const encryptedFile = await encryptFile(file);
     
-    // Convert to blob
     const binaryString = atob(encryptedFile.ciphertext);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
@@ -1119,7 +959,6 @@ async function handleFileSelect() {
     }
     const encryptedBlob = new Blob([bytes], { type: 'application/octet-stream' });
     
-    // Upload
     showNotification('Uploading encrypted file...', 'info');
     
     const formData = new FormData();
@@ -1194,7 +1033,6 @@ function updateTimer() {
   const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   document.getElementById('timeRemaining').textContent = timeStr;
   
-  // Visual warning when less than 5 minutes
   const timerBadge = document.getElementById('timerBadge');
   if (remaining < 300000) {
     timerBadge.classList.add('critical');
@@ -1238,7 +1076,6 @@ async function confirmVanish() {
     return;
   }
   
-  // We need the password for vanish - prompt user
   const pwd = prompt('Enter room password to confirm destruction:');
   if (!pwd) return;
   
@@ -1267,26 +1104,21 @@ async function confirmVanish() {
 // CLEANUP
 // ============================================
 function cleanupAndRedirect() {
-  // Clear timer
   if (timerInterval) clearInterval(timerInterval);
   if (typingTimeout) clearTimeout(typingTimeout);
   
-  // Disconnect socket
   if (socket) {
     socket.disconnect();
     socket = null;
   }
   
-  // Clear sensitive data
   encryptionKey = null;
   encryptionSalt = null;
   password = null;
   
-  // Clear any stored auth
   sessionStorage.removeItem('abysslink_auth');
   sessionStorage.removeItem('abysslink_temp_pwd');
   
-  // Redirect
   window.location.href = 'rooms.html';
 }
 
@@ -1303,7 +1135,6 @@ window.addEventListener('beforeunload', () => {
   if (socket) socket.disconnect();
 });
 
-// Prevent accidental navigation
 window.addEventListener('beforeunload', (e) => {
   if (socket?.connected) {
     e.preventDefault();
