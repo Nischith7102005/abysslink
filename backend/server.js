@@ -45,7 +45,6 @@ app.use(express.json({ limit: '50mb' }));
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., curl, Postman, mobile)
     if (!origin) return callback(null, true);
     if (FRONTEND_URL.includes(origin)) {
       callback(null, true);
@@ -66,7 +65,7 @@ app.options('*', cors(corsOptions)); // Handle preflight for all routes
 // ========================
 
 const createRoomLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5,
   message: { error: 'Too many room creation attempts. Please try again later.' },
   standardHeaders: true,
@@ -74,7 +73,7 @@ const createRoomLimiter = rateLimit({
 });
 
 // ========================
-// Storage & Uploads
+// File Upload Setup
 // ========================
 
 const uploadDir = path.join(__dirname, 'uploads');
@@ -93,9 +92,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1000 }, // 50MB
+  limits: { fileSize: 50 * 1024 * 1000 },
   fileFilter: (req, file, cb) => {
-    // Allow any binary (encrypted) file
     cb(null, true);
   }
 });
@@ -103,10 +101,10 @@ const upload = multer({
 app.use('/uploads', express.static(uploadDir));
 
 // ========================
-// In-Memory State
+// In-Memory Room Storage
 // ========================
 
-const activeRooms = new Map(); // roomId → { hostId, password?, participants: Set, messages: [], files: [] }
+const activeRooms = new Map();
 
 // ========================
 // Helper Functions
@@ -136,7 +134,6 @@ function generateRoomId(length = 6) {
 // API Routes
 // ========================
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -144,7 +141,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Create room
 app.post('/api/rooms/create', createRoomLimiter, async (req, res) => {
   const { hostId, password } = req.body;
 
@@ -152,12 +148,12 @@ app.post('/api/rooms/create', createRoomLimiter, async (req, res) => {
     return res.status(400).json({ error: 'Valid hostId is required' });
   }
 
-  let roomPassword = null;
+  let hashedPassword = null;
   if (password) {
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
-    roomPassword = await hash<PASSWORD>(password);
+    hashedPassword = await hashPassword(password);
   }
 
   const roomId = generateRoomId();
@@ -168,22 +164,19 @@ app.post('/api/rooms/create', createRoomLimiter, async (req, res) => {
     messages: [],
     files: [],
     createdAt: Date.now(),
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000
   });
 
   console.log(`Room created: ${roomId} by ${hostId}`);
   res.json({ roomId, hostId, requiresPassword: !!password });
 });
 
-// Get room info
 app.get('/api/rooms/:roomId', (req, res) => {
   const { roomId } = req.params;
   const room = activeRooms.get(roomId);
-  
   if (!room) {
     return res.status(404).json({ error: 'Room not found' });
   }
-
   res.json({
     roomId,
     hostId: room.hostId,
@@ -192,7 +185,6 @@ app.get('/api/rooms/:roomId', (req, res) => {
   });
 });
 
-// Join room (password check)
 app.post('/api/rooms/:roomId/join', async (req, res) => {
   const { roomId } = req.params;
   const { userId, password } = req.body;
@@ -216,22 +208,19 @@ app.post('/api/rooms/:roomId/join', async (req, res) => {
   res.json({ success: true });
 });
 
-// File upload
 app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
   const { roomId } = req.params;
   const room = activeRooms.get(roomId);
-
   if (!room) {
     return res.status(404).json({ error: 'Room not found' });
   }
-
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
   const fileRecord = {
     id: uuidv4(),
-    name: 'encrypted.bin', // Original name hidden
+    name: 'encrypted.bin',
     path: req.file.path,
     size: req.file.size,
     uploadedAt: Date.now()
@@ -241,7 +230,6 @@ app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
   res.json({ fileId: fileRecord.id, size: fileRecord.size });
 });
 
-// Delete room (for host)
 app.delete('/api/rooms/:roomId', (req, res) => {
   const { roomId } = req.params;
   if (activeRooms.has(roomId)) {
@@ -253,7 +241,7 @@ app.delete('/api/rooms/:roomId', (req, res) => {
 });
 
 // ========================
-// Socket.IO
+// Socket.IO Setup
 // ========================
 
 const io = new Server(httpServer, {
@@ -271,11 +259,8 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Room does not exist' });
       return;
     }
-
     socket.join(roomId);
     room.participants.add(userId || socket.id);
-    console.log(`User ${userId || socket.id} joined room ${roomId}`);
-
     socket.to(roomId).emit('user-joined', { userId: userId || socket.id });
   });
 
@@ -296,7 +281,6 @@ io.on('connection', (socket) => {
       if (room.participants.has(socket.id)) {
         room.participants.delete(socket.id);
         socket.to(roomId).emit('user-left', { userId: socket.id });
-        console.log(`User ${socket.id} disconnected from room ${roomId}`);
         break;
       }
     }
@@ -315,7 +299,7 @@ setInterval(() => {
       activeRooms.delete(roomId);
     }
   }
-}, 60000); // Every minute
+}, 60000);
 
 // ========================
 // Start Server
@@ -330,7 +314,6 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('========================================');
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('[SHUTDOWN] Cleaning up rooms...');
   activeRooms.clear();
