@@ -125,25 +125,6 @@ h1 {
   background: var(--text-main);
   color: var(--bg);
 }
-.security-notice {
-  background: rgba(68, 255, 136, 0.05);
-  border: 1px solid rgba(68, 255, 136, 0.2);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.8rem;
-}
-.security-notice h4 {
-  color: var(--success);
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.security-notice p {
-  color: var(--text-dim);
-  line-height: 1.6;
-}
 .empty-state {
   text-align: center;
   padding: 5rem 2rem;
@@ -264,15 +245,6 @@ h1 {
   font-family: 'Space Mono', monospace;
   color: var(--danger);
 }
-.info-box {
-  background: rgba(68, 255, 136, 0.05);
-  border: 1px solid rgba(68, 255, 136, 0.2);
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.8rem;
-  font-family: 'Space Mono', monospace;
-  color: var(--success);
-}
 .loading-overlay {
   display: none;
   position: fixed;
@@ -362,13 +334,6 @@ h1 {
     <p class="subtitle">Create or join an encrypted room</p>
   </header>
   
-  <div class="security-notice">
-    <h4>🔒 End-to-End Encrypted</h4>
-    <p>All messages are encrypted on your device before transmission. 
-    The server never sees your plaintext messages. Keys are derived using 
-    PBKDF2 with 100,000 iterations.</p>
-  </div>
-  
   <div class="action-buttons">
     <a href="landing.html" class="btn btn-secondary">← Back</a>
     <button class="btn btn-primary" onclick="openCreateModal()">+ Create Room</button>
@@ -429,10 +394,6 @@ h1 {
   <div class="modal-content">
     <h2>Join Session</h2>
     
-    <div class="info-box">
-      🔐 Your password never leaves your device. It's used locally to derive encryption keys.
-    </div>
-    
     <form onsubmit="handleJoinRoom(event)" id="joinForm">
       <div class="form-group">
         <label>Room Key</label>
@@ -469,10 +430,6 @@ h1 {
       <button type="button" class="btn btn-secondary" style="margin-top: 0.5rem; width: 100%;" onclick="copyRoomKey()">
         Copy Room Key
       </button>
-    </div>
-    
-    <div class="info-box" style="margin-top: 1rem;">
-      Share the Room Key AND Password with participants through a secure channel.
     </div>
     
     <div class="modal-actions">
@@ -522,12 +479,9 @@ function updatePasswordStrength(password) {
   
   let strength = 0;
   
-  // Length checks
   if (password.length >= 8) strength++;
   if (password.length >= 12) strength++;
   if (password.length >= 16) strength++;
-  
-  // Character variety
   if (/[a-z]/.test(password)) strength++;
   if (/[A-Z]/.test(password)) strength++;
   if (/[0-9]/.test(password)) strength++;
@@ -589,7 +543,6 @@ async function handleCreateRoom(e) {
   const password = document.getElementById('passwordInput').value;
   const confirmPassword = document.getElementById('confirmPasswordInput').value;
   
-  // Validation
   if (password !== confirmPassword) {
     showNotification('Passwords do not match', 'error');
     return;
@@ -620,7 +573,6 @@ async function handleCreateRoom(e) {
       throw new Error(data.error || 'Failed to create room');
     }
     
-    // Store data for entering room
     createdRoomData = data;
     storedPassword = password;
     
@@ -650,33 +602,8 @@ function enterCreatedRoom() {
     return;
   }
   
-  // Store auth in sessionStorage (not URL!)
-  sessionStorage.setItem('abysslink_auth', JSON.stringify({
-    roomId: createdRoomData.roomId,
-    password: storedPassword,
-    topic: createdRoomData.topic,
-    encryptionSalt: createdRoomData.encryptionSalt
-  }));
-  
-  // Clear sensitive data
-  storedPassword = null;
-  createdRoomData = null;
-  
-  // Navigate (password not in URL)
-  window.location.href = `chat.html?room=${createdRoomData?.roomId || sessionStorage.getItem('abysslink_auth') && JSON.parse(sessionStorage.getItem('abysslink_auth')).roomId}`;
-}
-
-// Fix: store before clearing
-function enterCreatedRoom() {
-  if (!createdRoomData || !storedPassword) {
-    showNotification('Session data lost. Please create a new room.', 'error');
-    closeSuccessModal();
-    return;
-  }
-  
   const roomId = createdRoomData.roomId;
   
-  // Store auth in sessionStorage (not URL!)
   sessionStorage.setItem('abysslink_auth', JSON.stringify({
     roomId: roomId,
     password: storedPassword,
@@ -684,11 +611,9 @@ function enterCreatedRoom() {
     encryptionSalt: createdRoomData.encryptionSalt
   }));
   
-  // Clear sensitive data
   storedPassword = null;
   createdRoomData = null;
   
-  // Navigate (password not in URL)
   window.location.href = `chat.html?room=${roomId}`;
 }
 
@@ -721,7 +646,6 @@ async function handleJoinRoom(e) {
       throw new Error(data.error || 'Invalid room key or password');
     }
     
-    // Store auth in sessionStorage
     sessionStorage.setItem('abysslink_auth', JSON.stringify({
       roomId: data.roomId,
       password: password,
@@ -732,7 +656,6 @@ async function handleJoinRoom(e) {
     showLoading(false);
     closeJoinModal();
     
-    // Navigate
     window.location.href = `chat.html?room=${data.roomId}`;
     
   } catch (err) {
@@ -753,12 +676,10 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Auto-trim room key input
 document.getElementById('joinRoomKey')?.addEventListener('input', function() {
   this.value = this.value.trim();
 });
 
-// Clear any leftover auth data on page load
 sessionStorage.removeItem('abysslink_auth');
 </script>
 </body>
