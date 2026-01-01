@@ -632,7 +632,10 @@ async function initialize() {
     updateLoadingText('Deriving encryption keys...');
     encryptionKey = await deriveEncryptionKey(password, encryptionSalt);
     
-    // Clear password from memory
+    // Store password temporarily for socket auth (will be cleared after successful join)
+    sessionStorage.setItem('abysslink_temp_pwd', password);
+    
+    // Clear password from memory variable
     password = null;
     
     // Initialize UI
@@ -875,10 +878,13 @@ async function connectSocket() {
       reconnectAttempts = 0;
       updateConnectionStatus('connected');
       
+      // Get password from temp storage for authentication
+      const tempPwd = sessionStorage.getItem('abysslink_temp_pwd');
+      
       // Re-authenticate on reconnect
       socket.emit('join_room', { 
         roomId, 
-        password: sessionStorage.getItem('abysslink_temp_pwd') || password 
+        password: tempPwd
       });
     });
     
@@ -902,6 +908,9 @@ async function connectSocket() {
     });
     
     socket.on('join_success', (data) => {
+      // Clear temporary password after successful join
+      sessionStorage.removeItem('abysslink_temp_pwd');
+      
       expiresAt = data.expiresAt;
       if (data.encryptionSalt && !encryptionSalt) {
         encryptionSalt = data.encryptionSalt;
