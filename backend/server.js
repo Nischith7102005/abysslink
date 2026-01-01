@@ -7,15 +7,14 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 
-// Load environment variables
+// Load environment
 dotenv.config();
 
-// Resolve __dirname in ES modules
+// ES __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -36,13 +35,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// JSON parsing
 app.use(express.json({ limit: '50mb' }));
 
-// ========================
-// CORS Configuration
-// ========================
-
+// CORS
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
@@ -53,272 +48,188 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
+  methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle preflight for all routes
+app.options('*', cors(corsOptions)); // Preflight support
 
-// ========================
-// Rate Limiting
-// ========================
-
-const createRoomLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { error: 'Too many room creation attempts. Please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// ========================
-// File Upload Setup
-// ========================
-
+// Uploads
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
     cb(null, `${uuidv4()}-${Date.now()}.bin`);
   }
 });
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 50 * 1024 * 1000 },
-  fileFilter: (req, file, cb) => {
-    cb(null, true);
-  }
-});
-
+const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1000 } });
 app.use('/uploads', express.static(uploadDir));
 
-// ========================
-// In-Memory Room Storage
-// ========================
+// In-memory rooms
+const rooms = new Map();
 
-const activeRooms = new Map();
-
-// ========================
-// Helper Functions
-// ========================
-
+// Helpers
 async function hashPassword(password) {
   return await bcrypt.hash(password, 12);
 }
 
-async function verifyPassword(password, hash) {
-  return await bcrypt.compare(password, hash);
-}
-
-function generateRoomId(length = 6) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  if (activeRooms.has(result)) {
-    return generateRoomId(length);
-  }
-  return result;
-}
-
-// ========================
+// ====================
 // API Routes
-// ========================
+// ====================
 
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    activeRooms: activeRooms.size
-  });
+  res.json({ status: 'ok', activeRooms: rooms.size });
 });
 
-app.post('/api/rooms/create', createRoomLimiter, async (req, res) => {
-  const { hostId, password } = req.body;
-
-  if (!hostId || typeof hostId !== 'string' || hostId.trim().length === 0) {
-    return res.status(400).json({ error: 'Valid hostId is required' });
-  }
-
-  let hashedPassword = null;
-  if (password) {
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+app.post('/api/rooms/create', async (req, res) => {
+  try {
+    const { topic, password } = req.body;
+    if (!topic || !password || password.length < 8) {
+      return res.status(400).json({ error: 'Topic and password (min 8 chars) required' });
     }
-    hashedPassword = await hashPassword(password);
+    const roomId = uuidv4();
+    const hashedPassword = await hashPassword(password);
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+    rooms.set(roomId, {
+      id: roomId,
+      topic,
+      password: <PASSWORD>,
+      expiresAt,
+      messages: [],
+      files: [],
+      participants: new Set()
+    });
+    res.json({ roomId, expiresAt, topic });
+  } catch (err) {
+    console.error('[CREATE ERROR]', err);
+    res.status(500).json({ error: 'Failed to create room' });
   }
-
-  const roomId = generateRoomId();
-  activeRooms.set(roomId, {
-    hostId,
-    password: <PASSWORD>,
-    participants: new Set([hostId]),
-    messages: [],
-    files: [],
-    createdAt: Date.now(),
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000
-  });
-
-  console.log(`Room created: ${roomId} by ${hostId}`);
-  res.json({ roomId, hostId, requiresPassword: !!password });
 });
 
-app.get('/api/rooms/:roomId', (req, res) => {
-  const { roomId } = req.params;
-  const room = activeRooms.get(roomId);
-  if (!room) {
-    return res.status(404).json({ error: 'Room not found' });
-  }
-  res.json({
-    roomId,
-    hostId: room.hostId,
-    participantCount: room.participants.size,
-    requiresPassword: !!room.password
-  });
-});
-
-app.post('/api/rooms/:roomId/join', async (req, res) => {
-  const { roomId } = req.params;
-  const { userId, password } = req.body;
-
-  const room = activeRooms.get(roomId);
-  if (!room) {
-    return res.status(404).json({ error: 'Room not found' });
-  }
-
-  if (room.password) {
-    if (!password) {
-      return res.status(401).json({ error: 'Password required' });
+app.post('/api/rooms/validate', async (req, res) => {
+  try {
+    const { roomId, password } = req.body;
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
+    if (!room) {
+      await new Promise(r => setTimeout(r, 50));
+      return res.status(401).json({ error: 'Invalid room key or password' });
     }
-    const isValid = await verifyPassword(password, room.password);
+    const isValid = await bcrypt.compare(password, room.password);
     if (!isValid) {
-      return res.status(401).json({ error: 'Invalid password' });
+      return res.status(401).json({ error: 'Invalid room key or password' });
     }
+    res.json({ roomId: room.id, topic: room.topic, expiresAt: room.expiresAt });
+  } catch (err) {
+    console.error('[VALIDATE ERROR]', err);
+    res.status(500).json({ error: 'Validation failed' });
   }
-
-  room.participants.add(userId);
-  res.json({ success: true });
 });
 
-app.post('/api/rooms/:roomId/upload', upload.single('file'), (req, res) => {
-  const { roomId } = req.params;
-  const room = activeRooms.get(roomId);
-  if (!room) {
-    return res.status(404).json({ error: 'Room not found' });
+app.post('/api/rooms/vanish', async (req, res) => {
+  try {
+    const { roomId, password } = req.body;
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
+    if (!room) {
+      await new Promise(r => setTimeout(r, 50));
+      return res.status(401).json({ error: 'Invalid room key or password' });
+    }
+    const isValid = await bcrypt.compare(password, room.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid room key or password' });
+    }
+    rooms.delete(cleanRoomId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[VANISH ERROR]', err);
+    res.status(500).json({ error: 'Failed to vanish room' });
   }
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
-
-  const fileRecord = {
-    id: uuidv4(),
-    name: 'encrypted.bin',
-    path: req.file.path,
-    size: req.file.size,
-    uploadedAt: Date.now()
-  };
-
-  room.files.push(fileRecord);
-  res.json({ fileId: fileRecord.id, size: fileRecord.size });
 });
 
-app.delete('/api/rooms/:roomId', (req, res) => {
-  const { roomId } = req.params;
-  if (activeRooms.has(roomId)) {
-    activeRooms.delete(roomId);
-    console.log(`Room deleted: ${roomId}`);
-    return res.json({ success: true });
+app.post('/api/rooms/:roomId/upload', upload.single('encryptedFile'), (req, res) => {
+  try {
+    const cleanRoomId = String(req.params.roomId).trim();
+    const room = rooms.get(cleanRoomId);
+    if (!room) return res.status(401).json({ error: 'Room not found' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const fileData = {
+      id: uuidv4(),
+      url: `/uploads/${req.file.filename}`,
+      uploadedAt: Date.now()
+    };
+    room.files.push(fileData);
+    res.json(fileData);
+  } catch (err) {
+    console.error('[UPLOAD ERROR]', err);
+    res.status(500).json({ error: 'Upload failed' });
   }
-  res.status(404).json({ error: 'Room not found' });
 });
 
-// ========================
-// Socket.IO Setup
-// ========================
+// ====================
+// Socket.IO
+// ====================
 
 const io = new Server(httpServer, {
   cors: corsOptions,
   transports: ['websocket']
 });
 
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+const socketToRoom = new Map();
 
-  socket.on('join-room', (data) => {
-    const { roomId, userId } = data;
-    const room = activeRooms.get(roomId);
-    if (!room) {
-      socket.emit('error', { message: 'Room does not exist' });
+io.on('connection', (socket) => {
+  socket.on('join_room', async ({ roomId, password }) => {
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
+    if (!room || !(await bcrypt.compare(password, room.password))) {
+      socket.emit('error', 'Invalid room key or password');
       return;
     }
-    socket.join(roomId);
-    room.participants.add(userId || socket.id);
-    socket.to(roomId).emit('user-joined', { userId: userId || socket.id });
+    socket.join(cleanRoomId);
+    room.participants.add(socket.id);
+    socketToRoom.set(socket.id, cleanRoomId);
+    socket.emit('join_success', { expiresAt: room.expiresAt, topic: room.topic, participantCount: room.participants.size });
   });
 
-  socket.on('offer', (data) => {
-    socket.to(data.roomId).emit('offer', data);
-  });
-
-  socket.on('answer', (data) => {
-    socket.to(data.roomId).emit('answer', data);
-  });
-
-  socket.on('ice-candidate', (data) => {
-    socket.to(data.roomId).emit('ice-candidate', data);
+  socket.on('send_message', ({ roomId, encrypted }) => {
+    const cleanRoomId = String(roomId).trim();
+    const room = rooms.get(cleanRoomId);
+    if (!room || !encrypted) return;
+    const msg = { id: uuidv4(), encrypted, timestamp: Date.now(), sender: socket.id };
+    room.messages.push(msg);
+    io.to(cleanRoomId).emit('new_message', msg);
   });
 
   socket.on('disconnect', () => {
-    for (const [roomId, room] of activeRooms.entries()) {
-      if (room.participants.has(socket.id)) {
-        room.participants.delete(socket.id);
-        socket.to(roomId).emit('user-left', { userId: socket.id });
-        break;
-      }
+    const roomId = socketToRoom.get(socket.id);
+    if (roomId) {
+      const room = rooms.get(roomId);
+      if (room) room.participants.delete(socket.id);
+      socketToRoom.delete(socket.id);
     }
   });
 });
 
-// ========================
 // Cleanup expired rooms
-// ========================
-
 setInterval(() => {
   const now = Date.now();
-  for (const [roomId, room] of activeRooms.entries()) {
+  for (const [id, room] of rooms) {
     if (room.expiresAt <= now) {
-      console.log(`[EXPIRED] Cleaning up room ${roomId}`);
-      activeRooms.delete(roomId);
+      rooms.delete(id);
     }
   }
 }, 60000);
 
-// ========================
-// Start Server
-// ========================
-
+// Start server
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('========================================');
   console.log(`🚀 AbyssLink Backend`);
-  console.log(`📡 Listening on port ${PORT}`);
+  console.log(`📡 Port: ${PORT}`);
   console.log(`🌐 Allowed origins: ${FRONTEND_URL.join(', ')}`);
-  console.log(`🕒 Node.js ${process.version}`);
   console.log('========================================');
-});
-
-process.on('SIGTERM', () => {
-  console.log('[SHUTDOWN] Cleaning up rooms...');
-  activeRooms.clear();
-  httpServer.close(() => {
-    console.log('✅ Server closed');
-    process.exit(0);
-  });
 });
