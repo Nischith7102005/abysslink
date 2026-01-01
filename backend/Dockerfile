@@ -5,10 +5,11 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy package files first (for better layer caching)
+# Copy package files first
 COPY package*.json ./
 
-RUN npm ci --only=production --no-audit --no-fund && \
+# Use 'npm install' instead of 'npm ci' to resolve lockfile sync issues
+RUN npm install --only=production --no-audit --no-fund && \
     mkdir -p /app/uploads && \
     chown -R nodejs:nodejs /app
 
