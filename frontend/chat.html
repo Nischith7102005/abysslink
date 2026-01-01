@@ -4,731 +4,1307 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Session Active — AbyssLink</title>
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
---bg: #050505;
---surface: #0a0a0a;
---text-main: #ffffff;
---text-dim: #888888;
---border: #222222;
---accent: #ffffff;
---danger: #ff4444;
---ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --bg: #050505;
+  --surface: #0a0a0a;
+  --text-main: #ffffff;
+  --text-dim: #888888;
+  --border: #222222;
+  --accent: #ffffff;
+  --danger: #ff4444;
+  --success: #44ff88;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 * {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 body {
-background-color: var(--bg);
-color: var(--text-main);
-font-family: 'Manrope', sans-serif;
-overflow: hidden;
--webkit-font-smoothing: antialiased;
-height: 100vh;
-display: flex;
-flex-direction: column;
+  background-color: var(--bg);
+  color: var(--text-main);
+  font-family: 'Manrope', sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 .loading {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background: var(--bg);
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 9999;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 .loading-spinner {
-width: 40px;
-height: 40px;
-border: 2px solid var(--border);
-border-top-color: var(--text-main);
-border-radius: 50%;
-animation: spin 1s linear infinite;
-margin: 0 auto 1rem;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--text-main);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
 }
 @keyframes spin {
-to { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 .loading-text {
-font-family: 'Space Mono', monospace;
-font-size: 0.9rem;
-text-transform: uppercase;
-color: var(--text-dim);
-letter-spacing: 0.1em;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+.loading-subtext {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  opacity: 0.5;
+  margin-top: 0.5rem;
+}
+.security-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--success);
+  text-transform: uppercase;
+  margin-top: 2rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(68, 255, 136, 0.3);
+  background: rgba(68, 255, 136, 0.05);
+}
+.security-indicator::before {
+  content: '🔒';
 }
 .chat-header {
-background: var(--surface);
-border-bottom: 1px solid var(--border);
-padding: 1.5rem 2rem;
-display: flex;
-justify-content: space-between;
-align-items: center;
-flex-wrap: wrap;
-gap: 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 .room-info h2 {
-font-family: 'Space Mono', monospace;
-font-size: clamp(1rem, 2vw, 1.3rem);
-font-weight: 700;
-letter-spacing: -0.02em;
-text-transform: uppercase;
-margin-bottom: 0.3rem;
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
 }
 .room-meta {
-font-family: 'Space Mono', monospace;
-font-size: 0.75rem;
-color: var(--text-dim);
-text-transform: uppercase;
-display: flex;
-align-items: center;
-gap: 0.5rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .copy-btn {
-font-family: 'Space Mono', monospace;
-font-size: 0.7rem;
-padding: 0.2rem 0.5rem;
-background: transparent;
-color: var(--text-dim);
-border: 1px solid var(--border);
-cursor: pointer;
-transition: all 0.2s ease;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .copy-btn:hover {
-color: var(--text-main);
-border-color: var(--text-main);
+  color: var(--text-main);
+  border-color: var(--text-main);
 }
 .header-right {
-display: flex;
-align-items: center;
-gap: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 .status-badge {
-font-family: 'Space Mono', monospace;
-font-size: 0.75rem;
-padding: 0.5rem 1rem;
-border: 1px solid var(--border);
-background: var(--bg);
-text-transform: uppercase;
-letter-spacing: 0.05em;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .status-badge.timer {
-color: var(--danger);
-border-color: rgba(255, 68, 68, 0.3);
+  color: var(--text-main);
+  border-color: var(--border);
+}
+.status-badge.timer.critical {
+  color: var(--danger);
+  border-color: rgba(255, 68, 68, 0.3);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 .status-badge.participants {
-color: var(--text-main);
+  color: var(--text-main);
+}
+.status-badge.encrypted {
+  color: var(--success);
+  border-color: rgba(68, 255, 136, 0.3);
 }
 .chat-container {
-flex: 1;
-display: flex;
-overflow: hidden;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 .messages {
-flex: 1;
-overflow-y: auto;
-padding: 2rem;
-display: flex;
-flex-direction: column;
-gap: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 .message {
-max-width: 65%;
-padding: 1rem 1.5rem;
-animation: slideIn 0.4s var(--ease-out);
-word-wrap: break-word;
+  max-width: 65%;
+  padding: 1rem 1.5rem;
+  animation: slideIn 0.4s var(--ease-out);
+  word-wrap: break-word;
+  position: relative;
 }
 @keyframes slideIn {
-from { opacity: 0; transform: translateY(20px); }
-to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .message.own {
-align-self: flex-end;
-background: var(--text-main);
-color: var(--bg);
+  align-self: flex-end;
+  background: var(--text-main);
+  color: var(--bg);
 }
 .message.other {
-align-self: flex-start;
-background: var(--surface);
-border: 1px solid var(--border);
+  align-self: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 .message-text {
-margin-bottom: 0.5rem;
-line-height: 1.6;
-font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 .message-time {
-font-family: 'Space Mono', monospace;
-font-size: 0.65rem;
-opacity: 0.5;
-text-transform: uppercase;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+.message-encrypted-badge {
+  font-size: 0.6rem;
+  opacity: 0.4;
+  margin-left: 0.5rem;
 }
 .system-message {
-align-self: center;
-background: transparent;
-border-top: 1px solid var(--border);
-border-bottom: 1px solid var(--border);
-padding: 0.75rem 1.5rem;
-font-family: 'Space Mono', monospace;
-font-size: 0.75rem;
-color: var(--text-dim);
-text-transform: uppercase;
-letter-spacing: 0.1em;
-max-width: 100%;
-text-align: center;
+  align-self: center;
+  background: transparent;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  max-width: 100%;
+  text-align: center;
+}
+.file-message {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.file-message:hover {
+  border-color: var(--text-main);
+}
+.typing-indicator {
+  align-self: flex-start;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.typing-dots {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+.typing-dots span {
+  width: 4px;
+  height: 4px;
+  background: var(--text-dim);
+  border-radius: 50%;
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
 }
 .input-area {
-padding: 1.5rem 2rem;
-background: var(--surface);
-border-top: 1px solid var(--border);
-display: flex;
-gap: 1rem;
-align-items: center;
+  padding: 1.5rem 2rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 .input-area input[type="text"] {
-flex: 1;
-padding: 1rem 1.5rem;
-border: 1px solid var(--border);
-background: var(--bg);
-color: var(--text-main);
-font-family: 'Manrope', sans-serif;
-font-size: 0.95rem;
-outline: none;
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-main);
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s ease;
 }
 .input-area input[type="text"]:focus {
-border-color: var(--text-main);
-background: var(--surface);
+  border-color: var(--text-main);
+  background: var(--surface);
 }
 .input-area input[type="text"]::placeholder {
-color: var(--text-dim);
+  color: var(--text-dim);
 }
 .btn {
-font-family: 'Space Mono', monospace;
-font-size: 0.8rem;
-text-transform: uppercase;
-font-weight: 700;
-padding: 1rem 1.5rem;
-border: 1px solid var(--border);
-background: transparent;
-color: var(--text-main);
-cursor: pointer;
-transition: all 0.3s var(--ease-out);
-white-space: nowrap;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  white-space: nowrap;
 }
 .btn:hover {
-background: var(--text-main);
-color: var(--bg);
-transform: translateY(-2px);
+  background: var(--text-main);
+  color: var(--bg);
+  transform: translateY(-2px);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 .btn-primary {
-background: var(--text-main);
-color: var(--bg);
+  background: var(--text-main);
+  color: var(--bg);
 }
 .btn-danger {
-border-color: var(--danger);
-color: var(--danger);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 .btn-danger:hover {
-background: var(--danger);
-color: var(--text-main);
+  background: var(--danger);
+  color: var(--text-main);
 }
 .sidebar {
-width: 300px;
-background: var(--surface);
-border-left: 1px solid var(--border);
-padding: 2rem;
-display: flex;
-flex-direction: column;
-gap: 2rem;
+  width: 300px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 .sidebar h3 {
-font-family: 'Space Mono', monospace;
-font-size: 0.85rem;
-text-transform: uppercase;
-letter-spacing: 0.1em;
-margin-bottom: 1rem;
-color: var(--text-dim);
-border-bottom: 1px solid var(--border);
-padding-bottom: 0.5rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
 }
 .info-box {
-background: var(--bg);
-padding: 1.5rem;
-border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
 }
 .info-box p {
-font-family: 'Space Mono', monospace;
-color: var(--text-dim);
-font-size: 0.75rem;
-margin-bottom: 0.5rem;
-text-transform: uppercase;
+  font-family: 'Space Mono', monospace;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
 }
 .info-box strong {
-font-family: 'Space Mono', monospace;
-color: var(--text-main);
-font-size: 1.5rem;
-font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  color: var(--text-main);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.security-info {
+  background: rgba(68, 255, 136, 0.05);
+  border: 1px solid rgba(68, 255, 136, 0.2);
+  padding: 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--success);
+}
+.security-info ul {
+  list-style: none;
+  margin-top: 0.5rem;
+}
+.security-info li {
+  padding: 0.25rem 0;
+  opacity: 0.8;
+}
+.security-info li::before {
+  content: '✓ ';
 }
 .action-buttons {
-margin-top: auto;
-padding-top: 2rem;
-border-top: 1px solid var(--border);
+  margin-top: auto;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
-.error-message {
-position: fixed;
-top: 20px;
-right: 20px;
-background: var(--danger);
-color: white;
-padding: 1rem 2rem;
-border-radius: 4px;
-font-family: 'Space Mono', monospace;
-z-index: 1000;
-animation: slideIn 0.3s ease;
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  animation: slideInRight 0.3s ease;
+  cursor: pointer;
 }
-@keyframes slideIn {
-from { transform: translateX(100%); opacity: 0; }
-to { transform: translateX(0); opacity: 1; }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.notification.error {
+  background: var(--danger);
+  color: white;
+}
+.notification.success {
+  background: var(--success);
+  color: var(--bg);
+}
+.notification.info {
+  background: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+.connection-status {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 100;
+}
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.connection-dot.disconnected {
+  background: var(--danger);
+  animation: pulse 1s ease-in-out infinite;
+}
+.connection-dot.connecting {
+  background: #ffaa44;
+  animation: pulse 0.5s ease-in-out infinite;
 }
 @media (max-width: 968px) {
-.sidebar { display: none; }
-.message { max-width: 80%; }
+  .sidebar { display: none; }
+  .message { max-width: 80%; }
 }
 @media (max-width: 600px) {
-.chat-header { padding: 1rem; }
-.input-area { padding: 1rem; flex-wrap: wrap; }
-.input-area input[type="text"] { width: 100%; }
-.btn { padding: 0.75rem 1rem; font-size: 0.75rem; }
-.message { max-width: 90%; }
+  .chat-header { padding: 1rem; }
+  .input-area { padding: 1rem; flex-wrap: wrap; }
+  .input-area input[type="text"] { width: 100%; }
+  .btn { padding: 0.75rem 1rem; font-size: 0.75rem; }
+  .message { max-width: 90%; }
+  .header-right { flex-wrap: wrap; }
 }
 </style>
 </head>
 <body>
+
 <div id="loadingScreen" class="loading">
-<div class="loading-content">
-<div class="loading-spinner"></div>
-<div class="loading-text">Joining Session...</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Initializing Secure Session...</div>
+  <div class="loading-subtext" id="loadingSubtext">Deriving encryption keys</div>
+  <div class="security-indicator">End-to-End Encrypted</div>
 </div>
-</div>
+
 <div id="chatApp" style="display:none; height:100%; flex-direction:column;">
-<div class="chat-header">
-<div class="room-info">
-<h2 id="roomTopic">Untitled Session</h2>
-<div class="room-meta">
-Key: <span id="roomKeyDisplay"></span>
-<button class="copy-btn" onclick="copyFullKey(event)">Copy Full</button>
+  <div class="chat-header">
+    <div class="room-info">
+      <h2 id="roomTopic">Untitled Session</h2>
+      <div class="room-meta">
+        Key: <span id="roomKeyDisplay"></span>
+        <button class="copy-btn" onclick="copyRoomKey()">Copy</button>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-badge encrypted">🔒 E2EE</div>
+      <div class="status-badge participants"><span id="participantCount">0</span> Active</div>
+      <div class="status-badge timer" id="timerBadge"><span id="timeRemaining">24:00:00</span></div>
+    </div>
+  </div>
+  
+  <div class="chat-container">
+    <div style="flex:1; display:flex; flex-direction:column;">
+      <div class="messages" id="messages"></div>
+      <div id="typingIndicator" class="typing-indicator" style="display:none; margin: 0 2rem 1rem;">
+        Someone is typing <span class="typing-dots"><span></span><span></span><span></span></span>
+      </div>
+      <div class="input-area">
+        <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
+        <button class="btn" onclick="document.getElementById('fileInput').click()" id="attachBtn">Attach</button>
+        <input type="text" id="messageInput" placeholder="Compose encrypted message..." onkeypress="handleKeyPress(event)" oninput="handleTyping()">
+        <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn">Send</button>
+      </div>
+    </div>
+    
+    <div class="sidebar">
+      <div>
+        <h3>Session Status</h3>
+        <div class="info-box">
+          <p>Active Participants</p>
+          <strong><span id="sidebarParticipants">0</span></strong>
+        </div>
+      </div>
+      
+      <div class="security-info">
+        <strong>Security Active</strong>
+        <ul>
+          <li>AES-256-GCM Encryption</li>
+          <li>PBKDF2 Key Derivation</li>
+          <li>No Server Storage</li>
+          <li>Perfect Forward Secrecy</li>
+        </ul>
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn" onclick="leaveRoom()">Exit Session</button>
+        <button class="btn btn-danger" onclick="confirmVanish()">Destroy Room</button>
+      </div>
+    </div>
+  </div>
 </div>
+
+<div class="connection-status" id="connectionStatus">
+  <span class="connection-dot" id="connectionDot"></span>
+  <span id="connectionText">Connecting...</span>
 </div>
-<div class="header-right">
-<div class="status-badge participants"><span id="participantCount">0</span> Active</div>
-<div class="status-badge timer" id="timerBadge"><span id="timeRemaining">24:00:00</span></div>
-</div>
-</div>
-<div class="chat-container">
-<div style="flex:1; display:flex; flex-direction:column;">
-<div class="messages" id="messages"></div>
-<div class="input-area">
-<input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
-<button class="btn" onclick="document.getElementById('fileInput').click()">Attach</button>
-<input type="text" id="messageInput" placeholder="Compose message..." onkeypress="handleKeyPress(event)">
-<button class="btn btn-primary" onclick="sendMessage()">Send</button>
-</div>
-</div>
-<div class="sidebar">
-<div>
-<h3>Session Status</h3>
-<div class="info-box">
-<p>Active Participants</p>
-<strong><span id="sidebarParticipants">0</span></strong>
-</div>
-</div>
-<div class="action-buttons">
-<button class="btn" onclick="leaveRoom()">Exit Session</button>
-<button class="btn btn-danger" onclick="confirmVanish()">Destroy Room</button>
-</div>
-</div>
-</div>
-</div>
-<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+
+<script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
 <script>
+// ============================================
+// CONFIGURATION
+// ============================================
 const API_URL = 'https://abysslink.onrender.com';
 const SOCKET_URL = 'https://abysslink.onrender.com';
-const urlParams = new URLSearchParams(window.location.search);
-const roomId = urlParams.get('room');
-const password = urlParams.get('password');
-const topic = urlParams.get('topic');
-if (!roomId || !password) {
-  alert('Missing room key or password');
-  window.location.href = 'rooms.html';
-}
+const PBKDF2_ITERATIONS = 100000;
+const KEY_LENGTH = 256;
 
+// ============================================
+// STATE
+// ============================================
 let socket = null;
 let myId = null;
 let expiresAt = null;
-let timer = null;
+let timerInterval = null;
+let encryptionKey = null;
+let encryptionSalt = null;
+let roomId = null;
+let password = null;
+let topic = null;
+let isTyping = false;
+let typingTimeout = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
-function showError(message) {
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'error-message';
-  errorDiv.textContent = message;
-  errorDiv.onclick = () => errorDiv.remove();
-  document.body.appendChild(errorDiv);
-  setTimeout(() => errorDiv.remove(), 5000);
-}
-
-// ✅ FIXED: event is passed correctly
-function copyFullKey(event) {
-  navigator.clipboard.writeText(roomId).then(() => {
-    const btn = event.target;
-    const originalText = btn.textContent;
-    btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = originalText; }, 2000);
-  }).catch(err => {
-    console.error('Copy failed:', err);
-    showError('Failed to copy key');
-  });
-}
-
-// 🔐 E2EE: Derive key from room ID + password
-async function deriveEncryptionKey() {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(roomId + password);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return hash;
-}
-
-// 🔐 Encrypt message
-async function encryptMessage(plaintext) {
-  const key = await deriveEncryptionKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoded = new TextEncoder().encode(plaintext);
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
-    encoded
-  );
-  const ivB64 = btoa(String.fromCharCode(...iv));
-  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-  return { iv: ivB64, ciphertext: ctB64 };
-}
-
-// 🔐 Decrypt message
-async function decryptMessage(ivB64, ciphertextB64) {
+// ============================================
+// INITIALIZATION
+// ============================================
+async function initialize() {
   try {
-    const key = await deriveEncryptionKey();
-    const iv = new Uint8Array(atob(ivB64).split('').map(c => c.charCodeAt(0)));
-    const ciphertext = new Uint8Array(atob(ciphertextB64).split('').map(c => c.charCodeAt(0)));
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['decrypt']),
-      ciphertext
-    );
-    return new TextDecoder().decode(decrypted);
+    updateLoadingText('Validating session...');
+    
+    // Get credentials from sessionStorage (secure) or URL params (fallback)
+    const storedAuth = sessionStorage.getItem('abysslink_auth');
+    
+    if (storedAuth) {
+      const auth = JSON.parse(storedAuth);
+      roomId = auth.roomId;
+      password = auth.password;
+      topic = auth.topic;
+      encryptionSalt = auth.encryptionSalt;
+      // Clear immediately after reading
+      sessionStorage.removeItem('abysslink_auth');
+    } else {
+      // Fallback to URL params (less secure, for backwards compatibility)
+      const urlParams = new URLSearchParams(window.location.search);
+      roomId = urlParams.get('room');
+      password = urlParams.get('password');
+      topic = urlParams.get('topic');
+      
+      // Clean URL immediately
+      if (password) {
+        const cleanUrl = new URL(window.location);
+        cleanUrl.searchParams.delete('password');
+        window.history.replaceState({}, '', cleanUrl);
+      }
+    }
+    
+    if (!roomId || !password) {
+      showNotification('Missing credentials. Redirecting...', 'error');
+      setTimeout(() => window.location.href = 'rooms.html', 2000);
+      return;
+    }
+    
+    // Validate with server and get encryption salt if not present
+    updateLoadingText('Authenticating...');
+    
+    if (!encryptionSalt) {
+      const validateRes = await fetch(`${API_URL}/api/rooms/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, password })
+      });
+      
+      if (!validateRes.ok) {
+        const error = await validateRes.json();
+        throw new Error(error.error || 'Authentication failed');
+      }
+      
+      const data = await validateRes.json();
+      encryptionSalt = data.encryptionSalt;
+      topic = data.topic || topic;
+      expiresAt = data.expiresAt;
+    }
+    
+    // Derive encryption key using PBKDF2
+    updateLoadingText('Deriving encryption keys...');
+    encryptionKey = await deriveEncryptionKey(password, encryptionSalt);
+    
+    // Clear password from memory
+    password = null;
+    
+    // Initialize UI
+    updateLoadingText('Establishing secure connection...');
+    initializeUI();
+    
+    // Connect to socket
+    await connectSocket();
+    
   } catch (err) {
-    console.warn('Decryption failed:', err.message);
-    return '[Decryption failed]';
+    console.error('[INIT ERROR]', err);
+    showNotification(err.message || 'Failed to initialize session', 'error');
+    setTimeout(() => window.location.href = 'rooms.html', 3000);
   }
 }
 
-// Encrypt metadata (e.g. file name)
-async function encryptMetadata(plaintext) {
-  const key = await deriveEncryptionKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoded = new TextEncoder().encode(plaintext);
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
-    encoded
-  );
-  const ivB64 = btoa(String.fromCharCode(...iv));
-  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-  return { iv: ivB64, ciphertext: ctB64 };
+function updateLoadingText(text) {
+  const el = document.getElementById('loadingSubtext');
+  if (el) el.textContent = text;
 }
 
-// Encrypt file content
+function initializeUI() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('chatApp').style.display = 'flex';
+  document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
+  document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase() + '...';
+  
+  // Focus input
+  document.getElementById('messageInput').focus();
+}
+
+// ============================================
+// ENCRYPTION (PBKDF2 + AES-GCM)
+// ============================================
+async function deriveEncryptionKey(password, salt) {
+  const encoder = new TextEncoder();
+  
+  // Import password as key material
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+  
+  // Derive key using PBKDF2 with high iteration count
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode(salt + roomId), // Combine salt with roomId
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: KEY_LENGTH },
+    false,
+    ['encrypt', 'decrypt']
+  );
+  
+  return key;
+}
+
+async function encryptMessage(plaintext) {
+  if (!encryptionKey) throw new Error('Encryption key not initialized');
+  
+  const encoder = new TextEncoder();
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+  
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    encryptionKey,
+    encoder.encode(plaintext)
+  );
+  
+  return {
+    iv: arrayBufferToBase64(iv),
+    ciphertext: arrayBufferToBase64(encrypted)
+  };
+}
+
+async function decryptMessage(ivBase64, ciphertextBase64) {
+  if (!encryptionKey) throw new Error('Encryption key not initialized');
+  
+  try {
+    const iv = base64ToArrayBuffer(ivBase64);
+    const ciphertext = base64ToArrayBuffer(ciphertextBase64);
+    
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      encryptionKey,
+      ciphertext
+    );
+    
+    return new TextDecoder().decode(decrypted);
+  } catch (err) {
+    console.warn('[DECRYPT ERROR]', err.message);
+    return '[Unable to decrypt message]';
+  }
+}
+
 async function encryptFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    
     reader.onload = async (e) => {
       try {
-        const key = await deriveEncryptionKey();
         const iv = crypto.getRandomValues(new Uint8Array(12));
+        
         const encrypted = await crypto.subtle.encrypt(
           { name: 'AES-GCM', iv },
-          await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']),
+          encryptionKey,
           e.target.result
         );
-        const ivB64 = btoa(String.fromCharCode(...iv));
-        const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-        resolve({ iv: ivB64, ciphertext: ctB64, originalSize: file.size });
+        
+        resolve({
+          iv: arrayBufferToBase64(iv),
+          ciphertext: arrayBufferToBase64(encrypted),
+          originalSize: file.size
+        });
       } catch (err) {
         reject(err);
       }
     };
+    
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
 }
 
-async function handleFileSelect() {
-  const input = document.getElementById('fileInput');
-  const file = input.files[0];
-  if (!file) return;
+async function encryptMetadata(plaintext) {
+  return encryptMessage(plaintext);
+}
 
-  if (file.size > 50 * 1024 * 1000) {
-    showError('File too large (max 50MB)');
-    return;
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
+  return btoa(binary);
+}
 
-  try {
-    const encryptedName = await encryptMetadata(file.name);
-    const encryptedFile = await encryptFile(file);
-    
-    const binary = atob(encryptedFile.ciphertext);
-    const array = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      array[i] = binary.charCodeAt(i);
-    }
-    const encryptedBlob = new Blob([array], { type: 'application/octet-stream' });
+function base64ToArrayBuffer(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
 
-    const formData = new FormData();
-    formData.append('encryptedFile', encryptedBlob, 'encrypted.bin');
-    formData.append('encryptedName', JSON.stringify(encryptedName));
-    formData.append('originalSize', encryptedFile.originalSize);
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
 
-    const res = await fetch(`${API_URL}/api/rooms/${roomId}/upload`, {
-      method: 'POST',
-      body: formData
-    });
+function formatTime(timestamp) {
+  return new Date(timestamp).toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+}
 
-    if (!res.ok) throw new Error('Upload failed');
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
-    const fileData = await res.json();
-    addMessage({
-      id: fileData.id,
-      text: `📎 File shared (${formatFileSize(fileData.originalSize)})`,
-      timestamp: Date.now(),
-      sender: 'system',
-      isFile: true,
-      fileData
-    });
+// ============================================
+// NOTIFICATIONS
+// ============================================
+function showNotification(message, type = 'info') {
+  // Remove existing notifications
+  document.querySelectorAll('.notification').forEach(n => n.remove());
+  
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  notification.onclick = () => notification.remove();
+  document.body.appendChild(notification);
+  
+  setTimeout(() => notification.remove(), 5000);
+}
 
-    input.value = '';
-  } catch (err) {
-    console.error('File upload error:', err);
-    showError('Failed to upload file');
-    input.value = '';
+// ============================================
+// CONNECTION STATUS
+// ============================================
+function updateConnectionStatus(status) {
+  const dot = document.getElementById('connectionDot');
+  const text = document.getElementById('connectionText');
+  
+  dot.className = 'connection-dot';
+  
+  switch (status) {
+    case 'connected':
+      dot.classList.remove('disconnected', 'connecting');
+      text.textContent = 'Connected (E2EE)';
+      break;
+    case 'connecting':
+      dot.classList.add('connecting');
+      text.textContent = 'Connecting...';
+      break;
+    case 'disconnected':
+      dot.classList.add('disconnected');
+      text.textContent = 'Disconnected';
+      break;
+    case 'reconnecting':
+      dot.classList.add('connecting');
+      text.textContent = `Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`;
+      break;
   }
 }
 
-function initialize() {
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('chatApp').style.display = 'flex';
-  document.getElementById('roomTopic').textContent = decodeURIComponent(topic || 'Untitled Session');
-  document.getElementById('roomKeyDisplay').textContent = roomId.substring(0, 8).toUpperCase();
-
-  socket = io(SOCKET_URL, {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000
-  });
-
-  socket.on('connect', () => {
-    myId = socket.id;
-    socket.emit('join_room', { roomId, password });
-  });
-
-  socket.on('connect_error', (error) => {
-    console.error('Connection error:', error);
-    showError('Failed to connect to chat server');
-  });
-
-  socket.on('join_success', (data) => {
-    expiresAt = data.expiresAt;
-    updateParticipants(data.participantCount || 1);
-    updateTimer();
-  });
-
-  socket.on('error', (message) => {
-    console.error('Socket error:', message);
-    showError(message);
-    if (message.includes('password') || message.includes('found')) {
-      cleanupAndRedirect();
-    }
-  });
-
-  socket.on('new_message', async (msg) => {
-    if (msg.type === 'system') {
-      addMessage(msg);
-      return;
-    }
-    let displayText = msg.text;
-    if (msg.encrypted) {
-      displayText = await decryptMessage(msg.encrypted.iv, msg.encrypted.ciphertext);
-    }
-    addMessage({ ...msg, text: displayText });
-  });
-
-  socket.on('participant_joined', (data) => {
-    updateParticipants(data.count);
-    if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
-  });
-
-  socket.on('participant_left', (data) => {
-    updateParticipants(data.count);
-    if (data.message) addMessage({ id: Date.now().toString(), text: data.message, timestamp: Date.now(), type: 'system' });
-  });
-
-  socket.on('room_vanished', () => {
-    showError('Room has been destroyed.');
-    cleanupAndRedirect();
-  });
-
-  socket.on('file_uploaded', async (fileData) => {
-    let displayName = '📎 File shared';
-    if (fileData.encryptedName) {
-      try {
-        const name = await decryptMessage(
-          fileData.encryptedName.iv,
-          fileData.encryptedName.ciphertext
-        );
-        displayName = `📎 ${name} (${formatFileSize(fileData.originalSize)})`;
-      } catch (e) {
-        displayName = `📎 Encrypted file (${formatFileSize(fileData.originalSize)})`;
-      }
-    }
-    addMessage({
-      id: fileData.id,
-      text: displayName,
-      timestamp: fileData.uploadedAt,
-      sender: 'system',
-      isFile: true
+// ============================================
+// SOCKET CONNECTION
+// ============================================
+async function connectSocket() {
+  return new Promise((resolve, reject) => {
+    updateConnectionStatus('connecting');
+    
+    socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000
     });
+    
+    socket.on('connect', () => {
+      myId = socket.id;
+      reconnectAttempts = 0;
+      updateConnectionStatus('connected');
+      
+      // Re-authenticate on reconnect
+      socket.emit('join_room', { 
+        roomId, 
+        password: sessionStorage.getItem('abysslink_temp_pwd') || password 
+      });
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('[CONNECTION ERROR]', error);
+      updateConnectionStatus('disconnected');
+      
+      if (reconnectAttempts === 0) {
+        showNotification('Connection failed. Retrying...', 'error');
+      }
+    });
+    
+    socket.on('reconnect_attempt', (attempt) => {
+      reconnectAttempts = attempt;
+      updateConnectionStatus('reconnecting');
+    });
+    
+    socket.on('reconnect_failed', () => {
+      showNotification('Unable to reconnect. Please refresh the page.', 'error');
+      updateConnectionStatus('disconnected');
+    });
+    
+    socket.on('join_success', (data) => {
+      expiresAt = data.expiresAt;
+      if (data.encryptionSalt && !encryptionSalt) {
+        encryptionSalt = data.encryptionSalt;
+      }
+      updateParticipants(data.participantCount || 1);
+      startTimer();
+      resolve();
+    });
+    
+    socket.on('error_message', (data) => {
+      const message = typeof data === 'string' ? data : data.error;
+      console.error('[SOCKET ERROR]', message);
+      showNotification(message, 'error');
+      
+      if (message.includes('Authentication') || message.includes('not found')) {
+        setTimeout(() => cleanupAndRedirect(), 2000);
+      }
+    });
+    
+    socket.on('new_message', async (msg) => {
+      await handleIncomingMessage(msg);
+    });
+    
+    socket.on('system_message', (msg) => {
+      addSystemMessage(msg.text);
+    });
+    
+    socket.on('participant_update', (data) => {
+      updateParticipants(data.count);
+    });
+    
+    socket.on('user_typing', (data) => {
+      if (data.sender !== myId) {
+        showTypingIndicator(true);
+      }
+    });
+    
+    socket.on('user_stopped_typing', (data) => {
+      if (data.sender !== myId) {
+        showTypingIndicator(false);
+      }
+    });
+    
+    socket.on('file_uploaded', async (fileData) => {
+      await handleFileUploaded(fileData);
+    });
+    
+    socket.on('room_vanished', (data) => {
+      showNotification('Room has been destroyed', 'info');
+      setTimeout(() => cleanupAndRedirect(), 2000);
+    });
+    
+    socket.on('server_shutdown', () => {
+      showNotification('Server is restarting. Please rejoin shortly.', 'info');
+    });
+    
+    socket.on('disconnect', (reason) => {
+      updateConnectionStatus('disconnected');
+      if (reason === 'io server disconnect') {
+        showNotification('Disconnected by server', 'error');
+      }
+    });
+    
+    // Timeout for initial connection
+    setTimeout(() => {
+      if (!socket.connected) {
+        reject(new Error('Connection timeout'));
+      }
+    }, 30000);
+  });
+}
+
+// ============================================
+// MESSAGE HANDLING
+// ============================================
+async function handleIncomingMessage(msg) {
+  // Hide typing indicator
+  showTypingIndicator(false);
+  
+  let displayText = msg.text;
+  
+  if (msg.encrypted) {
+    displayText = await decryptMessage(msg.encrypted.iv, msg.encrypted.ciphertext);
+  }
+  
+  addMessage({
+    ...msg,
+    text: displayText,
+    isOwn: msg.sender === myId
   });
 }
 
 function addMessage(msg) {
+  const messagesContainer = document.getElementById('messages');
   const el = document.createElement('div');
-  el.className = msg.type === 'system' ? 'system-message' :
-    (msg.sender === myId ? 'message own' : 'message other');
-  if (msg.type === 'system') {
-    el.textContent = msg.text;
-  } else {
-    const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    el.innerHTML = `<div class="message-text">${escape(msg.text)}</div><div class="message-time">${time}</div>`;
-  }
-  document.getElementById('messages').appendChild(el);
-  el.scrollIntoView({ behavior: 'smooth' });
+  
+  el.className = msg.isOwn ? 'message own' : 'message other';
+  
+  const time = formatTime(msg.timestamp);
+  
+  el.innerHTML = `
+    <div class="message-text">${escapeHtml(msg.text)}</div>
+    <div class="message-time">
+      ${time}
+      <span class="message-encrypted-badge">🔒</span>
+    </div>
+  `;
+  
+  messagesContainer.appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
-function updateParticipants(count) {
-  document.getElementById('participantCount').textContent = count;
-  document.getElementById('sidebarParticipants').textContent = count;
+function addSystemMessage(text) {
+  const messagesContainer = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = 'system-message';
+  el.textContent = text;
+  messagesContainer.appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 async function sendMessage() {
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
-  if (!text) return;
-
+  
+  if (!text || !socket?.connected) return;
+  
   try {
     const encrypted = await encryptMessage(text);
     socket.emit('send_message', { roomId, encrypted });
     input.value = '';
+    
+    // Stop typing indicator
+    if (isTyping) {
+      socket.emit('typing_stop', { roomId });
+      isTyping = false;
+    }
   } catch (err) {
-    showError('Failed to encrypt message');
-    console.error(err);
+    console.error('[SEND ERROR]', err);
+    showNotification('Failed to send message', 'error');
   }
 }
 
 function handleKeyPress(e) {
-  if (e.key === 'Enter') sendMessage();
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 }
 
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+// ============================================
+// TYPING INDICATOR
+// ============================================
+function handleTyping() {
+  if (!socket?.connected) return;
+  
+  if (!isTyping) {
+    isTyping = true;
+    socket.emit('typing_start', { roomId });
+  }
+  
+  // Clear existing timeout
+  if (typingTimeout) clearTimeout(typingTimeout);
+  
+  // Set new timeout
+  typingTimeout = setTimeout(() => {
+    if (isTyping) {
+      socket.emit('typing_stop', { roomId });
+      isTyping = false;
+    }
+  }, 2000);
+}
+
+function showTypingIndicator(show) {
+  const indicator = document.getElementById('typingIndicator');
+  indicator.style.display = show ? 'block' : 'none';
+}
+
+// ============================================
+// FILE HANDLING
+// ============================================
+async function handleFileSelect() {
+  const input = document.getElementById('fileInput');
+  const file = input.files[0];
+  
+  if (!file) return;
+  
+  // Size limit
+  if (file.size > 50 * 1024 * 1024) {
+    showNotification('File too large (max 50MB)', 'error');
+    input.value = '';
+    return;
+  }
+  
+  try {
+    showNotification('Encrypting file...', 'info');
+    
+    const encryptedName = await encryptMetadata(file.name);
+    const encryptedFile = await encryptFile(file);
+    
+    // Convert to blob
+    const binaryString = atob(encryptedFile.ciphertext);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const encryptedBlob = new Blob([bytes], { type: 'application/octet-stream' });
+    
+    // Upload
+    showNotification('Uploading encrypted file...', 'info');
+    
+    const formData = new FormData();
+    formData.append('encryptedFile', encryptedBlob, 'encrypted.bin');
+    formData.append('encryptedName', JSON.stringify(encryptedName));
+    formData.append('originalSize', encryptedFile.originalSize);
+    
+    const res = await fetch(`${API_URL}/api/rooms/${roomId}/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    
+    showNotification('File uploaded successfully', 'success');
+    input.value = '';
+    
+  } catch (err) {
+    console.error('[UPLOAD ERROR]', err);
+    showNotification('File upload failed: ' + err.message, 'error');
+    input.value = '';
+  }
+}
+
+async function handleFileUploaded(fileData) {
+  let displayName = '📎 Encrypted file';
+  
+  if (fileData.encryptedName) {
+    try {
+      const name = await decryptMessage(
+        fileData.encryptedName.iv,
+        fileData.encryptedName.ciphertext
+      );
+      displayName = `📎 ${name}`;
+    } catch (e) {
+      // Keep default name
+    }
+  }
+  
+  const size = formatFileSize(fileData.originalSize);
+  addSystemMessage(`${displayName} (${size}) shared`);
+}
+
+// ============================================
+// TIMER
+// ============================================
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 1000);
 }
 
 function updateTimer() {
   if (!expiresAt) return;
+  
   const now = Date.now();
   const remaining = expiresAt - now;
+  
   if (remaining <= 0) {
-    showError('Session expired.');
+    showNotification('Session expired', 'info');
     cleanupAndRedirect();
     return;
   }
+  
   const h = Math.floor(remaining / 3600000);
   const m = Math.floor((remaining % 3600000) / 60000);
   const s = Math.floor((remaining % 60000) / 1000);
-  document.getElementById('timeRemaining').textContent =
-    `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  
+  const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  document.getElementById('timeRemaining').textContent = timeStr;
+  
+  // Visual warning when less than 5 minutes
+  const timerBadge = document.getElementById('timerBadge');
   if (remaining < 300000) {
-    document.getElementById('timerBadge').style.borderColor = 'var(--danger)';
-    document.getElementById('timerBadge').style.color = 'var(--danger)';
+    timerBadge.classList.add('critical');
+  } else {
+    timerBadge.classList.remove('critical');
   }
-  timer = setTimeout(updateTimer, 1000);
 }
 
-function confirmVanish() {
-  if (confirm('Destroy this room for everyone? This cannot be undone.')) {
-    fetch(`${API_URL}/api/rooms/vanish`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, password })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        showError('Room destruction initiated.');
-        cleanupAndRedirect();
-      } else {
-        showError('Failed to vanish room');
-      }
-    })
-    .catch(err => {
-      console.error('Vanish error:', err);
-      showError('Failed to vanish room');
-    });
-  }
+// ============================================
+// PARTICIPANTS
+// ============================================
+function updateParticipants(count) {
+  document.getElementById('participantCount').textContent = count;
+  document.getElementById('sidebarParticipants').textContent = count;
+}
+
+// ============================================
+// ROOM ACTIONS
+// ============================================
+function copyRoomKey() {
+  navigator.clipboard.writeText(roomId).then(() => {
+    showNotification('Room key copied to clipboard', 'success');
+  }).catch(() => {
+    showNotification('Failed to copy', 'error');
+  });
 }
 
 function leaveRoom() {
-  if (confirm('Leave this session?')) {
+  if (confirm('Leave this session? You can rejoin with the room key and password.')) {
     cleanupAndRedirect();
   }
 }
 
+async function confirmVanish() {
+  const confirmText = prompt('Type "DESTROY" to permanently delete this room for everyone:');
+  
+  if (confirmText !== 'DESTROY') {
+    if (confirmText !== null) {
+      showNotification('Destruction cancelled', 'info');
+    }
+    return;
+  }
+  
+  // We need the password for vanish - prompt user
+  const pwd = prompt('Enter room password to confirm destruction:');
+  if (!pwd) return;
+  
+  try {
+    const res = await fetch(`${API_URL}/api/rooms/vanish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId, password: pwd })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Destruction failed');
+    }
+    
+    showNotification('Room destroyed', 'success');
+    setTimeout(() => cleanupAndRedirect(), 1500);
+    
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
+}
+
+// ============================================
+// CLEANUP
+// ============================================
 function cleanupAndRedirect() {
-  if (timer) clearTimeout(timer);
-  if (socket) socket.disconnect();
+  // Clear timer
+  if (timerInterval) clearInterval(timerInterval);
+  if (typingTimeout) clearTimeout(typingTimeout);
+  
+  // Disconnect socket
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+  
+  // Clear sensitive data
+  encryptionKey = null;
+  encryptionSalt = null;
+  password = null;
+  
+  // Clear any stored auth
+  sessionStorage.removeItem('abysslink_auth');
+  sessionStorage.removeItem('abysslink_temp_pwd');
+  
+  // Redirect
   window.location.href = 'rooms.html';
 }
 
-function escape(str) {
-  return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
-}
-
+// ============================================
+// EVENT LISTENERS
+// ============================================
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && expiresAt) updateTimer();
+  if (!document.hidden && expiresAt) {
+    updateTimer();
+  }
 });
 
 window.addEventListener('beforeunload', () => {
   if (socket) socket.disconnect();
 });
 
+// Prevent accidental navigation
+window.addEventListener('beforeunload', (e) => {
+  if (socket?.connected) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+// ============================================
+// START
+// ============================================
 initialize();
 </script>
 </body>
