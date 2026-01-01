@@ -12,7 +12,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-/* [Keep all existing styles] */
 :root {
   --bg: #050505;
   --surface: #0a0a0a;
@@ -21,7 +20,6 @@
   --border: #222222;
   --accent: #ffffff;
   --danger: #ff4444;
-  --success: #44ff88;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 * {
@@ -105,15 +103,6 @@ body {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-}
-.fingerprint {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
-  color: var(--success);
-  background: rgba(68, 255, 136, 0.1);
-  padding: 0.2rem 0.5rem;
-  border: 1px solid rgba(68, 255, 136, 0.3);
-  cursor: help;
 }
 .copy-btn {
   font-family: 'Space Mono', monospace;
@@ -353,22 +342,6 @@ body {
   font-size: 1.5rem;
   font-weight: 700;
 }
-.security-info {
-  background: rgba(68, 255, 136, 0.05);
-  border: 1px solid rgba(68, 255, 136, 0.2);
-  padding: 1rem;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--success);
-}
-.security-info h4 {
-  margin-bottom: 0.5rem;
-  font-size: 0.75rem;
-}
-.security-info p {
-  opacity: 0.8;
-  line-height: 1.4;
-}
 .action-buttons {
   margin-top: auto;
   padding-top: 2rem;
@@ -398,7 +371,7 @@ body {
   color: white;
 }
 .notification.success {
-  background: var(--success);
+  background: var(--text-main);
   color: var(--bg);
 }
 .notification.info {
@@ -435,7 +408,6 @@ body {
       <div class="room-meta">
         Key: <span id="roomKeyDisplay"></span>
         <button class="copy-btn" onclick="copyRoomKey()">Copy</button>
-        <span class="fingerprint" id="keyFingerprint" title="Verify this matches on all devices">🔐 ---</span>
       </div>
     </div>
     <div class="header-right">
@@ -465,17 +437,6 @@ body {
           <p>Active Participants</p>
           <strong><span id="sidebarParticipants">0</span></strong>
         </div>
-      </div>
-      
-      <div class="security-info">
-        <h4>🔒 Zero-Knowledge Security</h4>
-        <p>Your password never leaves this device. Server cannot decrypt messages.</p>
-      </div>
-      
-      <div class="security-info">
-        <h4>🔑 Key Fingerprint</h4>
-        <p>Verify this matches on all participant devices:</p>
-        <strong id="sidebarFingerprint" style="font-size: 1rem; word-break: break-all;">---</strong>
       </div>
       
       <div class="action-buttons">
