@@ -35,7 +35,6 @@ body {
     font-family: 'Manrope', sans-serif;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
-    will-change: scroll-position;
 }
 
 .background-wrapper {
@@ -56,12 +55,10 @@ body {
     height: 100%;
     background: url('https://i.ibb.co/TMkPJDsN/1.jpg') center/cover no-repeat;
     filter: blur(12px) brightness(0.6);
-    transform: scale(1.1);
+    transform: scale(1.1) translate3d(0, 0, 0);
     z-index: -2;
-    will-change: filter, transform;
-    transform: translate3d(0, 0, 0) scale(1.1);
+    will-change: filter;
     backface-visibility: hidden;
-    perspective: 1000px;
 }
 
 #warrior-container {
@@ -78,7 +75,6 @@ body {
     pointer-events: none;
     overflow: hidden;
     background: transparent;
-    will-change: transform, opacity;
 }
 
 #warrior-img {
@@ -107,7 +103,6 @@ body {
     transform-origin: center bottom;
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
-    perspective: 1000px;
     margin: 0 auto;
 }
 
@@ -124,7 +119,8 @@ body {
     z-index: 5;
     pointer-events: none;
     overflow: hidden;
-    will-change: transform, opacity;
+    will-change: transform;
+    contain: layout style paint;
 }
 
 #sword-img {
@@ -136,11 +132,10 @@ body {
     object-position: bottom left;
     display: block;
     opacity: 0;
-    filter: drop-shadow(0 0 25px rgba(255,255,255,0.3));
+    filter: drop-shadow(0 0 20px rgba(255,255,255,0.25));
     will-change: opacity, transform;
-    transform: translate3d(0, 120px, 0);
+    transform: translate3d(0, 60px, 0);
     backface-visibility: hidden;
-    perspective: 1000px;
     mix-blend-mode: normal;
     mask-image: linear-gradient(to bottom,
         transparent 0%,
@@ -273,7 +268,6 @@ section {
     padding: 0 8rem;
     z-index: 10;
     background: transparent;
-    will-change: transform, opacity;
 }
 
 #hero {
@@ -755,8 +749,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 ScrollTrigger.config({
     autoRefreshEvents: "visibilitychange,DOMContentLoaded,load",
-    syncInterval: 8,
-    anticipatePin: 1
+    ignoreMobileResize: true
 });
 
 window.addEventListener("load", () => {
@@ -764,27 +757,32 @@ window.addEventListener("load", () => {
     setTimeout(() => {
         ScrollTrigger.refresh();
         initializeAnimations();
-    }, 200);
+    }, 100);
 });
 
 function initializeAnimations() {
-    // Warrior fade in
-    gsap.fromTo("#warrior-img",
-        {
-            opacity: 0,
-            y: 250,
-            scale: 0.85
-        },
-        {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 2,
-            ease: "power3.out",
-            delay: 0.3,
-            force3D: true
-        }
-    );
+    // Set initial states
+    gsap.set("#warrior-img", {
+        opacity: 0,
+        y: 200,
+        scale: 0.9
+    });
+
+    gsap.set("#sword-img", {
+        opacity: 0,
+        y: 60
+    });
+
+    // Warrior fade in on load
+    gsap.to("#warrior-img", {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 1.8,
+        ease: "power2.out",
+        delay: 0.2,
+        force3D: true
+    });
 
     // Warrior fade out on scroll
     gsap.to("#warrior-img", {
@@ -792,68 +790,45 @@ function initializeAnimations() {
             trigger: "#hero",
             start: "top top",
             end: "bottom top",
-            scrub: 1.5,
-            invalidateOnRefresh: true,
-            fastScrollEnd: true
+            scrub: 1,
+            invalidateOnRefresh: true
         },
         opacity: 0,
-        y: -100,
-        scale: 1.15,
+        y: -80,
+        scale: 1.1,
         ease: "none",
         force3D: true
     });
 
-    // Sword timeline for smooth fade in with position
-    let swordTimeline = gsap.timeline({
+    // Sword fade in - smooth and responsive
+    gsap.to("#sword-img", {
         scrollTrigger: {
             trigger: "#hero",
-            start: "bottom 90%",
-            end: "bottom 10%",
-            scrub: 3,
-            invalidateOnRefresh: true,
-            fastScrollEnd: true
-        }
+            start: "bottom 95%",
+            end: "bottom 40%",
+            scrub: 1,
+            invalidateOnRefresh: true
+        },
+        opacity: 0.95,
+        y: 0,
+        ease: "none",
+        force3D: true
     });
 
-    swordTimeline
-        .fromTo("#sword-img",
-            {
-                opacity: 0,
-                y: 150,
-                scale: 0.95,
-                filter: "drop-shadow(0 0 25px rgba(255,255,255,0)) brightness(0.5)"
-            },
-            {
-                opacity: 0.95,
-                y: 0,
-                scale: 1,
-                filter: "drop-shadow(0 0 25px rgba(255,255,255,0.3)) brightness(1)",
-                ease: "power2.out",
-                force3D: true
-            }
-        );
-
-    // Sword fade out timeline - smooth and gradual
-    let swordFadeOutTimeline = gsap.timeline({
+    // Sword fade out - separate trigger
+    gsap.to("#sword-img", {
         scrollTrigger: {
             trigger: "#security",
-            start: "top 70%",
-            end: "center 30%",
-            scrub: 2.5,
-            invalidateOnRefresh: true,
-            fastScrollEnd: true
-        }
+            start: "top 85%",
+            end: "top 35%",
+            scrub: 1,
+            invalidateOnRefresh: true
+        },
+        opacity: 0,
+        y: -50,
+        ease: "none",
+        force3D: true
     });
-
-    swordFadeOutTimeline
-        .to("#sword-img", {
-            opacity: 0,
-            y: -80,
-            scale: 1.02,
-            filter: "drop-shadow(0 0 25px rgba(255,255,255,0)) brightness(0.6)",
-            ease: "power2.inOut",
-            force3D: true
-        });
 
     // Background blur animation
     gsap.to("#bg-image", {
@@ -861,12 +836,10 @@ function initializeAnimations() {
             trigger: "#hero",
             start: "top top",
             end: "bottom top",
-            scrub: 1.5,
-            fastScrollEnd: true
+            scrub: 1
         },
         filter: "blur(0px) brightness(0.8)",
-        ease: "none",
-        force3D: true
+        ease: "none"
     });
 
     // Content wrapper animations
@@ -875,13 +848,12 @@ function initializeAnimations() {
             scrollTrigger: {
                 trigger: content,
                 start: "top 85%",
-                toggleActions: "play none none reverse",
-                fastScrollEnd: true
+                toggleActions: "play none none reverse"
             },
             opacity: 1,
             y: 0,
-            duration: 1,
-            ease: "power3.out",
+            duration: 0.8,
+            ease: "power2.out",
             delay: index * 0.05,
             force3D: true
         });
@@ -893,13 +865,12 @@ function initializeAnimations() {
             scrollTrigger: {
                 trigger: pane,
                 start: "top 90%",
-                toggleActions: "play none none reverse",
-                fastScrollEnd: true
+                toggleActions: "play none none reverse"
             },
             opacity: 0,
-            y: 30,
-            duration: 0.8,
-            delay: i * 0.1,
+            y: 25,
+            duration: 0.6,
+            delay: i * 0.08,
             ease: "power2.out",
             force3D: true
         });
@@ -911,19 +882,19 @@ function initializeAnimations() {
             scrollTrigger: {
                 trigger: card,
                 start: "top 90%",
-                toggleActions: "play none none reverse",
-                fastScrollEnd: true
+                toggleActions: "play none none reverse"
             },
             opacity: 0,
-            y: 30,
-            duration: 0.8,
-            delay: i * 0.08,
+            y: 25,
+            duration: 0.6,
+            delay: i * 0.06,
             ease: "power2.out",
             force3D: true
         });
     });
 }
 
+// Glitch text effect
 function pulsingWaveGlitch(element) {
     const text = element.dataset.text || element.textContent;
     const chars = '█▓▒░/\\|_-<>[]{}';
@@ -969,6 +940,7 @@ function pulsingWaveGlitch(element) {
 
 document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
 
+// Navigation scroll tracking
 let scrollTimeout;
 const navItems = document.querySelectorAll('.sticky-nav .nav-item');
 const sections = document.querySelectorAll('section[id]');
@@ -997,6 +969,7 @@ window.addEventListener('scroll', () => {
     scrollTimeout = window.requestAnimationFrame(updateActiveNav);
 }, { passive: true });
 
+// Menu toggle
 const menuToggle = document.getElementById('menuToggle');
 const menuOverlay = document.getElementById('menuOverlay');
 
@@ -1016,6 +989,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -1027,6 +1001,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// Refresh ScrollTrigger on resize
 let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
