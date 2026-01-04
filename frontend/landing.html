@@ -61,32 +61,6 @@ body {
     backface-visibility: hidden;
 }
 
-/* Unicorn Studio Effect - Full Screen Behind Warrior */
-#unicorn-effect-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-    overflow: hidden;
-}
-
-#unicorn-effect-container [data-us-project] {
-    width: 100% !important;
-    height: 100% !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-}
-
-#unicorn-effect-container canvas {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-}
-
 #warrior-container {
     position: fixed;
     bottom: -15vh;
@@ -298,8 +272,6 @@ section {
 
 #hero {
     background: transparent;
-    position: relative;
-    overflow: hidden;
 }
 
 #hero .content-wrapper {
@@ -347,6 +319,16 @@ p.lead {
     margin-bottom: 3rem;
     font-weight: 300;
     text-shadow: 0 2px 10px rgba(0,0,0,1);
+}
+
+.glitch-text {
+    position: relative;
+}
+
+.glitch-char {
+    display: inline-block;
+    position: relative;
+    will-change: opacity, transform;
 }
 
 .button-group {
@@ -574,28 +556,19 @@ p.lead {
     });
 </script>
 
-<!-- Layer 1: Background Image (z-index: -3 to -2) -->
 <div class="background-wrapper">
     <div id="bg-image"></div>
 </div>
 
-<!-- Layer 2: Unicorn Studio Effect (z-index: 0) - Behind Warrior -->
-<div id="unicorn-effect-container">
-    <div data-us-project="Z9vuqneKhlEa3Mg00KsK" style="width:100%; height:100%;"></div>
-</div>
-
-<!-- Layer 3: Warrior Image (z-index: 1) -->
 <div id="warrior-container">
     <img id="warrior-img" src="https://i.ibb.co/TMmNskSK/a-w.png" alt="Warrior">
 </div>
 
-<!-- Layer 4: Vignette Overlay (z-index: 2) -->
-<div class="vignette"></div>
-
-<!-- Layer 5: Sword (z-index: 5) -->
 <div id="sword-container">
     <img id="sword-img" src="https://image2url.com/r2/default/images/1767366955365-dc9faf5e-f348-49f3-b370-7caad31108b6.png" alt="Berserk Sword">
 </div>
+
+<div class="vignette"></div>
 
 <div class="menu-toggle" id="menuToggle">
     <span></span>
@@ -618,6 +591,7 @@ p.lead {
 
 <section id="hero">
     <div class="content-wrapper">
+        <h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
         <p class="lead">
             An ephemeral communication layer designed for professionals who require absolute stealth.<br>
             No persistent storage. No logs. Just silence.
@@ -768,37 +742,6 @@ p.lead {
     </div>
 </footer>
 
-<!-- Unicorn Studio Script - Load First -->
-<script type="text/javascript">
-!function(){
-    if(!window.UnicornStudio){
-        window.UnicornStudio={isInitialized:!1};
-        var i=document.createElement("script");
-        i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.0/dist/unicornStudio.umd.js";
-        i.onload=function(){
-            if(!window.UnicornStudio.isInitialized){
-                UnicornStudio.init();
-                window.UnicornStudio.isInitialized=!0;
-                
-                // Ensure canvas fills container after initialization
-                setTimeout(function() {
-                    const container = document.getElementById('unicorn-effect-container');
-                    if (container) {
-                        const canvas = container.querySelector('canvas');
-                        if (canvas) {
-                            canvas.style.width = '100%';
-                            canvas.style.height = '100%';
-                            canvas.style.objectFit = 'cover';
-                        }
-                    }
-                }, 500);
-            }
-        };
-        (document.head || document.body).appendChild(i);
-    }
-}();
-</script>
-
 <script>
 const API_URL = 'https://abysslink.onrender.com';
 
@@ -830,10 +773,6 @@ function initializeAnimations() {
         y: 60
     });
 
-    gsap.set("#unicorn-effect-container", {
-        opacity: 1
-    });
-
     // Warrior fade in on load
     gsap.to("#warrior-img", {
         opacity: 1,
@@ -857,20 +796,6 @@ function initializeAnimations() {
         opacity: 0,
         y: -80,
         scale: 1.1,
-        ease: "none",
-        force3D: true
-    });
-
-    // Unicorn effect fade out on scroll (synced with warrior)
-    gsap.to("#unicorn-effect-container", {
-        scrollTrigger: {
-            trigger: "#hero",
-            start: "top top",
-            end: "bottom top",
-            scrub: 1,
-            invalidateOnRefresh: true
-        },
-        opacity: 0,
         ease: "none",
         force3D: true
     });
@@ -968,6 +893,52 @@ function initializeAnimations() {
         });
     });
 }
+
+// Glitch text effect
+function pulsingWaveGlitch(element) {
+    const text = element.dataset.text || element.textContent;
+    const chars = '█▓▒░/\\|_-<>[]{}';
+
+    element.innerHTML = '';
+
+    const spans = text.split('').map(char => {
+        const span = document.createElement('span');
+        span.className = 'glitch-char';
+        span.textContent = char;
+        span.dataset.original = char;
+        element.appendChild(span);
+        return span;
+    });
+
+    let waveIndex = 0;
+    let lastTime = 0;
+    const interval = 120;
+
+    function animate(currentTime) {
+        if (currentTime - lastTime >= interval) {
+            spans.forEach((span, i) => {
+                const distance = Math.abs(i - waveIndex);
+                const isInWave = distance < 4;
+
+                if (isInWave && Math.random() > 0.3) {
+                    span.textContent = chars[Math.floor(Math.random() * chars.length)];
+                    span.style.opacity = 0.6 + Math.random() * 0.4;
+                } else if (!isInWave) {
+                    span.textContent = span.dataset.original;
+                    span.style.opacity = '1';
+                }
+            });
+
+            waveIndex = (waveIndex + 1) % (spans.length + 5);
+            lastTime = currentTime;
+        }
+        requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+}
+
+document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
 
 // Navigation scroll tracking
 let scrollTimeout;
