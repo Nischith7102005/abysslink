@@ -1,1315 +1,1774 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AbyssLink | Secure Transmission Layer</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-
-<!-- Preload the video for faster loading -->
-<link rel="preload" as="video" href="0104.mp4" type="video/mp4">
-
-<style>
-:root {
-    --bg: #050505;
-    --surface: #0a0a0a;
-    --text-main: #ffffff;
-    --text-dim: #888888;
-    --border: #222222;
-    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-    background-color: var(--bg);
-    color: var(--text-main);
-    font-family: 'Manrope', sans-serif;
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-}
-
-/* ============================================
-   OPTIMIZED VIDEO BACKGROUND STYLES
-   ============================================ */
-#video-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    z-index: -2;
-    overflow: hidden;
-    /* GPU acceleration */
-    transform: translateZ(0);
-    will-change: opacity;
-    backface-visibility: hidden;
-}
-
-#hero-video {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    min-width: 100%;
-    min-height: 100%;
-    width: auto;
-    height: auto;
-    transform: translate(-50%, -50%) translateZ(0);
-    object-fit: cover;
-    /* Smooth rendering */
-    image-rendering: optimizeQuality;
-    -webkit-transform: translate(-50%, -50%) translateZ(0);
-    /* Prevent repaints */
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    perspective: 1000px;
-    /* Smooth playback */
-    will-change: transform;
-}
-
-.video-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        to bottom,
-        rgba(5, 5, 5, 0.15) 0%,
-        rgba(5, 5, 5, 0.3) 50%,
-        rgba(5, 5, 5, 0.8) 100%
-    );
-    pointer-events: none;
-    /* GPU layer */
-    transform: translateZ(0);
-}
-
-/* Loading spinner */
-#video-background.loading::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg);
-    z-index: 5;
-}
-
-#video-background.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 40px;
-    height: 40px;
-    border: 2px solid rgba(255,255,255,0.1);
-    border-top-color: rgba(255,255,255,0.6);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    animation: spin 0.8s linear infinite;
-    z-index: 10;
-}
-
-@keyframes spin {
-    to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* Smooth transition when video loads */
-#video-background.loaded #hero-video {
-    animation: fadeInVideo 0.8s ease-out forwards;
-}
-
-@keyframes fadeInVideo {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -50%) translateZ(0) scale(1.02);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) translateZ(0) scale(1);
-    }
-}
-
-/* ============================================
-   REST OF STYLES
-   ============================================ */
-
-.background-wrapper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -3;
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-}
-
-.background-wrapper.visible {
-    opacity: 1;
-}
-
-#bg-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url('https://i.ibb.co/TMkPJDsN/1.jpg') center/cover no-repeat;
-    filter: blur(12px) brightness(0.6);
-    transform: scale(1.1) translate3d(0, 0, 0);
-    z-index: -2;
-    will-change: filter;
-    backface-visibility: hidden;
-}
-
-#warrior-container {
-    position: fixed;
-    bottom: -15vh;
-    left: -2%;
-    right: 0;
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    z-index: 1;
-    pointer-events: none;
-    overflow: hidden;
-    background: transparent;
-}
-
-#warrior-img {
-    position: relative;
-    height: 100vh;
-    width: auto;
-    max-width: 100%;
-    object-fit: contain;
-    object-position: center bottom;
-    display: block;
-    background: transparent;
-    mix-blend-mode: screen;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
-    mask-image: linear-gradient(to bottom,
-        black 0%,
-        black 85%,
-        transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom,
-        black 0%,
-        black 85%,
-        transparent 100%);
-    will-change: opacity, transform;
-    transform-origin: center bottom;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    margin: 0 auto;
-}
-
-#sword-container {
-    position: fixed;
-    bottom: -18vh;
-    left: -8%;
-    width: 100%;
-    height: 115vh;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-start;
-    padding-left: 0;
-    z-index: 5;
-    pointer-events: none;
-    overflow: hidden;
-    will-change: transform;
-    contain: layout style paint;
-}
-
-#sword-img {
-    position: relative;
-    height: 100vh;
-    width: auto;
-    max-height: none;
-    object-fit: contain;
-    object-position: bottom left;
-    display: block;
-    opacity: 0;
-    filter: drop-shadow(0 0 20px rgba(255,255,255,0.25));
-    will-change: opacity, transform;
-    transform: translate3d(0, 60px, 0);
-    backface-visibility: hidden;
-    mix-blend-mode: normal;
-    mask-image: linear-gradient(to bottom,
-        transparent 0%,
-        black 5%,
-        black 100%);
-    -webkit-mask-image: linear-gradient(to bottom,
-        transparent 0%,
-        black 5%,
-        black 100%);
-}
-
-.vignette {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at center, transparent 30%, rgba(5,5,5,0.7) 100%);
-    z-index: 2;
-    pointer-events: none;
-}
-
-.menu-toggle {
-    position: fixed;
-    top: 2rem;
-    left: 4rem;
-    width: 32px;
-    height: 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    cursor: pointer;
-    z-index: 1001;
-}
-
-.menu-toggle span {
-    width: 100%;
-    height: 2px;
-    background: var(--text-main);
-    transition: all 0.3s ease;
-}
-
-.menu-toggle.active span:nth-child(1) {
-    transform: translateY(11px) rotate(45deg);
-}
-
-.menu-toggle.active span:nth-child(2) {
-    opacity: 0;
-}
-
-.menu-toggle.active span:nth-child(3) {
-    transform: translateY(-11px) rotate(-45deg);
-}
-
-.menu-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(5, 5, 5, 0.98);
-    backdrop-filter: blur(20px);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 3rem;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.4s ease, visibility 0.4s ease;
-}
-
-.menu-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.menu-overlay a {
-    color: var(--text-main);
-    text-decoration: none;
-    font-family: 'Space Mono', monospace;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-    cursor: pointer;
-}
-
-.menu-overlay a:hover {
-    opacity: 1;
-}
-
-.sticky-nav {
-    position: fixed;
-    top: 2rem;
-    right: 4rem;
-    z-index: 500;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.sticky-nav a {
-    color: var(--text-dim);
-    text-decoration: none;
-    opacity: 0.5;
-    transition: all 0.3s ease;
-    padding-right: 1rem;
-    border-right: 2px solid transparent;
-}
-
-.sticky-nav a.active {
-    color: var(--text-main);
-    opacity: 1;
-    border-right-color: var(--text-main);
-}
-
-section {
-    position: relative;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0 8rem;
-    z-index: 10;
-    background: transparent;
-}
-
-#hero {
-    background: transparent;
-}
-
-#hero .content-wrapper {
-    text-align: center;
-    margin: 0 auto;
-    z-index: 20;
-    margin-top: 5vh;
-}
-
-.content-wrapper {
-    max-width: 900px;
-    opacity: 0;
-    transform: translateY(20px);
-    margin: 0 auto;
-    position: relative;
-    z-index: 15;
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-}
-
-h1, h2, h3 {
-    font-family: 'Space Mono', monospace;
-    font-weight: 200;
-    letter-spacing: -0.04em;
-    text-transform: uppercase;
-}
-
-h1 {
-    font-size: clamp(3.5rem, 10vw, 7rem);
-    line-height: 0.9;
-    margin-bottom: 1.5rem;
-    text-shadow: 0 0 40px rgba(0,0,0,1), 0 0 80px rgba(0,0,0,0.8);
-}
-
-h2 {
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    margin-bottom: 2rem;
-    text-shadow: 0 2px 20px rgba(0,0,0,0.8);
-}
-
-p.lead {
-    font-size: 1.25rem;
-    color: #ddd;
-    line-height: 1.6;
-    margin-bottom: 3rem;
-    font-weight: 300;
-    text-shadow: 0 2px 15px rgba(0,0,0,1);
-}
-
-.glitch-text {
-    position: relative;
-}
-
-.glitch-char {
-    display: inline-block;
-    position: relative;
-    will-change: opacity, transform;
-}
-
-.button-group {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 2rem;
-}
-
-.glass-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-    margin-top: 3rem;
-}
-
-.glass-pane {
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 2.5rem;
-    border-radius: 4px;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    position: relative;
-    will-change: transform, background, border-color;
-    backface-visibility: hidden;
-}
-
-.glass-pane:hover {
-    background: rgba(0, 0, 0, 0.75);
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: translateY(-5px);
-}
-
-.glass-pane h3 {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    color: var(--text-main);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 0.5rem;
-    display: inline-block;
-}
-
-.glass-pane p {
-    font-size: 0.95rem;
-    color: var(--text-dim);
-    line-height: 1.6;
-}
-
-.grid-3 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    margin-top: 4rem;
-}
-
-.card {
-    border-top: 1px solid var(--border);
-    padding-top: 1.5rem;
-    transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 1.5rem;
-    backdrop-filter: blur(5px);
-    will-change: transform, background, border-color;
-    backface-visibility: hidden;
-}
-
-.card:hover {
-    border-color: var(--text-main);
-    background: rgba(0, 0, 0, 0.7);
-    transform: translateY(-3px);
-}
-
-.card h3 {
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-}
-
-.card p {
-    font-size: 1rem;
-    color: var(--text-dim);
-    line-height: 1.5;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    background: var(--text-main);
-    color: var(--bg);
-    padding: 1rem 2.5rem;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: transform 0.3s var(--ease-out);
-    z-index: 30;
-    text-decoration: none;
-    will-change: transform;
-}
-
-.btn:hover {
-    transform: translateX(10px);
-}
-
-.btn-secondary {
-    background: rgba(0,0,0,0.6);
-    color: var(--text-main);
-    border: 1px solid var(--border);
-}
-
-.btn-secondary:hover {
-    background: var(--text-main);
-    color: var(--bg);
-    transform: translateX(0) scale(1.05);
-}
-
-.about-section {
-    min-height: 60vh;
-    background: rgba(5, 5, 5, 0.9);
-    border-top: 1px solid var(--border);
-    padding: 4rem 8rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    z-index: 20;
-    backdrop-filter: blur(10px);
-}
-
-.footer-brand {
-    width: 100%;
-    margin-bottom: 3rem;
-}
-
-.footer-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2rem;
-    width: 100%;
-}
-
-.footer-col h4 {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 1rem;
-}
-
-.footer-col p, .footer-col a {
-    font-size: 0.9rem;
-    color: var(--text-main);
-    line-height: 1.8;
-    text-decoration: none;
-    display: block;
-}
-
-.footer-col a:hover {
-    color: var(--text-dim);
-}
-
-.scroll-indicator {
-    position: absolute;
-    bottom: 3rem;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    opacity: 0.6;
-    animation: bounce 2s infinite;
-    z-index: 25;
-}
-
-.scroll-indicator span {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-}
-
-.scroll-indicator .arrow {
-    width: 20px;
-    height: 20px;
-    border-right: 2px solid var(--text-dim);
-    border-bottom: 2px solid var(--text-dim);
-    transform: rotate(45deg);
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateX(-50%) translateY(0);
-    }
-    40% {
-        transform: translateX(-50%) translateY(-10px);
-    }
-    60% {
-        transform: translateX(-50%) translateY(-5px);
-    }
-}
-
-/* Mobile optimizations - reduce video quality on smaller screens */
-@media (max-width: 768px) {
-    #hero-video {
-        /* Reduce quality on mobile for smoother playback */
-        filter: blur(0.5px);
-    }
-}
-
-@media (max-width: 1024px) {
-    section { padding: 0 4rem; }
-    .about-section { padding: 3rem 2rem; }
-    .footer-grid { grid-template-columns: 1fr 1fr; }
-    #warrior-container { bottom: -12vh; left: -8%; }
-    #warrior-img { height: 95vh; }
-    #sword-container {
-        bottom: -15vh;
-        left: -5%;
-    }
-    #sword-img {
-        height: 95vh;
-    }
-    .menu-toggle { left: 2rem; }
-    .sticky-nav { right: 2rem; }
-    .glass-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 768px) {
-    h1 { font-size: 2.5rem; }
-    h2 { font-size: 2rem; }
-    #warrior-container { bottom: -8vh; left: -5%; }
-    #warrior-img { height: 90vh; }
-    #sword-container {
-        bottom: -12vh;
-        left: -3%;
-    }
-    #sword-img {
-        height: 85vh;
-    }
-    .button-group { gap: 1rem; }
-    .sticky-nav { display: none; }
-    .glass-grid { grid-template-columns: 1fr; }
-    section { padding: 0 2rem; }
-}
-
-@media (max-width: 600px) {
-    h1 { font-size: 2rem; }
-    .about-section { padding: 2rem 1.5rem; }
-    .footer-grid { grid-template-columns: 1fr; }
-    #warrior-container { bottom: -5vh; left: -3%; }
-    #warrior-img { height: 85vh; }
-    #sword-container {
-        bottom: -8vh;
-        left: 0;
-    }
-    #sword-img { height: 75vh; }
-    .menu-toggle { left: 1rem; top: 1rem; }
-    .scroll-indicator { bottom: 2rem; }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbyssLink - Bridging the Gap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== PRELOADER STYLES ===== */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .preloader-logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00f0ff, #0080ff, #8000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .loader-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 240, 255, 0.1);
+            border-top: 3px solid #00f0ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loader-text {
+            font-family: 'Rajdhani', sans-serif;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .loader-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .loader-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00f0ff, #8000ff);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.5)); }
+            50% { filter: drop-shadow(0 0 30px rgba(0, 240, 255, 0.8)); }
+        }
+
+        /* Hide main content initially */
+        .main-content {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .main-content.loaded {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ===== ORIGINAL STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-cyan: #00f0ff;
+            --primary-blue: #0080ff;
+            --primary-purple: #8000ff;
+            --dark-bg: #0a0a0f;
+            --darker-bg: #050508;
+            --card-bg: rgba(15, 15, 25, 0.8);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --glow-cyan: 0 0 30px rgba(0, 240, 255, 0.5);
+            --glow-purple: 0 0 30px rgba(128, 0, 255, 0.5);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(0, 128, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(128, 0, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 240, 255, 0.05) 0%, transparent 70%);
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary-cyan);
+            border-radius: 50%;
+            animation: float 15s infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            padding: 0.7rem 5%;
+            background: rgba(10, 10, 15, 0.95);
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--primary-cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-cyan), transparent);
+            opacity: 0.3;
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-cyan), var(--primary-purple));
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-cyan);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            padding: 10px 25px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
+            border: none;
+            border-radius: 25px;
+            color: var(--dark-bg);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .mobile-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .mobile-toggle span {
+            width: 25px;
+            height: 2px;
+            background: var(--primary-cyan);
+            transition: all 0.3s ease;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 100px 5% 50px;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 900px;
+            z-index: 10;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--primary-cyan);
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        .hero h1 .gradient-text {
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue), var(--primary-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInUp 0.8s ease 0.4s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease 0.6s both;
+        }
+
+        .btn-primary {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
+            border: none;
+            border-radius: 30px;
+            color: var(--dark-bg);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .btn-secondary {
+            padding: 15px 40px;
+            background: transparent;
+            border: 2px solid var(--primary-purple);
+            border-radius: 30px;
+            color: var(--primary-purple);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-purple);
+            color: var(--text-primary);
+            transform: translateY(-3px);
+            box-shadow: var(--glow-purple);
+        }
+
+        .hero-visual {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .floating-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .float-element {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            animation: floatElement 8s ease-in-out infinite;
+        }
+
+        .float-element:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            background: rgba(0, 240, 255, 0.15);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .float-element:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            background: rgba(128, 0, 255, 0.1);
+            bottom: 10%;
+            right: 10%;
+            animation-delay: -3s;
+        }
+
+        .float-element:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 128, 255, 0.12);
+            top: 50%;
+            right: 20%;
+            animation-delay: -5s;
+        }
+
+        @keyframes floatElement {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Video Section */
+        .video-section {
+            padding: 100px 5%;
+            position: relative;
+        }
+
+        .video-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(0, 240, 255, 0.2);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+        }
+
+        .video-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+            border-radius: 22px;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-top: 56.25%;
+            background: var(--darker-bg);
+        }
+
+        .video-wrapper video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 15, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .play-button {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 50px rgba(0, 240, 255, 0.6);
+        }
+
+        .play-button i {
+            color: var(--dark-bg);
+            font-size: 2rem;
+            margin-left: 5px;
+        }
+
+        /* Section Styling */
+        .section {
+            padding: 100px 5%;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(128, 0, 255, 0.1);
+            border: 1px solid rgba(128, 0, 255, 0.3);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--primary-purple);
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .section-header h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+
+        /* Features Section */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px 30px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(128, 0, 255, 0.1));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .feature-icon i {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feature-card h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        /* Problem Section */
+        .problem-section {
+            background: linear-gradient(180deg, var(--darker-bg), var(--dark-bg));
+        }
+
+        .problem-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .problem-text h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--primary-cyan);
+        }
+
+        .problem-text p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .problem-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* Solution Section */
+        .solution-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .solution-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            padding: 50px 40px;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .solution-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .solution-card.featured {
+            border-color: var(--primary-cyan);
+            background: linear-gradient(180deg, rgba(0, 240, 255, 0.05), var(--card-bg));
+        }
+
+        .solution-card.featured::before {
+            content: 'RECOMMENDED';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 5px 20px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
+            color: var(--dark-bg);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 20px;
+        }
+
+        .solution-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(128, 0, 255, 0.1));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+        }
+
+        .solution-icon i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .solution-card h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .solution-card p {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+
+        .solution-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 30px;
+        }
+
+        .solution-features li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+        }
+
+        .solution-features li i {
+            color: var(--primary-cyan);
+        }
+
+        /* How It Works */
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .step {
+            flex: 1;
+            min-width: 250px;
+            max-width: 300px;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark-bg);
+        }
+
+        .step h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .step p {
+            color: var(--text-secondary);
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            right: -20px;
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-cyan), transparent);
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        /* Testimonials */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+        }
+
+        .testimonial-card::before {
+            content: '"';
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 5rem;
+            font-family: serif;
+            color: rgba(0, 240, 255, 0.1);
+            line-height: 1;
+        }
+
+        .testimonial-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .author-info h4 {
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+
+        .author-info span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 120px 5%;
+            background: linear-gradient(180deg, var(--dark-bg), var(--darker-bg));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.1), transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-content h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin-bottom: 20px;
+        }
+
+        .cta-content p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--darker-bg);
+            padding: 60px 5% 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto 40px;
+        }
+
+        .footer-brand {
+            max-width: 300px;
+        }
+
+        .footer-brand .logo {
+            margin-bottom: 20px;
+        }
+
+        .footer-brand p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .footer-links h4 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            color: var(--primary-cyan);
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-cyan);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: var(--primary-cyan);
+            color: var(--dark-bg);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .problem-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 15, 0.98);
+                flex-direction: column;
+                padding: 20px;
+                gap: 15px;
+                border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .mobile-toggle {
+                display: flex;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .step::after {
+                display: none;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .footer-brand {
+                max-width: 100%;
+            }
+
+            .social-links {
+                justify-content: center;
+            }
+
+            .preloader-logo {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .solution-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<script>
-    if (history.scrollRestoration) {
-        history.scrollRestoration = 'manual';
-    }
-    window.addEventListener('beforeunload', () => {
-        window.scrollTo(0, 0);
-    });
-</script>
-
-<!-- Video Background for Hero -->
-<div id="video-background" class="loading">
-    <video 
-        id="hero-video"
-        autoplay 
-        muted 
-        loop 
-        playsinline
-        preload="auto"
-        disablePictureInPicture
-        disableRemotePlayback
-    >
-        <!-- Local video source -->
-        <source src="0104.mp4" type="video/mp4">
-    </video>
-    <div class="video-overlay"></div>
-</div>
-
-<!-- Background for other sections -->
-<div class="background-wrapper" id="originalBackground">
-    <div id="bg-image"></div>
-</div>
-
-<div id="warrior-container">
-    <img id="warrior-img" src="https://i.ibb.co/TMmNskSK/a-w.png" alt="Warrior">
-</div>
-
-<div id="sword-container">
-    <img id="sword-img" src="https://image2url.com/r2/default/images/1767366955365-dc9faf5e-f348-49f3-b370-7caad31108b6.png" alt="Berserk Sword">
-</div>
-
-<div class="vignette"></div>
-
-<div class="menu-toggle" id="menuToggle">
-    <span></span>
-    <span></span>
-    <span></span>
-</div>
-
-<div class="sticky-nav">
-    <a href="#hero" class="nav-item active" data-section="hero">Overview</a>
-    <a href="#infrastructure" class="nav-item" data-section="infrastructure">Infrastructure</a>
-    <a href="#security" class="nav-item" data-section="security">Security</a>
-    <a href="#implementation" class="nav-item" data-section="implementation">Implementation</a>
-    <a href="#contact" class="nav-item" data-section="contact">Contact</a>
-</div>
-
-<div class="menu-overlay" id="menuOverlay">
-    <a href="rooms.html">Get Into The Abyss</a>
-    <a href="#infrastructure" onclick="closeMenu();">Features</a>
-</div>
-
-<section id="hero">
-    <div class="content-wrapper">
-        <h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
-        <p class="lead">
-            An ephemeral communication layer designed for professionals who require absolute stealth.<br>
-            No persistent storage. No logs. Just silence.
-        </p>
-        <div class="button-group">
-            <a href="rooms.html" class="btn">Get Into The Abyss</a>
-        </div>
-    </div>
-    <div class="scroll-indicator">
-        <span>Scroll</span>
-        <div class="arrow"></div>
-    </div>
-</section>
-
-<section id="infrastructure">
-    <div class="content-wrapper">
-        <h2>STRUCTURED ANONYMITY.</h2>
-        <p style="color: var(--text-dim); margin-bottom: 2rem;">
-            Our architecture prioritizes complete anonymity through distributed protocols and zero-knowledge proof systems.
-        </p>
-        <div class="glass-grid">
-            <div class="glass-pane">
-                <h3>01 // Zero-Persistence</h3>
-                <p>Messages never stored - real-time broadcast only. 24-hour automatic expiration with instant destruction capability.</p>
-            </div>
-            <div class="glass-pane">
-                <h3>02 // Complete Anonymity</h3>
-                <p>No accounts, no usernames, no identity tracking. All participants appear as encrypted nodes in the network.</p>
-            </div>
-            <div class="glass-pane">
-                <h3>03 // Room Keys</h3>
-                <p>Join via a Room Key + Password. No invites. No tracking. Just direct access.</p>
-            </div>
-            <div class="glass-pane">
-                <h3>04 // Real-Time Encryption</h3>
-                <p>End-to-end encrypted messaging with ephemeral file sharing. All secrets hashed with SHA-256.</p>
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-logo">ABYSSLINK</div>
+        <div class="loader-container">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Loading Experience</div>
+            <div class="loader-progress">
+                <div class="loader-progress-bar" id="progressBar"></div>
             </div>
         </div>
     </div>
-</section>
 
-<section id="security">
-    <div class="content-wrapper">
-        <h2 id="absolute-privacy-trigger">ABSOLUTE PRIVACY.</h2>
-        <p class="lead">
-            In the modern digital landscape, surveillance is the default. We have built a system where privacy is the baseline.
-        </p>
-        <div class="grid-3">
-            <div class="card">
-                <h3>Hashed Secrets</h3>
-                <p>All passwords and keys hashed with SHA-256. No plain-text storage. Rate-limited authentication.</p>
+    <!-- Main Content Wrapper -->
+    <div class="main-content" id="mainContent">
+        <!-- Background Effects -->
+        <div class="bg-animation"></div>
+        <div class="particles" id="particles"></div>
+
+        <!-- Navigation -->
+        <nav class="navbar" id="navbar">
+            <a href="#" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-link"></i>
+                </div>
+                ABYSSLINK
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#problem">Problem</a></li>
+                <li><a href="#solution">Solution</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#testimonials">Testimonials</a></li>
+            </ul>
+            <button class="nav-cta">Get Started</button>
+            <div class="mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
-            <div class="card">
-                <h3>No User Accounts</h3>
-                <p>Registration is surveillance. Session tokens only - scoped to room lifetime.</p>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-visual">
+                <div class="floating-elements">
+                    <div class="float-element"></div>
+                    <div class="float-element"></div>
+                    <div class="float-element"></div>
+                </div>
             </div>
-            <div class="card">
-                <h3>No Message Storage</h3>
-                <p>Messages broadcast in real-time only. Zero persistence. Once delivered, vanished.</p>
+            <div class="hero-content">
+                <span class="hero-badge">🚀 Next Generation Connectivity</span>
+                <h1>
+                    <span class="gradient-text">Bridging the Gap</span><br>
+                    Between Ideas & Reality
+                </h1>
+                <p>AbyssLink revolutionizes how teams collaborate, connect, and create. Experience seamless integration that transcends boundaries.</p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        Launch Now
+                    </a>
+                    <a href="#features" class="btn-secondary">
+                        <i class="fas fa-play"></i>
+                        Explore Features
+                    </a>
+                </div>
             </div>
-            <div class="card">
-                <h3>No Analytics</h3>
-                <p>We don't track usage patterns, behaviors, or metadata. Your existence leaves no digital footprint.</p>
+        </section>
+
+        <!-- Video Section -->
+        <section class="video-section" id="video">
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <video id="promoVideo" preload="auto" playsinline muted>
+                        <source src="0104.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="video-overlay" id="videoOverlay">
+                        <div class="play-button">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <h3>Rate Limiting</h3>
-                <p>Brute-force protection: 5 attempts per 15 minutes. IP-based throttling.</p>
+        </section>
+
+        <!-- Features Section -->
+        <section class="section" id="features">
+            <div class="section-header">
+                <span class="section-tag">Features</span>
+                <h2>Why Choose <span class="gradient-text">AbyssLink</span></h2>
+                <p>Discover the powerful features that make AbyssLink the ultimate solution for modern connectivity challenges.</p>
             </div>
-            <div class="card">
-                <h3>Complete Destruction</h3>
-                <p>Room expiration purges all sessions, invites, messages, and files. Irrecoverable.</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Lightning Fast</h3>
+                    <p>Experience blazing-fast connections with our optimized infrastructure. Transfer data at unprecedented speeds without compromising security.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Military-Grade Security</h3>
+                    <p>Your data is protected with end-to-end encryption and advanced security protocols that exceed industry standards.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <h3>Real-Time Sync</h3>
+                    <p>Stay synchronized across all your devices with instant updates and seamless data consistency in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h3>Global Network</h3>
+                    <p>Connect with anyone, anywhere. Our worldwide network ensures reliable connectivity regardless of location.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>Developer API</h3>
+                    <p>Build powerful integrations with our comprehensive API. Full documentation and SDKs for all major platforms.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3>24/7 Support</h3>
+                    <p>Our dedicated support team is available around the clock to help you with any questions or issues.</p>
+                </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Problem Section -->
+        <section class="section problem-section" id="problem">
+            <div class="section-header">
+                <span class="section-tag">The Problem</span>
+                <h2>The <span class="gradient-text">Connectivity Crisis</span></h2>
+            </div>
+            <div class="problem-content">
+                <div class="problem-text">
+                    <h3>Disconnected in a Connected World</h3>
+                    <p>In today's digital landscape, teams struggle with fragmented tools, security vulnerabilities, and unreliable connections. The cost of poor connectivity extends beyond productivity—it impacts innovation and growth.</p>
+                    <p>Traditional solutions fail to address the complexity of modern workflows, leaving organizations vulnerable and inefficient. It's time for a revolutionary approach.</p>
+                </div>
+                <div class="problem-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">73%</div>
+                        <div class="stat-label">Teams face connectivity issues daily</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">$2.5M</div>
+                        <div class="stat-label">Average annual cost of downtime</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">47%</div>
+                        <div class="stat-label">Data breaches from weak links</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">89%</div>
+                        <div class="stat-label">Want better integration tools</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Solution Section -->
+        <section class="section" id="solution">
+            <div class="section-header">
+                <span class="section-tag">Our Solution</span>
+                <h2>Choose Your <span class="gradient-text">Path Forward</span></h2>
+                <p>Flexible plans designed to scale with your needs, from startups to enterprise.</p>
+            </div>
+            <div class="solution-cards">
+                <div class="solution-card">
+                    <div class="solution-icon">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <h3>Starter</h3>
+                    <p>Perfect for individuals and small teams getting started with AbyssLink.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Up to 5 team members</li>
+                        <li><i class="fas fa-check"></i> 10GB secure storage</li>
+                        <li><i class="fas fa-check"></i> Basic analytics</li>
+                        <li><i class="fas fa-check"></i> Email support</li>
+                    </ul>
+                    <a href="#" class="btn-secondary">Get Started</a>
+                </div>
+                <div class="solution-card featured">
+                    <div class="solution-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>Professional</h3>
+                    <p>For growing teams that need advanced features and priority support.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Up to 50 team members</li>
+                        <li><i class="fas fa-check"></i> 100GB secure storage</li>
+                        <li><i class="fas fa-check"></i> Advanced analytics & reporting</li>
+                        <li><i class="fas fa-check"></i> Priority 24/7 support</li>
+                        <li><i class="fas fa-check"></i> API access</li>
+                    </ul>
+                    <a href="#" class="btn-primary">Start Free Trial</a>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>Enterprise</h3>
+                    <p>Custom solutions for large organizations with complex requirements.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Unlimited team members</li>
+                        <li><i class="fas fa-check"></i> Unlimited storage</li>
+                        <li><i class="fas fa-check"></i> Custom integrations</li>
+                        <li><i class="fas fa-check"></i> Dedicated account manager</li>
+                        <li><i class="fas fa-check"></i> SLA guarantee</li>
+                    </ul>
+                    <a href="#" class="btn-secondary">Contact Sales</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="section" id="how-it-works">
+            <div class="section-header">
+                <span class="section-tag">Process</span>
+                <h2>How <span class="gradient-text">AbyssLink</span> Works</h2>
+                <p>Get started in minutes with our simple onboarding process.</p>
+            </div>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Sign Up</h3>
+                    <p>Create your account in seconds with just your email.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Connect</h3>
+                    <p>Integrate your existing tools and invite your team.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Configure</h3>
+                    <p>Customize your workspace to match your workflow.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Launch</h3>
+                    <p>Go live and experience the power of AbyssLink.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials -->
+        <section class="section" id="testimonials">
+            <div class="section-header">
+                <span class="section-tag">Testimonials</span>
+                <h2>What Our <span class="gradient-text">Users Say</span></h2>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">AbyssLink transformed how our remote team collaborates. The speed and reliability are unmatched. We've seen a 40% increase in productivity since switching.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SK</div>
+                        <div class="author-info">
+                            <h4>Sarah Kim</h4>
+                            <span>CTO, TechStart Inc.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">The security features give us peace of mind. As a healthcare company, data protection is paramount, and AbyssLink exceeds all our compliance requirements.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MR</div>
+                        <div class="author-info">
+                            <h4>Michael Rodriguez</h4>
+                            <span>IT Director, MedSecure</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">The API integration capabilities are fantastic. We built custom workflows that automated hours of manual work. The developer documentation is top-notch.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">AL</div>
+                        <div class="author-info">
+                            <h4>Alex Liu</h4>
+                            <span>Lead Developer, CodeForge</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2>Ready to Bridge the <span class="gradient-text">Gap</span>?</h2>
+                <p>Join thousands of teams already using AbyssLink to revolutionize their connectivity. Start your free trial today.</p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        Start Free Trial
+                    </a>
+                    <a href="#" class="btn-secondary">
+                        <i class="fas fa-calendar"></i>
+                        Schedule Demo
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <div class="logo-icon">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        ABYSSLINK
+                    </a>
+                    <p>Bridging the gap between ideas and reality. AbyssLink provides next-generation connectivity solutions for modern teams.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#">Features</a></li>
+                        <li><a href="#">Pricing</a></li>
+                        <li><a href="#">API</a></li>
+                        <li><a href="#">Integrations</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Status</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 AbyssLink. All rights reserved. | Privacy Policy | Terms of Service</p>
+            </div>
+        </footer>
     </div>
-</section>
 
-<section id="implementation">
-    <div class="content-wrapper">
-        <h2>HOW IT WORKS.</h2>
-        <p class="lead">
-            AbyssLink operates on a simple principle: communication should be ephemeral.
-        </p>
-        <div class="glass-grid">
-            <div class="glass-pane">
-                <h3>Step 1: Create Room</h3>
-                <p>Generate a random Room Key. Set a password. Enter chat.</p>
-            </div>
-            <div class="glass-pane">
-                <h3>Step 2: Share Key + Password</h3>
-                <p>Send both to trusted participants via secure external channels.</p>
-            </div>
-            <div class="glass-pane">
-                <h3>Step 3: Communicate</h3>
-                <p>Messages and files are real-time only. Never stored. Never logged.</p>
-            </div>
-            <div class="glass-pane">
-                <h3>Step 4: Vanish</h3>
-                <p>Anyone can trigger full room destruction. Everything dissolves instantly.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="contact" style="text-align: center; align-items: center;">
-    <div class="content-wrapper" style="max-width: 100%; text-align: center;">
-        <h2>READY TO VANISH?</h2>
-        <p class="lead">Join the network that forgets.</p>
-        <div class="button-group" style="justify-content: center;">
-            <a href="rooms.html" class="btn">Get Into The Abyss</a>
-        </div>
-    </div>
-</section>
-
-<footer class="about-section">
-    <div class="footer-brand">
-        <h3>ABYSSLINK</h3>
-        <p style="margin-top: 1rem; color: var(--text-dim); max-width: 400px; font-size: 0.9rem;">
-            Founded on the principle that digital communication should mirror the transience of physical conversation. We build for the shadows.
-        </p>
-    </div>
-    <div class="footer-grid">
-        <div class="footer-col">
-            <h4>Protocol</h4>
-            <p>E2E Encryption</p>
-            <p>Volatile Nodes</p>
-            <p>Room Key + Password</p>
-            <p>24hr Auto-Destruct</p>
-        </div>
-        <div class="footer-col">
-            <h4>Features</h4>
-            <p>Anonymous Chat</p>
-            <p>File Sharing</p>
-            <p>Instant Vanish</p>
-            <p>Zero Logs</p>
-        </div>
-        <div class="footer-col">
-            <h4>Legal</h4>
-            <p>Terms of Service</p>
-            <p>Privacy Policy</p>
-            <p>Security Report</p>
-            <p>Transparency</p>
-        </div>
-        <div class="footer-col">
-            <h4>Access</h4>
-            <a href="rooms.html">Get Started</a>
-            <p>Documentation</p>
-            <p>API Access</p>
-        </div>
-    </div>
-    <div style="width: 100%; margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem; font-family: 'Space Mono'; font-size: 0.7rem; color: #333;">
-        &copy; 2025 AbyssLink Systems. All rights reserved. No data stored.
-    </div>
-</footer>
-
-<script>
-const API_URL = 'https://abysslink.onrender.com';
-
-gsap.registerPlugin(ScrollTrigger);
-
-ScrollTrigger.config({
-    autoRefreshEvents: "visibilitychange,DOMContentLoaded,load",
-    ignoreMobileResize: true
-});
-
-// ============================================
-// OPTIMIZED VIDEO LOADING & PLAYBACK
-// ============================================
-const heroVideo = document.getElementById('hero-video');
-const videoBackground = document.getElementById('video-background');
-
-// Set optimal playback rate (slightly slower can appear smoother)
-heroVideo.playbackRate = 1.0;
-
-// Force hardware acceleration
-heroVideo.style.transform = 'translate(-50%, -50%) translateZ(0)';
-
-// Buffer handling for smoother playback
-let videoReady = false;
-
-function handleVideoReady() {
-    if (videoReady) return;
-    videoReady = true;
-    
-    // Small delay to ensure first frame is rendered
-    requestAnimationFrame(() => {
-        setTimeout(() => {
-            videoBackground.classList.remove('loading');
-            videoBackground.classList.add('loaded');
-        }, 100);
-    });
-}
-
-// Multiple events to catch when video is ready
-heroVideo.addEventListener('canplaythrough', handleVideoReady);
-heroVideo.addEventListener('playing', handleVideoReady);
-
-heroVideo.addEventListener('loadeddata', () => {
-    // Ensure video starts from beginning
-    heroVideo.currentTime = 0;
-});
-
-// Handle buffering - pause animations during buffer
-heroVideo.addEventListener('waiting', () => {
-    console.log('Video buffering...');
-});
-
-heroVideo.addEventListener('stalled', () => {
-    console.log('Video stalled, attempting to recover...');
-    // Try to recover playback
-    setTimeout(() => {
-        heroVideo.play().catch(e => console.log('Playback recovery failed'));
-    }, 1000);
-});
-
-heroVideo.addEventListener('error', (e) => {
-    console.error('Video failed to load:', e);
-    videoBackground.classList.remove('loading');
-    // Fallback gradient
-    videoBackground.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)';
-    heroVideo.style.display = 'none';
-});
-
-// Ensure video plays (some browsers block autoplay)
-document.addEventListener('click', () => {
-    if (heroVideo.paused) {
-        heroVideo.play().catch(e => console.log('Autoplay blocked'));
-    }
-}, { once: true });
-
-// Visibility API - pause when tab is hidden for performance
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        heroVideo.pause();
-    } else {
-        heroVideo.play().catch(e => {});
-    }
-});
-
-// Fallback timeout
-setTimeout(() => {
-    if (!videoReady) {
-        videoBackground.classList.remove('loading');
-        videoBackground.classList.add('loaded');
-    }
-}, 8000);
-
-// ============================================
-// MAIN INITIALIZATION
-// ============================================
-window.addEventListener("load", () => {
-    window.scrollTo(0, 0);
-    setTimeout(() => {
-        ScrollTrigger.refresh();
-        initializeAnimations();
-    }, 100);
-});
-
-function initializeAnimations() {
-    gsap.set("#warrior-img", {
-        opacity: 0,
-        y: 200,
-        scale: 0.9
-    });
-
-    gsap.set("#sword-img", {
-        opacity: 0,
-        y: 60
-    });
-
-    gsap.to("#warrior-img", {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 1.8,
-        ease: "power2.out",
-        delay: 0.2,
-        force3D: true
-    });
-
-    gsap.to("#warrior-img", {
-        scrollTrigger: {
-            trigger: "#hero",
-            start: "top top",
-            end: "bottom top",
-            scrub: 1,
-            invalidateOnRefresh: true
-        },
-        opacity: 0,
-        y: -80,
-        scale: 1.1,
-        ease: "none",
-        force3D: true
-    });
-
-    gsap.to("#video-background", {
-        scrollTrigger: {
-            trigger: "#hero",
-            start: "top top",
-            end: "bottom top",
-            scrub: 1,
-            invalidateOnRefresh: true
-        },
-        opacity: 0,
-        ease: "none"
-    });
-
-    ScrollTrigger.create({
-        trigger: "#hero",
-        start: "center top",
-        end: "bottom top",
-        onEnter: () => {
-            document.getElementById('originalBackground').classList.add('visible');
-        },
-        onLeaveBack: () => {
-            document.getElementById('originalBackground').classList.remove('visible');
-        }
-    });
-
-    gsap.to(".scroll-indicator", {
-        scrollTrigger: {
-            trigger: "#hero",
-            start: "top top",
-            end: "20% top",
-            scrub: 1
-        },
-        opacity: 0,
-        y: 20,
-        ease: "none"
-    });
-
-    gsap.to("#sword-img", {
-        scrollTrigger: {
-            trigger: "#hero",
-            start: "bottom 95%",
-            end: "bottom 40%",
-            scrub: 1,
-            invalidateOnRefresh: true
-        },
-        opacity: 0.95,
-        y: 0,
-        ease: "none",
-        force3D: true
-    });
-
-    gsap.to("#sword-img", {
-        scrollTrigger: {
-            trigger: "#security",
-            start: "top 85%",
-            end: "top 35%",
-            scrub: 1,
-            invalidateOnRefresh: true
-        },
-        opacity: 0,
-        y: -50,
-        ease: "none",
-        force3D: true
-    });
-
-    gsap.to("#bg-image", {
-        scrollTrigger: {
-            trigger: "#hero",
-            start: "top top",
-            end: "bottom top",
-            scrub: 1
-        },
-        filter: "blur(0px) brightness(0.8)",
-        ease: "none"
-    });
-
-    document.querySelectorAll('.content-wrapper').forEach((content, index) => {
-        gsap.to(content, {
-            scrollTrigger: {
-                trigger: content,
-                start: "top 85%",
-                toggleActions: "play none none reverse"
-            },
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power2.out",
-            delay: index * 0.05,
-            force3D: true
-        });
-    });
-
-    gsap.utils.toArray('.glass-pane').forEach((pane, i) => {
-        gsap.from(pane, {
-            scrollTrigger: {
-                trigger: pane,
-                start: "top 90%",
-                toggleActions: "play none none reverse"
-            },
-            opacity: 0,
-            y: 25,
-            duration: 0.6,
-            delay: i * 0.08,
-            ease: "power2.out",
-            force3D: true
-        });
-    });
-
-    gsap.utils.toArray('.card').forEach((card, i) => {
-        gsap.from(card, {
-            scrollTrigger: {
-                trigger: card,
-                start: "top 90%",
-                toggleActions: "play none none reverse"
-            },
-            opacity: 0,
-            y: 25,
-            duration: 0.6,
-            delay: i * 0.06,
-            ease: "power2.out",
-            force3D: true
-        });
-    });
-}
-
-// Glitch text effect
-function pulsingWaveGlitch(element) {
-    const text = element.dataset.text || element.textContent;
-    const chars = '█▓▒░/\\|_-<>[]{}';
-
-    element.innerHTML = '';
-
-    const spans = text.split('').map(char => {
-        const span = document.createElement('span');
-        span.className = 'glitch-char';
-        span.textContent = char;
-        span.dataset.original = char;
-        element.appendChild(span);
-        return span;
-    });
-
-    let waveIndex = 0;
-    let lastTime = 0;
-    const interval = 120;
-
-    function animate(currentTime) {
-        if (currentTime - lastTime >= interval) {
-            spans.forEach((span, i) => {
-                const distance = Math.abs(i - waveIndex);
-                const isInWave = distance < 4;
-
-                if (isInWave && Math.random() > 0.3) {
-                    span.textContent = chars[Math.floor(Math.random() * chars.length)];
-                    span.style.opacity = 0.6 + Math.random() * 0.4;
-                } else if (!isInWave) {
-                    span.textContent = span.dataset.original;
-                    span.style.opacity = '1';
+    <script>
+        // ===== PRELOADER LOGIC =====
+        (function() {
+            const preloader = document.getElementById('preloader');
+            const mainContent = document.getElementById('mainContent');
+            const progressBar = document.getElementById('progressBar');
+            
+            let progress = 0;
+            let resourcesLoaded = 0;
+            let totalResources = 0;
+            let minimumLoadTime = 1500; // Minimum time to show loader (1.5 seconds)
+            let startTime = Date.now();
+            
+            // Get all resources to track
+            const images = document.querySelectorAll('img');
+            const videos = document.querySelectorAll('video');
+            const fonts = ['Orbitron', 'Rajdhani'];
+            
+            totalResources = images.length + videos.length + fonts.length + 1; // +1 for DOM ready
+            
+            // Update progress bar
+            function updateProgress() {
+                resourcesLoaded++;
+                progress = Math.min((resourcesLoaded / totalResources) * 100, 100);
+                progressBar.style.width = progress + '%';
+                
+                checkAllLoaded();
+            }
+            
+            // Check if all resources are loaded
+            function checkAllLoaded() {
+                if (resourcesLoaded >= totalResources) {
+                    const elapsedTime = Date.now() - startTime;
+                    const remainingTime = Math.max(minimumLoadTime - elapsedTime, 0);
+                    
+                    // Wait for minimum load time to pass
+                    setTimeout(showPage, remainingTime);
+                }
+            }
+            
+            // Show the page
+            function showPage() {
+                progressBar.style.width = '100%';
+                
+                setTimeout(function() {
+                    preloader.classList.add('hidden');
+                    mainContent.classList.add('loaded');
+                    
+                    // Remove preloader from DOM after animation
+                    setTimeout(function() {
+                        preloader.style.display = 'none';
+                    }, 500);
+                }, 200);
+            }
+            
+            // Track image loading
+            images.forEach(function(img) {
+                if (img.complete) {
+                    updateProgress();
+                } else {
+                    img.addEventListener('load', updateProgress);
+                    img.addEventListener('error', updateProgress);
                 }
             });
+            
+            // Track video loading
+            videos.forEach(function(video) {
+                if (video.readyState >= 3) { // HAVE_FUTURE_DATA or higher
+                    updateProgress();
+                } else {
+                    video.addEventListener('canplaythrough', function() {
+                        updateProgress();
+                    }, { once: true });
+                    video.addEventListener('error', updateProgress);
+                    
+                    // Fallback timeout for video
+                    setTimeout(function() {
+                        if (video.readyState < 3) {
+                            updateProgress();
+                        }
+                    }, 5000);
+                }
+            });
+            
+            // Track font loading
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function() {
+                    fonts.forEach(function() {
+                        updateProgress();
+                    });
+                }).catch(function() {
+                    fonts.forEach(function() {
+                        updateProgress();
+                    });
+                });
+            } else {
+                // Fallback for browsers without Font Loading API
+                fonts.forEach(function() {
+                    updateProgress();
+                });
+            }
+            
+            // DOM ready
+            if (document.readyState === 'complete') {
+                updateProgress();
+            } else {
+                window.addEventListener('load', updateProgress);
+            }
+            
+            // Fallback: Force show page after maximum wait time
+            setTimeout(function() {
+                if (!preloader.classList.contains('hidden')) {
+                    showPage();
+                }
+            }, 8000); // 8 second maximum wait
+            
+            // Simulate progress for visual feedback
+            let simulatedProgress = setInterval(function() {
+                if (progress < 90) {
+                    progress += Math.random() * 10;
+                    progressBar.style.width = Math.min(progress, 90) + '%';
+                }
+            }, 200);
+            
+            // Clear simulated progress when actual loading completes
+            setTimeout(function() {
+                clearInterval(simulatedProgress);
+            }, 8000);
+        })();
 
-            waveIndex = (waveIndex + 1) % (spans.length + 5);
-            lastTime = currentTime;
+        // ===== ORIGINAL SCRIPTS =====
+        
+        // Create particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
         }
-        requestAnimationFrame(animate);
-    }
 
-    requestAnimationFrame(animate);
-}
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
 
-document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
+        // Mobile menu toggle
+        document.getElementById('mobileToggle').addEventListener('click', function() {
+            document.getElementById('navLinks').classList.toggle('active');
+        });
 
-// Navigation
-let scrollTimeout;
-const navItems = document.querySelectorAll('.sticky-nav .nav-item');
-const sections = document.querySelectorAll('section[id]');
+        // Video play functionality
+        const video = document.getElementById('promoVideo');
+        const overlay = document.getElementById('videoOverlay');
 
-function updateActiveNav() {
-    let current = '';
-    sections.forEach(section => {
-        const sectionTop = section.offsetTop;
-        if (window.pageYOffset >= sectionTop - 300) {
-            current = section.getAttribute('id');
-        }
-    });
+        overlay.addEventListener('click', function() {
+            if (video.paused) {
+                video.muted = false;
+                video.play();
+                overlay.classList.add('hidden');
+            }
+        });
 
-    navItems.forEach(item => {
-        item.classList.remove('active');
-        if (item.getAttribute('data-section') === current) {
-            item.classList.add('active');
-        }
-    });
-}
+        video.addEventListener('click', function() {
+            if (!video.paused) {
+                video.pause();
+                overlay.classList.remove('hidden');
+            }
+        });
 
-window.addEventListener('scroll', () => {
-    if (scrollTimeout) {
-        window.cancelAnimationFrame(scrollTimeout);
-    }
-    scrollTimeout = window.requestAnimationFrame(updateActiveNav);
-}, { passive: true });
+        video.addEventListener('ended', function() {
+            overlay.classList.remove('hidden');
+        });
 
-// Menu toggle
-const menuToggle = document.getElementById('menuToggle');
-const menuOverlay = document.getElementById('menuOverlay');
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // Close mobile menu if open
+                    document.getElementById('navLinks').classList.remove('active');
+                }
+            });
+        });
 
-menuToggle.addEventListener('click', () => {
-    menuToggle.classList.toggle('active');
-    menuOverlay.classList.toggle('active');
-});
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
 
-function closeMenu() {
-    menuToggle.classList.remove('active');
-    menuOverlay.classList.remove('active');
-}
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
 
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeMenu();
-    }
-});
+        // Observe elements for animation
+        document.querySelectorAll('.feature-card, .solution-card, .testimonial-card, .step').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.6s ease';
+            observer.observe(el);
+        });
 
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            closeMenu();
-        }
-    });
-});
-
-let resizeTimeout;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        ScrollTrigger.refresh();
-    }, 250);
-}, { passive: true });
-</script>
-
+        // Initialize particles after page loads
+        document.addEventListener('DOMContentLoaded', createParticles);
+    </script>
 </body>
 </html>
