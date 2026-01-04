@@ -61,6 +61,25 @@ body {
     backface-visibility: hidden;
 }
 
+/* Unicorn Studio Effect Container */
+.unicorn-effect-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1440px;
+    height: 900px;
+    max-width: 100vw;
+    max-height: 80vh;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.unicorn-effect-wrapper [data-us-project] {
+    width: 100%;
+    height: 100%;
+}
+
 #warrior-container {
     position: fixed;
     bottom: -15vh;
@@ -272,6 +291,8 @@ section {
 
 #hero {
     background: transparent;
+    position: relative;
+    overflow: hidden;
 }
 
 #hero .content-wrapper {
@@ -510,6 +531,10 @@ p.lead {
     .menu-toggle { left: 2rem; }
     .sticky-nav { right: 2rem; }
     .glass-grid { grid-template-columns: repeat(2, 1fr); }
+    .unicorn-effect-wrapper {
+        width: 100%;
+        height: 70vh;
+    }
 }
 
 @media (max-width: 768px) {
@@ -528,6 +553,10 @@ p.lead {
     .sticky-nav { display: none; }
     .glass-grid { grid-template-columns: 1fr; }
     section { padding: 0 2rem; }
+    .unicorn-effect-wrapper {
+        width: 100%;
+        height: 60vh;
+    }
 }
 
 @media (max-width: 600px) {
@@ -542,6 +571,10 @@ p.lead {
     }
     #sword-img { height: 75vh; }
     .menu-toggle { left: 1rem; top: 1rem; }
+    .unicorn-effect-wrapper {
+        width: 100%;
+        height: 50vh;
+    }
 }
 </style>
 </head>
@@ -590,8 +623,12 @@ p.lead {
 </div>
 
 <section id="hero">
+    <!-- Unicorn Studio Effect -->
+    <div class="unicorn-effect-wrapper">
+        <div data-us-project="Z9vuqneKhlEa3Mg00KsK" style="width:100%; height: 100%"></div>
+    </div>
+    
     <div class="content-wrapper">
-        <h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
         <p class="lead">
             An ephemeral communication layer designed for professionals who require absolute stealth.<br>
             No persistent storage. No logs. Just silence.
@@ -742,6 +779,21 @@ p.lead {
     </div>
 </footer>
 
+<!-- Unicorn Studio Script -->
+<script type="text/javascript">
+!function(){
+    if(!window.UnicornStudio){
+        window.UnicornStudio={isInitialized:!1};
+        var i=document.createElement("script");
+        i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.0/dist/unicornStudio.umd.js";
+        i.onload=function(){
+            window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)
+        };
+        (document.head || document.body).appendChild(i)
+    }
+}();
+</script>
+
 <script>
 const API_URL = 'https://abysslink.onrender.com';
 
@@ -796,6 +848,21 @@ function initializeAnimations() {
         opacity: 0,
         y: -80,
         scale: 1.1,
+        ease: "none",
+        force3D: true
+    });
+
+    // Unicorn effect fade out on scroll
+    gsap.to(".unicorn-effect-wrapper", {
+        scrollTrigger: {
+            trigger: "#hero",
+            start: "top top",
+            end: "bottom top",
+            scrub: 1,
+            invalidateOnRefresh: true
+        },
+        opacity: 0,
+        y: -50,
         ease: "none",
         force3D: true
     });
@@ -893,52 +960,6 @@ function initializeAnimations() {
         });
     });
 }
-
-// Glitch text effect
-function pulsingWaveGlitch(element) {
-    const text = element.dataset.text || element.textContent;
-    const chars = '█▓▒░/\\|_-<>[]{}';
-
-    element.innerHTML = '';
-
-    const spans = text.split('').map(char => {
-        const span = document.createElement('span');
-        span.className = 'glitch-char';
-        span.textContent = char;
-        span.dataset.original = char;
-        element.appendChild(span);
-        return span;
-    });
-
-    let waveIndex = 0;
-    let lastTime = 0;
-    const interval = 120;
-
-    function animate(currentTime) {
-        if (currentTime - lastTime >= interval) {
-            spans.forEach((span, i) => {
-                const distance = Math.abs(i - waveIndex);
-                const isInWave = distance < 4;
-
-                if (isInWave && Math.random() > 0.3) {
-                    span.textContent = chars[Math.floor(Math.random() * chars.length)];
-                    span.style.opacity = 0.6 + Math.random() * 0.4;
-                } else if (!isInWave) {
-                    span.textContent = span.dataset.original;
-                    span.style.opacity = '1';
-                }
-            });
-
-            waveIndex = (waveIndex + 1) % (spans.length + 5);
-            lastTime = currentTime;
-        }
-        requestAnimationFrame(animate);
-    }
-
-    requestAnimationFrame(animate);
-}
-
-document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
 
 // Navigation scroll tracking
 let scrollTimeout;
