@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/landing.jsx"
+      "destination": "/landing.html"
     },
     {
       "source": "/rooms",
