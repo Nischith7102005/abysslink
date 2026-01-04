@@ -10,6 +10,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
+<!-- Preload the video for faster loading -->
+<link rel="preload" as="video" href="https://raw.githubusercontent.com/Nischith7102005/abysslink/main/frontend/0104.mp4" type="video/mp4">
+
 <style>
 :root {
     --bg: #050505;
@@ -38,7 +41,9 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Video Background for Hero */
+/* ============================================
+   OPTIMIZED VIDEO BACKGROUND STYLES
+   ============================================ */
 #video-background {
     position: fixed;
     top: 0;
@@ -47,6 +52,10 @@ body {
     height: 100vh;
     z-index: -2;
     overflow: hidden;
+    /* GPU acceleration */
+    transform: translateZ(0);
+    will-change: opacity;
+    backface-visibility: hidden;
 }
 
 #hero-video {
@@ -57,8 +66,17 @@ body {
     min-height: 100%;
     width: auto;
     height: auto;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) translateZ(0);
     object-fit: cover;
+    /* Smooth rendering */
+    image-rendering: optimizeQuality;
+    -webkit-transform: translate(-50%, -50%) translateZ(0);
+    /* Prevent repaints */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px;
+    /* Smooth playback */
+    will-change: transform;
 }
 
 .video-overlay {
@@ -69,26 +87,39 @@ body {
     height: 100%;
     background: linear-gradient(
         to bottom,
-        rgba(5, 5, 5, 0.2) 0%,
-        rgba(5, 5, 5, 0.4) 50%,
-        rgba(5, 5, 5, 0.85) 100%
+        rgba(5, 5, 5, 0.15) 0%,
+        rgba(5, 5, 5, 0.3) 50%,
+        rgba(5, 5, 5, 0.8) 100%
     );
     pointer-events: none;
+    /* GPU layer */
+    transform: translateZ(0);
 }
 
-/* Loading state for video */
+/* Loading spinner */
+#video-background.loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    z-index: 5;
+}
+
 #video-background.loading::after {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 50px;
-    height: 50px;
-    border: 3px solid rgba(255,255,255,0.1);
-    border-top-color: rgba(255,255,255,0.8);
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: rgba(255,255,255,0.6);
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
     z-index: 10;
 }
 
@@ -96,7 +127,26 @@ body {
     to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* Background for other sections */
+/* Smooth transition when video loads */
+#video-background.loaded #hero-video {
+    animation: fadeInVideo 0.8s ease-out forwards;
+}
+
+@keyframes fadeInVideo {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) translateZ(0) scale(1.02);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) translateZ(0) scale(1);
+    }
+}
+
+/* ============================================
+   REST OF STYLES
+   ============================================ */
+
 .background-wrapper {
     position: fixed;
     top: 0;
@@ -560,7 +610,6 @@ p.lead {
     color: var(--text-dim);
 }
 
-/* Scroll indicator */
 .scroll-indicator {
     position: absolute;
     bottom: 3rem;
@@ -600,6 +649,14 @@ p.lead {
     }
     60% {
         transform: translateX(-50%) translateY(-5px);
+    }
+}
+
+/* Mobile optimizations - reduce video quality on smaller screens */
+@media (max-width: 768px) {
+    #hero-video {
+        /* Reduce quality on mobile for smoother playback */
+        filter: blur(0.5px);
     }
 }
 
@@ -668,7 +725,17 @@ p.lead {
 
 <!-- Video Background for Hero -->
 <div id="video-background" class="loading">
-    <video autoplay muted loop playsinline id="hero-video">
+    <video 
+        id="hero-video"
+        autoplay 
+        muted 
+        loop 
+        playsinline
+        preload="auto"
+        disablePictureInPicture
+        disableRemotePlayback
+    >
+        <!-- Primary source - use your own hosted version for best performance -->
         <source src="https://raw.githubusercontent.com/Nischith7102005/abysslink/main/frontend/0104.mp4" type="video/mp4">
     </video>
     <div class="video-overlay"></div>
@@ -875,30 +942,91 @@ ScrollTrigger.config({
     ignoreMobileResize: true
 });
 
-// Video loading handler
+// ============================================
+// OPTIMIZED VIDEO LOADING & PLAYBACK
+// ============================================
 const heroVideo = document.getElementById('hero-video');
 const videoBackground = document.getElementById('video-background');
 
+// Set optimal playback rate (slightly slower can appear smoother)
+heroVideo.playbackRate = 1.0;
+
+// Force hardware acceleration
+heroVideo.style.transform = 'translate(-50%, -50%) translateZ(0)';
+
+// Buffer handling for smoother playback
+let videoReady = false;
+
+function handleVideoReady() {
+    if (videoReady) return;
+    videoReady = true;
+    
+    // Small delay to ensure first frame is rendered
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            videoBackground.classList.remove('loading');
+            videoBackground.classList.add('loaded');
+        }, 100);
+    });
+}
+
+// Multiple events to catch when video is ready
+heroVideo.addEventListener('canplaythrough', handleVideoReady);
+heroVideo.addEventListener('playing', handleVideoReady);
+
 heroVideo.addEventListener('loadeddata', () => {
-    videoBackground.classList.remove('loading');
+    // Ensure video starts from beginning
+    heroVideo.currentTime = 0;
 });
 
-heroVideo.addEventListener('canplay', () => {
-    videoBackground.classList.remove('loading');
+// Handle buffering - pause animations during buffer
+heroVideo.addEventListener('waiting', () => {
+    console.log('Video buffering...');
+});
+
+heroVideo.addEventListener('stalled', () => {
+    console.log('Video stalled, attempting to recover...');
+    // Try to recover playback
+    setTimeout(() => {
+        heroVideo.play().catch(e => console.log('Playback recovery failed'));
+    }, 1000);
 });
 
 heroVideo.addEventListener('error', (e) => {
     console.error('Video failed to load:', e);
     videoBackground.classList.remove('loading');
-    // Fallback: show a dark background if video fails
+    // Fallback gradient
     videoBackground.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)';
+    heroVideo.style.display = 'none';
 });
 
-// Fallback: remove loading after timeout
-setTimeout(() => {
-    videoBackground.classList.remove('loading');
-}, 5000);
+// Ensure video plays (some browsers block autoplay)
+document.addEventListener('click', () => {
+    if (heroVideo.paused) {
+        heroVideo.play().catch(e => console.log('Autoplay blocked'));
+    }
+}, { once: true });
 
+// Visibility API - pause when tab is hidden for performance
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        heroVideo.pause();
+    } else {
+        heroVideo.play().catch(e => {});
+    }
+});
+
+// Fallback timeout
+setTimeout(() => {
+    if (!videoReady) {
+        videoBackground.classList.remove('loading');
+        videoBackground.classList.add('loaded');
+    }
+}, 8000);
+
+// ============================================
+// MAIN INITIALIZATION
+// ============================================
 window.addEventListener("load", () => {
     window.scrollTo(0, 0);
     setTimeout(() => {
@@ -908,7 +1036,6 @@ window.addEventListener("load", () => {
 });
 
 function initializeAnimations() {
-    // Set initial states
     gsap.set("#warrior-img", {
         opacity: 0,
         y: 200,
@@ -920,7 +1047,6 @@ function initializeAnimations() {
         y: 60
     });
 
-    // Warrior fade in on load
     gsap.to("#warrior-img", {
         opacity: 1,
         y: 0,
@@ -931,7 +1057,6 @@ function initializeAnimations() {
         force3D: true
     });
 
-    // Warrior fade out on scroll
     gsap.to("#warrior-img", {
         scrollTrigger: {
             trigger: "#hero",
@@ -947,7 +1072,6 @@ function initializeAnimations() {
         force3D: true
     });
 
-    // Video background fade out on scroll
     gsap.to("#video-background", {
         scrollTrigger: {
             trigger: "#hero",
@@ -960,7 +1084,6 @@ function initializeAnimations() {
         ease: "none"
     });
 
-    // Original background fade in
     ScrollTrigger.create({
         trigger: "#hero",
         start: "center top",
@@ -973,7 +1096,6 @@ function initializeAnimations() {
         }
     });
 
-    // Scroll indicator fade out
     gsap.to(".scroll-indicator", {
         scrollTrigger: {
             trigger: "#hero",
@@ -986,7 +1108,6 @@ function initializeAnimations() {
         ease: "none"
     });
 
-    // Sword fade in
     gsap.to("#sword-img", {
         scrollTrigger: {
             trigger: "#hero",
@@ -1001,7 +1122,6 @@ function initializeAnimations() {
         force3D: true
     });
 
-    // Sword fade out
     gsap.to("#sword-img", {
         scrollTrigger: {
             trigger: "#security",
@@ -1016,7 +1136,6 @@ function initializeAnimations() {
         force3D: true
     });
 
-    // Background blur animation
     gsap.to("#bg-image", {
         scrollTrigger: {
             trigger: "#hero",
@@ -1028,7 +1147,6 @@ function initializeAnimations() {
         ease: "none"
     });
 
-    // Content wrapper animations
     document.querySelectorAll('.content-wrapper').forEach((content, index) => {
         gsap.to(content, {
             scrollTrigger: {
@@ -1045,7 +1163,6 @@ function initializeAnimations() {
         });
     });
 
-    // Glass pane animations
     gsap.utils.toArray('.glass-pane').forEach((pane, i) => {
         gsap.from(pane, {
             scrollTrigger: {
@@ -1062,7 +1179,6 @@ function initializeAnimations() {
         });
     });
 
-    // Card animations
     gsap.utils.toArray('.card').forEach((card, i) => {
         gsap.from(card, {
             scrollTrigger: {
@@ -1126,7 +1242,7 @@ function pulsingWaveGlitch(element) {
 
 document.querySelectorAll('.glitch-text').forEach(el => pulsingWaveGlitch(el));
 
-// Navigation scroll tracking
+// Navigation
 let scrollTimeout;
 const navItems = document.querySelectorAll('.sticky-nav .nav-item');
 const sections = document.querySelectorAll('section[id]');
@@ -1175,7 +1291,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -1187,7 +1302,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Refresh ScrollTrigger on resize
 let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
