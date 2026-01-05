@@ -50,24 +50,67 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.socket.io", "https://cdnjs.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://i.ibb.co", "blob:"],
-      connectSrc: ["'self'", "wss://abysslink.onrender.com", "https://abysslink.onrender.com", "ws://localhost:*", "http://localhost:*"],
+      scriptSrc: [
+        "'self'",
+        // Socket.IO with SRI
+        "'sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HnDYgUvh7EJg7MXxJNAy0Dfdh0R'",
+        // GSAP scripts with SRI
+        "'sha512-16esztaSRplJROstbIIdwX3N97V1+pZvV33ABoG1H2OyTttBxEGkTsoIVsiP1iaTtM8b3+hu2kB6pQ4Clr5yug=='",
+        "'sha512-Ic9xkERjyZ1xgJ5svx3y0u3xrvfT/uPkV99LBwe68xjy/mGtO+4eURHZBW2xW4SZbFrF1Tf090XqB+EVgXnVjw=='",
+        "https://cdn.socket.io",
+        "https://cdnjs.cloudflare.com",
+        "'unsafe-inline'" // Required for inline scripts - minimize in production
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'", // Required for inline styles
+        "https://fonts.googleapis.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "data:"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://i.ibb.co",
+        "https://image2url.com",
+        "blob:"
+      ],
+      mediaSrc: [
+        "'self'",
+        "blob:"
+      ],
+      connectSrc: [
+        "'self'",
+        "wss://abysslink.onrender.com",
+        "https://abysslink.onrender.com",
+        "ws://localhost:*",
+        "http://localhost:*"
+      ],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
-      baseUri: ["'self'"]
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: [] // Force HTTPS in production
     }
   },
-  crossOriginEmbedderPolicy: false, // Required for some external resources
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
   },
   referrerPolicy: { policy: 'no-referrer' },
-  permittedCrossDomainPolicies: { permittedPolicies: 'none' }
+  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+  dnsPrefetchControl: { allow: false },
+  ieNoOpen: true,
+  noSniff: true,
+  originAgentCluster: true,
+  xssFilter: true
 }));
 
 // Additional privacy headers
