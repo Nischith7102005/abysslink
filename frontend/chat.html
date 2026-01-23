@@ -459,13 +459,6 @@ body {
   </div>
 </div>
 
-<script 
-  src="https://cdn.socket.io/4.7.2/socket.io.min.js"
-  integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HnDYgUvh7EJg7MXxJNAy0Dfdh0R"
-  crossorigin="anonymous"
-  referrerpolicy="no-referrer">
-</script>
-
 <!-- ============================================
      ANTI-INSPECT PROTECTION
      ============================================ -->
@@ -475,29 +468,24 @@ body {
     
     // Block keyboard shortcuts
     document.addEventListener('keydown', function(e) {
-        // F12
         if (e.key === 'F12' || e.keyCode === 123) {
             e.preventDefault();
             return false;
         }
-        // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (DevTools)
         if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
             e.preventDefault();
             return false;
         }
-        // Ctrl+U (View Source)
         if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
             e.preventDefault();
             return false;
         }
-        // Ctrl+S (Save Page)
         if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
             e.preventDefault();
             return false;
         }
     }, false);
 
-    // Detect DevTools via window size difference
     let devtoolsOpen = false;
     const threshold = 160;
     
@@ -517,42 +505,42 @@ body {
     
     function onDevToolsOpen() {
         console.clear();
-        console.log('%c⛔ ACCESS DENIED', 'color: #ff0000; font-size: 40px; font-weight: bold; text-shadow: 2px 2px #000;');
+        console.log('%c⛔ ACCESS DENIED', 'color: #ff0000; font-size: 40px; font-weight: bold;');
         console.log('%cThis browser feature is blocked for security.', 'color: #888; font-size: 14px;');
-        console.log('%cAbyssLink protects user privacy.', 'color: #888; font-size: 14px;');
     }
     
-    // Check periodically
     setInterval(detectDevTools, 1000);
-    
-    // Detect DevTools via debugger timing
-    let checkStatus = false;
-    setInterval(function() {
-        const startTime = performance.now();
-        debugger;
-        const endTime = performance.now();
-        if (endTime - startTime > 100) {
-            if (!checkStatus) {
-                checkStatus = true;
-                onDevToolsOpen();
-            }
-        }
-    }, 4000);
 
-    // Block drag
     document.addEventListener('dragstart', function(e) {
         e.preventDefault();
         return false;
     });
 
-    // Console warning on load
     console.clear();
     console.log('%c⚠️ STOP', 'color: #ff0000; font-size: 50px; font-weight: bold;');
     console.log('%cThis is a browser feature intended for developers.', 'font-size: 16px;');
-    console.log('%cIf someone told you to paste something here, it\'s likely a scam.', 'font-size: 14px; color: #ff6600;');
-    console.log('%cAbyssLink - Privacy First', 'font-size: 12px; color: #888;');
-    
 })();
+</script>
+
+<!-- Socket.IO - load with error handling -->
+<script>
+    // Load socket.io dynamically with fallback
+    function loadSocketIO() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+            script.onload = () => resolve();
+            script.onerror = () => {
+                // Try alternative CDN
+                const fallback = document.createElement('script');
+                fallback.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js';
+                fallback.onload = () => resolve();
+                fallback.onerror = () => reject(new Error('Failed to load Socket.IO'));
+                document.head.appendChild(fallback);
+            };
+            document.head.appendChild(script);
+        });
+    }
 </script>
 
 <script>
@@ -587,6 +575,16 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 // ============================================
 async function initialize() {
   try {
+    updateLoadingText('Loading dependencies...');
+    
+    // Wait for socket.io to load
+    await loadSocketIO();
+    
+    // Verify io is available
+    if (typeof io === 'undefined') {
+      throw new Error('Socket.IO failed to initialize');
+    }
+    
     updateLoadingText('Validating session...');
     
     const storedAuth = sessionStorage.getItem('abysslink_auth');
@@ -639,12 +637,10 @@ async function initialize() {
     
     updateLoadingText('Deriving encryption keys...');
     
-    // Derive encryption key from password + salt
     const keys = await deriveEncryptionKeys(password, encryptionSalt);
     encryptionKey = keys.encryptionKey;
     macKey = keys.macKey;
     
-    // Store password temporarily for socket auth, then clear
     sessionStorage.setItem('abysslink_temp_pwd', password);
     password = null;
     
@@ -687,7 +683,6 @@ async function deriveEncryptionKeys(password, salt) {
     ['deriveBits', 'deriveKey']
   );
   
-  // Derive encryption key
   const encKey = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
@@ -701,7 +696,6 @@ async function deriveEncryptionKeys(password, salt) {
     ['encrypt', 'decrypt']
   );
   
-  // Derive MAC key (separate from encryption key)
   const macK = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
@@ -1125,9 +1119,7 @@ async function handleFileUploaded(fileData) {
         fileData.encryptedName.ciphertext
       );
       displayName = `📎 ${name}`;
-    } catch (e) {
-      // Keep default name
-    }
+    } catch (e) {}
   }
   
   const size = formatFileSize(fileData.originalSize);
@@ -1273,10 +1265,15 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // ============================================
-// START
+// START - Wait for DOM then initialize
 // ============================================
-initialize();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialize);
+} else {
+  initialize();
+}
 </script>
+
 <script>
 // Certificate Transparency & Domain Validation
 (function() {
@@ -1294,7 +1291,6 @@ initialize();
   );
   
   if (!isExpectedDomain && window.location.protocol === 'https:') {
-    // Running on unexpected HTTPS domain - potential phishing
     const warning = document.createElement('div');
     warning.style.cssText = `
       position: fixed;
@@ -1317,14 +1313,8 @@ initialize();
       This may be a phishing attempt. Do not enter credentials.
     `;
     document.body.prepend(warning);
-    
-    // Log to console
-    console.error('%c⚠️ SECURITY WARNING', 'color: red; font-size: 20px; font-weight: bold;');
-    console.error('Unexpected domain:', currentDomain);
-    console.error('Expected domains:', EXPECTED_DOMAINS);
   }
   
-  // Check if HTTPS is used (except localhost)
   if (window.location.protocol !== 'https:' && 
       !currentDomain.includes('localhost') && 
       !currentDomain.includes('127.0.0.1')) {
@@ -1354,7 +1344,6 @@ initialize();
     document.body.append(httpsWarning);
   }
   
-  // Check for mixed content
   if (window.location.protocol === 'https:') {
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -1365,7 +1354,6 @@ initialize();
     });
     observer.observe({ entryTypes: ['resource'] });
   }
-  
 })();
 </script>
 </body>
