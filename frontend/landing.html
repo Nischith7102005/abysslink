@@ -14,6 +14,9 @@
 <!-- SEO: Robots -->
 <meta name="robots" content="index, follow">
 
+<!-- SEO: Canonical URL (FIX #1) -->
+<link rel="canonical" href="https://abysslink.vercel.app/">
+
 <!-- SEO: Open Graph -->
 <meta property="og:title" content="AbyssLink – Anonymous & Secure Ephemeral Chat">
 <meta property="og:description" content="Privacy-first anonymous chat with ephemeral, self-destructing messages. No accounts. No logs.">
@@ -24,6 +27,31 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AbyssLink – Anonymous & Secure Ephemeral Chat">
 <meta name="twitter:description" content="Privacy-first anonymous chat with ephemeral, self-destructing messages. No accounts. No logs.">
+
+<!-- SEO: Structured Data (FIX #3) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "AbyssLink",
+  "url": "https://abysslink.vercel.app",
+  "description": "Privacy-first anonymous chat app with end-to-end encryption and self-destructing messages. No login. No tracking. No logs.",
+  "applicationCategory": "CommunicationApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "End-to-end encryption",
+    "Self-destructing messages",
+    "Anonymous chat rooms",
+    "No account required",
+    "Zero data storage"
+  ]
+}
+</script>
 
 <script 
   src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
@@ -773,12 +801,13 @@ p.lead {
     <div class="bg-overlay"></div>
 </div>
 
+<!-- FIX #2: Updated alt text with semantic, keyword-rich descriptions -->
 <div id="warrior-container">
-    <img id="warrior-img" src="https://i.ibb.co/TMmNskSK/a-w.png" alt="Warrior">
+    <img id="warrior-img" src="https://i.ibb.co/TMmNskSK/a-w.png" alt="AbyssLink anonymous chat warrior illustration representing secure private messaging">
 </div>
 
 <div id="sword-container">
-    <img id="sword-img" src="https://image2url.com/r2/default/images/1767366955365-dc9faf5e-f348-49f3-b370-7caad31108b6.png" alt="Berserk Sword">
+    <img id="sword-img" src="https://image2url.com/r2/default/images/1767366955365-dc9faf5e-f348-49f3-b370-7caad31108b6.png" alt="AbyssLink ephemeral messaging sword graphic symbolizing message destruction">
 </div>
 
 <div class="vignette"></div>
