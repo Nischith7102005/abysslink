@@ -42,7 +42,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
 <!-- Preload critical assets -->
-<link rel="preload" as="video" href="0104.mp4" type="video/mp4">
 <link rel="preload" as="image" href="https://i.ibb.co/TMmNskSK/a-w.png">
 <link rel="preload" as="image" href="https://image2url.com/r2/default/images/1767366955365-dc9faf5e-f348-49f3-b370-7caad31108b6.png">
 <link rel="preload" as="image" href="https://i.ibb.co/TMkPJDsN/1.jpg">
@@ -171,55 +170,8 @@ body.loading #main-content {
 }
 
 /* ============================================
-   OPTIMIZED VIDEO BACKGROUND STYLES
+   BACKGROUND IMAGE STYLES
    ============================================ */
-#video-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    z-index: -2;
-    overflow: hidden;
-    transform: translateZ(0);
-    will-change: opacity;
-    backface-visibility: hidden;
-}
-
-#hero-video {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    min-width: 100%;
-    min-height: 100%;
-    width: auto;
-    height: auto;
-    transform: translate(-50%, -50%) translateZ(0);
-    object-fit: cover;
-    image-rendering: optimizeQuality;
-    -webkit-transform: translate(-50%, -50%) translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    perspective: 1000px;
-    will-change: transform;
-}
-
-.video-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        to bottom,
-        rgba(5, 5, 5, 0.15) 0%,
-        rgba(5, 5, 5, 0.3) 50%,
-        rgba(5, 5, 5, 0.8) 100%
-    );
-    pointer-events: none;
-    transform: translateZ(0);
-}
-
 .background-wrapper {
     position: fixed;
     top: 0;
@@ -228,12 +180,6 @@ body.loading #main-content {
     height: 100%;
     z-index: -3;
     overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-}
-
-.background-wrapper.visible {
-    opacity: 1;
 }
 
 #bg-image {
@@ -243,11 +189,27 @@ body.loading #main-content {
     width: 100%;
     height: 100%;
     background: url('https://i.ibb.co/TMkPJDsN/1.jpg') center/cover no-repeat;
-    filter: blur(12px) brightness(0.6);
+    filter: blur(8px) brightness(0.5);
     transform: scale(1.1) translate3d(0, 0, 0);
     z-index: -2;
     will-change: filter;
     backface-visibility: hidden;
+}
+
+.bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(5, 5, 5, 0.3) 0%,
+        rgba(5, 5, 5, 0.4) 50%,
+        rgba(5, 5, 5, 0.7) 100%
+    );
+    pointer-events: none;
+    z-index: -1;
 }
 
 #warrior-container {
@@ -736,12 +698,6 @@ p.lead {
     }
 }
 
-@media (max-width: 768px) {
-    #hero-video {
-        filter: blur(0.5px);
-    }
-}
-
 @media (max-width: 1024px) {
     section { padding: 0 4rem; }
     .about-section { padding: 3rem 2rem; }
@@ -811,26 +767,10 @@ p.lead {
 <!-- Main Content -->
 <div id="main-content">
 
-<!-- Video Background for Hero -->
-<div id="video-background">
-    <video 
-        id="hero-video"
-        autoplay 
-        muted 
-        loop 
-        playsinline
-        preload="auto"
-        disablePictureInPicture
-        disableRemotePlayback
-    >
-        <source src="0104.mp4" type="video/mp4">
-    </video>
-    <div class="video-overlay"></div>
-</div>
-
-<!-- Background for other sections -->
-<div class="background-wrapper" id="originalBackground">
+<!-- Background Image (used for all sections) -->
+<div class="background-wrapper">
     <div id="bg-image"></div>
+    <div class="bg-overlay"></div>
 </div>
 
 <div id="warrior-container">
@@ -1028,14 +968,13 @@ p.lead {
 const API_URL = 'https://abysslink.onrender.com';
 
 // ============================================
-// COMPREHENSIVE ASSET PRELOADER
+// ASSET PRELOADER (No Video)
 // ============================================
 class AssetPreloader {
     constructor() {
         this.totalAssets = 0;
         this.loadedAssets = 0;
         this.assets = {
-            video: null,
             images: [],
             fonts: []
         };
@@ -1058,41 +997,6 @@ class AssetPreloader {
         this.statusElement.textContent = message;
     }
 
-    loadVideo() {
-        return new Promise((resolve, reject) => {
-            const video = document.getElementById('hero-video');
-            this.assets.video = video;
-            
-            const onCanPlay = () => {
-                video.removeEventListener('canplaythrough', onCanPlay);
-                video.removeEventListener('error', onError);
-                this.updateStatus('Video loaded...');
-                resolve();
-            };
-            
-            const onError = (e) => {
-                video.removeEventListener('canplaythrough', onCanPlay);
-                video.removeEventListener('error', onError);
-                console.warn('Video failed to load, continuing anyway');
-                resolve(); // Resolve anyway to not block page load
-            };
-            
-            if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
-                resolve();
-            } else {
-                video.addEventListener('canplaythrough', onCanPlay);
-                video.addEventListener('error', onError);
-                
-                // Timeout fallback
-                setTimeout(() => {
-                    video.removeEventListener('canplaythrough', onCanPlay);
-                    video.removeEventListener('error', onError);
-                    resolve();
-                }, 8000);
-            }
-        });
-    }
-
     loadImage(src, name = 'Image') {
         return new Promise((resolve) => {
             const img = new Image();
@@ -1104,10 +1008,9 @@ class AssetPreloader {
             
             img.onerror = () => {
                 console.warn(`${name} failed to load`);
-                resolve(); // Resolve anyway
+                resolve();
             };
             
-            // Timeout fallback
             setTimeout(() => {
                 resolve();
             }, 5000);
@@ -1131,7 +1034,6 @@ class AssetPreloader {
                 resolve();
             });
             
-            // Timeout fallback
             setTimeout(() => {
                 resolve();
             }, 3000);
@@ -1139,20 +1041,17 @@ class AssetPreloader {
     }
 
     async loadAllAssets() {
-        this.updateStatus('Loading video...');
+        this.updateStatus('Loading assets...');
         
-        // Count total assets
         const imageUrls = [
             { url: 'https://i.ibb.co/TMmNskSK/a-w.png', name: 'Warrior' },
             { url: 'https://image2url.com/r2/default/images/1767366955365-dc9faf5e-f348-49f3-b370-7caad31108b6.png', name: 'Sword' },
             { url: 'https://i.ibb.co/TMkPJDsN/1.jpg', name: 'Background' }
         ];
         
-        this.totalAssets = 1 + imageUrls.length + 1; // video + images + fonts
+        this.totalAssets = imageUrls.length + 1; // images + fonts
         
-        const promises = [
-            this.loadVideo().then(() => this.updateProgress())
-        ];
+        const promises = [];
         
         // Load images
         imageUrls.forEach(({ url, name }) => {
@@ -1172,13 +1071,10 @@ class AssetPreloader {
     onComplete() {
         this.updateStatus('Ready...');
         
-        // Small delay to ensure everything is rendered
         setTimeout(() => {
-            // Hide preloader
             this.preloader.classList.add('loaded');
             document.body.classList.remove('loading');
             
-            // Initialize page
             setTimeout(() => {
                 initializePage();
             }, 300);
@@ -1190,22 +1086,19 @@ class AssetPreloader {
 // INITIALIZE ON DOM READY
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Prevent scroll restoration
     if (history.scrollRestoration) {
         history.scrollRestoration = 'manual';
     }
     window.scrollTo(0, 0);
     
-    // Start preloading
     const preloader = new AssetPreloader();
     preloader.loadAllAssets();
 });
 
 // ============================================
-// PAGE INITIALIZATION (after preload)
+// PAGE INITIALIZATION
 // ============================================
 function initializePage() {
-    // Register GSAP plugins
     gsap.registerPlugin(ScrollTrigger);
     
     ScrollTrigger.config({
@@ -1213,49 +1106,14 @@ function initializePage() {
         ignoreMobileResize: true
     });
     
-    // Initialize video controls
-    initializeVideo();
-    
-    // Initialize animations
     setTimeout(() => {
         ScrollTrigger.refresh();
         initializeAnimations();
     }, 100);
     
-    // Initialize other features
     initializeGlitchText();
     initializeNavigation();
     initializeMenu();
-}
-
-// ============================================
-// VIDEO CONTROLS
-// ============================================
-function initializeVideo() {
-    const heroVideo = document.getElementById('hero-video');
-    const videoBackground = document.getElementById('video-background');
-    
-    heroVideo.playbackRate = 1.0;
-    heroVideo.style.transform = 'translate(-50%, -50%) translateZ(0)';
-    
-    // Ensure video plays
-    heroVideo.play().catch(e => console.log('Autoplay blocked'));
-    
-    // Visibility API - pause when tab hidden
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            heroVideo.pause();
-        } else {
-            heroVideo.play().catch(e => {});
-        }
-    });
-    
-    // Handle errors
-    heroVideo.addEventListener('error', (e) => {
-        console.error('Video error:', e);
-        videoBackground.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)';
-        heroVideo.style.display = 'none';
-    });
 }
 
 // ============================================
@@ -1285,7 +1143,7 @@ function initializeAnimations() {
         force3D: true
     });
 
-    // Warrior parallax
+    // Warrior parallax on scroll
     gsap.to("#warrior-img", {
         scrollTrigger: {
             trigger: "#hero",
@@ -1301,33 +1159,7 @@ function initializeAnimations() {
         force3D: true
     });
 
-    // Video fade on scroll
-    gsap.to("#video-background", {
-        scrollTrigger: {
-            trigger: "#hero",
-            start: "top top",
-            end: "bottom top",
-            scrub: 1,
-            invalidateOnRefresh: true
-        },
-        opacity: 0,
-        ease: "none"
-    });
-
-    // Background transition
-    ScrollTrigger.create({
-        trigger: "#hero",
-        start: "center top",
-        end: "bottom top",
-        onEnter: () => {
-            document.getElementById('originalBackground').classList.add('visible');
-        },
-        onLeaveBack: () => {
-            document.getElementById('originalBackground').classList.remove('visible');
-        }
-    });
-
-    // Scroll indicator
+    // Scroll indicator fade
     gsap.to(".scroll-indicator", {
         scrollTrigger: {
             trigger: "#hero",
@@ -1340,7 +1172,7 @@ function initializeAnimations() {
         ease: "none"
     });
 
-    // Sword animations
+    // Sword fade in
     gsap.to("#sword-img", {
         scrollTrigger: {
             trigger: "#hero",
@@ -1355,6 +1187,7 @@ function initializeAnimations() {
         force3D: true
     });
 
+    // Sword fade out
     gsap.to("#sword-img", {
         scrollTrigger: {
             trigger: "#security",
@@ -1369,7 +1202,7 @@ function initializeAnimations() {
         force3D: true
     });
 
-    // Background blur
+    // Background blur/brightness animation on scroll
     gsap.to("#bg-image", {
         scrollTrigger: {
             trigger: "#hero",
@@ -1377,11 +1210,11 @@ function initializeAnimations() {
             end: "bottom top",
             scrub: 1
         },
-        filter: "blur(0px) brightness(0.8)",
+        filter: "blur(0px) brightness(0.7)",
         ease: "none"
     });
 
-    // Content wrappers
+    // Content wrappers fade in
     document.querySelectorAll('.content-wrapper').forEach((content, index) => {
         gsap.to(content, {
             scrollTrigger: {
@@ -1515,7 +1348,6 @@ function initializeNavigation() {
         scrollTimeout = window.requestAnimationFrame(updateActiveNav);
     }, { passive: true });
 
-    // Smooth scroll for anchors
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
@@ -1563,9 +1395,6 @@ window.addEventListener('resize', () => {
     }, 250);
 }, { passive: true });
 
-// ============================================
-// PREVENT SCROLL RESTORATION
-// ============================================
 window.addEventListener('beforeunload', () => {
     window.scrollTo(0, 0);
 });
@@ -1587,7 +1416,6 @@ window.addEventListener('beforeunload', () => {
   );
   
   if (!isExpectedDomain && window.location.protocol === 'https:') {
-    // Running on unexpected HTTPS domain - potential phishing
     const warning = document.createElement('div');
     warning.style.cssText = `
       position: fixed;
@@ -1611,13 +1439,11 @@ window.addEventListener('beforeunload', () => {
     `;
     document.body.prepend(warning);
     
-    // Log to console
     console.error('%c⚠️ SECURITY WARNING', 'color: red; font-size: 20px; font-weight: bold;');
     console.error('Unexpected domain:', currentDomain);
     console.error('Expected domains:', EXPECTED_DOMAINS);
   }
   
-  // Check if HTTPS is used (except localhost)
   if (window.location.protocol !== 'https:' && 
       !currentDomain.includes('localhost') && 
       !currentDomain.includes('127.0.0.1')) {
@@ -1647,7 +1473,6 @@ window.addEventListener('beforeunload', () => {
     document.body.append(httpsWarning);
   }
   
-  // Check for mixed content
   if (window.location.protocol === 'https:') {
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
