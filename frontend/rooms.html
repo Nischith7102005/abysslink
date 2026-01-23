@@ -35,6 +35,10 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   padding: 2rem;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 .container {
   max-width: 900px;
@@ -314,7 +318,7 @@ h1 {
 }
 </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
 <div class="loading-overlay" id="loadingOverlay">
   <div class="loading-spinner"></div>
@@ -437,6 +441,95 @@ h1 {
     </div>
   </div>
 </div>
+
+<!-- ============================================
+     ANTI-INSPECT PROTECTION
+     ============================================ -->
+<script>
+(function() {
+    'use strict';
+    
+    // Block keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // F12
+        if (e.key === 'F12' || e.keyCode === 123) {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (DevTools)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+U (View Source)
+        if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+S (Save Page)
+        if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
+            e.preventDefault();
+            return false;
+        }
+    }, false);
+
+    // Detect DevTools via window size difference
+    let devtoolsOpen = false;
+    const threshold = 160;
+    
+    function detectDevTools() {
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+        
+        if (widthThreshold || heightThreshold) {
+            if (!devtoolsOpen) {
+                devtoolsOpen = true;
+                onDevToolsOpen();
+            }
+        } else {
+            devtoolsOpen = false;
+        }
+    }
+    
+    function onDevToolsOpen() {
+        console.clear();
+        console.log('%c⛔ ACCESS DENIED', 'color: #ff0000; font-size: 40px; font-weight: bold; text-shadow: 2px 2px #000;');
+        console.log('%cThis browser feature is blocked for security.', 'color: #888; font-size: 14px;');
+        console.log('%cAbyssLink protects user privacy.', 'color: #888; font-size: 14px;');
+    }
+    
+    // Check periodically
+    setInterval(detectDevTools, 1000);
+    
+    // Detect DevTools via debugger timing
+    let checkStatus = false;
+    setInterval(function() {
+        const startTime = performance.now();
+        debugger;
+        const endTime = performance.now();
+        if (endTime - startTime > 100) {
+            if (!checkStatus) {
+                checkStatus = true;
+                onDevToolsOpen();
+            }
+        }
+    }, 4000);
+
+    // Block drag
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+    // Console warning on load
+    console.clear();
+    console.log('%c⚠️ STOP', 'color: #ff0000; font-size: 50px; font-weight: bold;');
+    console.log('%cThis is a browser feature intended for developers.', 'font-size: 16px;');
+    console.log('%cIf someone told you to paste something here, it\'s likely a scam.', 'font-size: 14px; color: #ff6600;');
+    console.log('%cAbyssLink - Privacy First', 'font-size: 12px; color: #888;');
+    
+})();
+</script>
 
 <script type="module">
 // Configuration
@@ -808,4 +901,3 @@ sessionStorage.removeItem('abysslink_auth');
 </script>
 </body>
 </html>
-
