@@ -4,7 +4,27 @@
 <meta name="google-site-verification" content="P-GjzrUdbq3uDUnpkff4G1aM6rhy7YyH_2D4nUoqTD4" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AbyssLink | Secure Transmission Layer</title>
+
+<!-- SEO: Updated title -->
+<title>AbyssLink – Anonymous & Secure Ephemeral Chat App</title>
+
+<!-- SEO: Meta description -->
+<meta name="description" content="AbyssLink is a privacy-first anonymous chat app with end-to-end encryption and self-destructing messages. No login. No tracking. No logs.">
+
+<!-- SEO: Robots -->
+<meta name="robots" content="index, follow">
+
+<!-- SEO: Open Graph -->
+<meta property="og:title" content="AbyssLink – Anonymous & Secure Ephemeral Chat">
+<meta property="og:description" content="Privacy-first anonymous chat with ephemeral, self-destructing messages. No accounts. No logs.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://abysslink.vercel.app">
+
+<!-- SEO: Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AbyssLink – Anonymous & Secure Ephemeral Chat">
+<meta name="twitter:description" content="Privacy-first anonymous chat with ephemeral, self-destructing messages. No accounts. No logs.">
+
 <script 
   src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
   integrity="sha512-16esztaSRplJROstbIIdwX3N97V1+pZvV33ABoG1H2OyTttBxEGkTsoIVsiP1iaTtM8b3+hu2kB6pQ4Clr5yug=="
@@ -475,6 +495,17 @@ h1 {
     text-shadow: 0 0 40px rgba(0,0,0,1), 0 0 80px rgba(0,0,0,0.8);
 }
 
+/* SEO: Subtitle styling */
+.hero-subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 15px rgba(0,0,0,1);
+}
+
 h2 {
     font-size: clamp(2rem, 4vw, 3.5rem);
     margin-bottom: 2rem;
@@ -833,10 +864,13 @@ p.lead {
 
 <section id="hero">
     <div class="content-wrapper">
+        <!-- SEO: H1 with keyword subtitle -->
         <h1 class="glitch-text" data-text="ABYSSLINK">ABYSSLINK</h1>
+        <p class="hero-subtitle">Anonymous & Secure Ephemeral Chat App</p>
         <p class="lead">
-            An ephemeral communication layer designed for professionals who require absolute stealth.<br>
-            No persistent storage. No logs. Just silence.
+            A privacy-focused anonymous chat application built for secure conversations. 
+            Messages and shared files are end-to-end encrypted and automatically destroyed after delivery. 
+            No accounts. No tracking. No stored data.
         </p>
         <div class="button-group">
             <a href="rooms.html" class="btn">Get Into The Abyss</a>
