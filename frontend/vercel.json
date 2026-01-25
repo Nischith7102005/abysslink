@@ -1,18 +1,16 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/",
-      "destination": "/frontend/landing.html"
+      "destination": "/landing.html"
     },
     {
       "source": "/rooms",
-      "destination": "/frontend/rooms.html"
+      "destination": "/rooms.html"
     },
     {
       "source": "/chat",
-      "destination": "/frontend/chat.html"
+      "destination": "/chat.html"
     }
   ],
   "headers": [
