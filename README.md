@@ -2,7 +2,7 @@
 
 > *“In the modern digital landscape, surveillance is the default. We have built a system where privacy is the baseline.”*
 
-AbyssLink is a zero-persistence, invite-only, end-to-end encrypted chat platform for professionals who demand absolute anonymity and impermanence in digital communication.
+AbyssLink is a zero-persistence, invite-only, end-to-end encrypted chat platform for people who demand absolute anonymity and impermanence in digital communication.
 
 - 🔒 **End-to-end encrypted** messaging and file sharing (AES-GCM + PBKDF2)
 - 🕵️ **No accounts, no usernames, no tracking** — every participant is anonymous
