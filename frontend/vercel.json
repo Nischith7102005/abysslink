@@ -4,7 +4,15 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/landing.html"
+      "destination": "/frontend/landing.html"
+    },
+    {
+      "source": "/rooms",
+      "destination": "/frontend/rooms.html"
+    },
+    {
+      "source": "/chat",
+      "destination": "/frontend/chat.html"
     }
   ],
   "headers": [
