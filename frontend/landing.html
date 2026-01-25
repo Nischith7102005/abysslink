@@ -566,6 +566,9 @@ body.loading #main-content {
     pointer-events: none;
 }
 
+/* ============================================
+   MENU TOGGLE - FIXED WITH BUTTON RESET
+   ============================================ */
 .menu-toggle {
     position: fixed;
     top: 2rem;
@@ -577,6 +580,23 @@ body.loading #main-content {
     justify-content: space-between;
     cursor: pointer;
     z-index: 1001;
+    /* Button reset styles */
+    background: none;
+    border: none;
+    padding: 0;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.menu-toggle:focus {
+    outline: none;
+}
+
+.menu-toggle:focus-visible {
+    outline: 2px solid var(--text-main);
+    outline-offset: 4px;
 }
 
 .menu-toggle span {
@@ -584,6 +604,7 @@ body.loading #main-content {
     height: 2px;
     background: var(--text-main);
     transition: all 0.3s ease;
+    display: block;
 }
 
 .menu-toggle.active span:nth-child(1) {
